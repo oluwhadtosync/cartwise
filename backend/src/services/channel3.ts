@@ -29,7 +29,9 @@ export class Channel3Service {
    */
   async fetchDemoMarketProducts(): Promise<any[]> {
     try {
-      const res = await fetch(`${config.demoStoreUrl}/api/products`);
+      const res = await fetch(`${config.demoStoreUrl}/api/products`, {
+        signal: AbortSignal.timeout(5000)
+      });
       if (res.ok) {
         const data = (await res.json()) as any;
         return data.products || [];
@@ -75,7 +77,8 @@ export class Channel3Service {
             'Content-Type': 'application/json',
             'x-api-key': config.channel3.apiKey
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(8000)
         });
 
         if (res.ok) {

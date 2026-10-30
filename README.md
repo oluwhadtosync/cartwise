@@ -12,6 +12,17 @@
 
 ---
 
+### 🌐 Live Cloud Deployments (Render)
+
+| Service | Public HTTPS URL | Description |
+| :--- | :--- | :--- |
+| **Demo Market** | [https://cartwise-demo-market.onrender.com](https://cartwise-demo-market.onrender.com) | Standalone mock store (Card-only, Lagos shipping, stockout toggle) |
+| **Backend API** | [https://cartwise-backend-kr8p.onrender.com](https://cartwise-backend-kr8p.onrender.com) | Express + TypeScript agent API (PayPal, Gemini, Channel3, Kernel) |
+| **Health Check** | [https://cartwise-backend-kr8p.onrender.com/health](https://cartwise-backend-kr8p.onrender.com/health) | Real-time system health and integration status |
+| **Android APK** | [app-debug.apk](file:///root/cartwise/android/app/build/outputs/apk/debug/app-debug.apk) | Pre-built native Android APK (19 MB) |
+
+---
+
 ## 🌟 1. The Product & The Problem
 
 ### The Problem
