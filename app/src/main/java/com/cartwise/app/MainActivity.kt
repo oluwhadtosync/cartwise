@@ -29,7 +29,7 @@ enum class Screen {
 
 class MainActivity : ComponentActivity() {
 
-    private val apiClient = ApiClient("http://10.0.2.2:3000") // 10.0.2.2 for emulator/phone or localhost
+    private val apiClient = ApiClient("https://cartwise-backend-kr8p.onrender.com") // Live Render Backend
     private var pendingOrderId: String? = null
 
     // Compose state variables accessible by activity
@@ -165,7 +165,7 @@ class MainActivity : ComponentActivity() {
                         shippingCost = 5.00,
                         totalCost = 39.99,
                         storeName = "Demo Market",
-                        storeUrl = "http://localhost:4000/product/prod-earbuds-01",
+                        storeUrl = "https://cartwise-demo-market.onrender.com/product/prod-earbuds-01",
                         rating = 4.8,
                         reasonWhy = "Best value pick: lowest total landed cost ($39.99) with verified shipping to Nigeria."
                     )
@@ -208,7 +208,7 @@ class MainActivity : ComponentActivity() {
                     totalAmount = deal.price + deal.shippingCost + 3.00,
                     status = "AUTHORIZED",
                     merchantName = deal.storeName,
-                    liveViewUrl = "http://localhost:4000/checkout?productId=prod-earbuds-01"
+                    liveViewUrl = "https://cartwise-demo-market.onrender.com/checkout?productId=prod-earbuds-01"
                 )
                 activeOrder.value = mockOrder
                 onPayPalApprovalCompleted(mockOrder.id)

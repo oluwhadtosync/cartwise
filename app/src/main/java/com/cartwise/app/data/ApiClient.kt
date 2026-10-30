@@ -14,7 +14,7 @@ import okhttp3.sse.EventSources
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class ApiClient(private var baseUrl: String = "http://10.0.2.2:3000") {
+class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onrender.com") {
 
     private val json = Json {
         ignoreUnknownKeys = true
