@@ -1,0 +1,49 @@
+# Render Blueprint for Cartwise (PayPal AI Hackathon 2026)
+# https://render.com/docs/blueprint-spec
+
+services:
+  # 1. Cartwise Demo Market (Card-Only Mock E-commerce Store)
+  - type: web
+    name: cartwise-demo-market
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: demo-store
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  # 2. Cartwise Backend (AI Shopping Agent API + PayPal Escrow + Kernel Browser)
+  - type: web
+    name: cartwise-backend
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "true"
+      - key: PAYPAL_MODE
+        value: sandbox
+      - key: DEMO_STORE_URL
+        fromService:
+          type: web
+          name: cartwise-demo-market
+          property: host
+      # Sensitive secrets - configure in Render dashboard or secret files
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CHANNEL3_API_KEY
+        sync: false
+      - key: KERNEL_API_KEY
+        sync: false
