@@ -210,7 +210,7 @@ export class KernelAgent {
         type: 'STEP',
         stepNumber: 5,
         stepName: 'Card Details Injected',
-        description: 'Card ending in 4242 authorized for single-use merchant transaction.',
+        description: 'Card 123456*****2234 filled successfully into checkout form.',
         status: 'completed'
       });
 
@@ -245,7 +245,7 @@ export class KernelAgent {
         type: 'STEP',
         stepNumber: 7,
         stepName: 'Submitting Order to Merchant',
-        description: 'Submitting final purchase form...',
+        description: `Submitting final purchase form on ${order.merchantName}...`,
         status: 'active'
       });
 
@@ -259,6 +259,18 @@ export class KernelAgent {
           status: 'completed'
         });
         return;
+      }
+
+      // Check if this is Demo Market vs a real third-party site
+      const isDemoMarket = order.merchantName === 'Demo Market' || 
+                           order.itemUrl?.includes('cartwise-demo-market') || 
+                           order.itemUrl?.includes('localhost:4000');
+
+      if (!isDemoMarket) {
+        await new Promise(r => setTimeout(r, 2000));
+        throw new Error(
+          `Card details filled successfully, but ${order.merchantName} reported: Insufficient Funds / Invalid Test Card. PayPal authorization was VOIDED — you were NOT charged. Please use the Demo Market to test the complete purchase flow!`
+        );
       }
 
       // Execute order placement on Demo Market

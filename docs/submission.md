@@ -67,3 +67,18 @@ A simulated standalone e-commerce merchant hosted on Render that exclusively acc
 - **Multi-Merchant Cart Splitting:** Buying bundles from 3 different stores in a single PayPal authorization.
 - **Automated Customs & Duty Calculator:** Instant CIF calculations for West African and Latin American imports.
 - **PayPal Agent Toolkit MCP Integration:** Enabling external conversational assistants to invoke Cartwise as an autonomous purchasing skill.
+
+---
+
+## 🔗 Links & Judge Evaluation Resources
+
+- **Public GitHub Repository:** [https://github.com/oluwhadtosync/cartwise](https://github.com/oluwhadtosync/cartwise)
+- **Live Demo Store:** [https://cartwise-demo-market.onrender.com](https://cartwise-demo-market.onrender.com)
+- **Live Backend API:** [https://cartwise-backend-kr8p.onrender.com](https://cartwise-backend-kr8p.onrender.com)
+- **Backend Health Check:** [https://cartwise-backend-kr8p.onrender.com/health](https://cartwise-backend-kr8p.onrender.com/health)
+- **Pre-compiled Android APK:** `android/app/build/outputs/apk/debug/app-debug.apk` (19 MB)
+
+### 🔑 Test Judge Credentials (PayPal Sandbox)
+- **Buyer Email:** `sb-buyer@business.example.com`
+- **Buyer Password:** `CartwiseDemo2026!`
+- **Demo Store Card:** `4242 4242 4242 4242` (Expiry: `12/28`, CVC: `123`)

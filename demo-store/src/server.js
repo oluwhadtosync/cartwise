@@ -34,7 +34,7 @@ function renderPage(title, content) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>${title} | Demo Market</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,9 +61,23 @@ function renderPage(title, content) {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    .banner-warning {
+      background: #2b1111;
+      border-bottom: 1px solid #7f1d1d;
+      color: #fca5a5;
+      padding: 0.65rem 1rem;
+      font-size: 0.8rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      line-height: 1.4;
     }
     header {
-      background: rgba(17, 24, 39, 0.85);
+      background: rgba(17, 24, 39, 0.92);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--card-border);
       position: sticky;
@@ -73,53 +87,44 @@ function renderPage(title, content) {
     .header-inner {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 1rem 1.5rem;
+      padding: 0.9rem 1.25rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
     }
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.6rem;
       text-decoration: none;
       color: #fff;
       font-weight: 800;
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       letter-spacing: -0.025em;
     }
     .brand-badge {
       background: linear-gradient(135deg, #4f46e5, #06b6d4);
       color: #fff;
       font-size: 0.65rem;
-      padding: 0.2rem 0.5rem;
+      padding: 0.2rem 0.55rem;
       border-radius: 9999px;
       font-weight: 700;
       text-transform: uppercase;
-    }
-    .banner-warning {
-      background: #311313;
-      border-bottom: 1px solid #7f1d1d;
-      color: #fca5a5;
-      padding: 0.6rem 1rem;
-      font-size: 0.825rem;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+      letter-spacing: 0.05em;
     }
     .main-container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem 1.5rem;
+      padding: 1.75rem 1.25rem;
       flex: 1;
       width: 100%;
     }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
+      gap: 1.25rem;
     }
     .card {
       background: var(--card-bg);
@@ -131,7 +136,7 @@ function renderPage(title, content) {
       transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
     }
     .card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-3px);
       border-color: #374151;
       box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
     }
@@ -146,14 +151,14 @@ function renderPage(title, content) {
       position: relative;
     }
     .card-body {
-      padding: 1.25rem;
+      padding: 1.15rem;
       display: flex;
       flex-direction: column;
       flex: 1;
     }
     .card-title {
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700;
       color: #fff;
       margin-bottom: 0.5rem;
       line-height: 1.4;
@@ -170,11 +175,12 @@ function renderPage(title, content) {
     }
     .card-price-row {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       margin-top: auto;
-      padding-top: 1rem;
+      padding-top: 0.85rem;
       border-top: 1px solid var(--card-border);
+      gap: 0.75rem;
     }
     .price {
       font-size: 1.35rem;
@@ -183,7 +189,8 @@ function renderPage(title, content) {
     }
     .shipping-tag {
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: var(--accent);
+      font-weight: 500;
     }
     .btn {
       display: inline-flex;
@@ -199,36 +206,28 @@ function renderPage(title, content) {
       border: none;
       cursor: pointer;
       text-decoration: none;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s;
+      min-height: 44px;
     }
     .btn:hover { background: var(--primary-dark); }
+    .btn:active { transform: scale(0.98); }
     .btn-secondary {
       background: #1f2937;
       color: #e5e7eb;
       border: 1px solid #374151;
     }
     .btn-secondary:hover { background: #374151; }
-    .btn-danger {
-      background: #dc2626;
-    }
-    .btn-danger:hover { background: #b91c1c; }
     .badge {
       display: inline-block;
       font-size: 0.7rem;
       font-weight: 700;
-      padding: 0.2rem 0.5rem;
+      padding: 0.25rem 0.55rem;
       border-radius: 0.4rem;
       text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
-    .badge-in-stock { background: #064e3b; color: #6ee7b7; }
-    .badge-out-stock { background: #7f1d1d; color: #fca5a5; }
-    footer {
-      border-top: 1px solid var(--card-border);
-      padding: 2rem 1.5rem;
-      text-align: center;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
+    .badge-in-stock { background: #064e3b; color: #6ee7b7; border: 1px solid #047857; }
+    .badge-out-stock { background: #7f1d1d; color: #fca5a5; border: 1px solid #b91c1c; }
     input, select {
       width: 100%;
       background: #1e293b;
@@ -236,10 +235,11 @@ function renderPage(title, content) {
       color: #fff;
       padding: 0.75rem 1rem;
       border-radius: 0.5rem;
-      font-size: 0.95rem;
+      font-size: 1rem; /* 16px prevents iOS zoom */
       margin-top: 0.35rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.9rem;
       outline: none;
+      min-height: 46px;
     }
     input:focus, select:focus {
       border-color: var(--primary);
@@ -255,6 +255,141 @@ function renderPage(title, content) {
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
     }
+
+    /* Product Detail & Checkout Grids */
+    .product-detail-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.25fr);
+      gap: 2rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 2rem;
+    }
+    .product-detail-image-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0d121f;
+      border-radius: 1rem;
+      padding: 1.75rem;
+      border: 1px solid #1f2937;
+      width: 100%;
+    }
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 1.75rem;
+    }
+
+    /* Footer styling */
+    footer.site-footer {
+      border-top: 1px solid var(--card-border);
+      background: #080c14;
+      padding: 2.25rem 1.25rem 2rem;
+      margin-top: auto;
+    }
+    .footer-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .footer-powered-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .footer-powered-wrap span {
+      letter-spacing: 0.02em;
+    }
+    .render-logo-img {
+      height: 22px;
+      width: auto;
+      display: inline-block;
+      vertical-align: middle;
+      opacity: 0.95;
+      transition: opacity 0.2s;
+    }
+    .render-logo-img:hover {
+      opacity: 1;
+    }
+    .footer-bottom {
+      border-top: 1px solid #1f2937;
+      padding-top: 1rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+      width: 100%;
+    }
+
+    /* Mobile Responsive Overrides */
+    @media (max-width: 768px) {
+      .header-inner {
+        padding: 0.75rem 1rem;
+        flex-direction: row;
+        justify-content: space-between;
+      }
+      .brand-subtext {
+        display: none;
+      }
+      .main-container {
+        padding: 1rem 0.85rem;
+      }
+      .catalog-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+      }
+      .catalog-header h1 {
+        font-size: 1.5rem !important;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      .product-detail-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem !important;
+        padding: 1.15rem !important;
+      }
+      .product-detail-image-box {
+        padding: 1.25rem !important;
+      }
+      .product-detail-image-box > div {
+        width: 180px !important;
+        height: 180px !important;
+      }
+      .checkout-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem !important;
+      }
+      .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 0.4rem !important;
+      }
+      .partner-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+      .partner-card {
+        padding: 0.7rem 0.75rem;
+      }
+      .partner-role {
+        font-size: 0.65rem;
+      }
+    }
+    @media (max-width: 480px) {
+      .partner-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -268,7 +403,7 @@ function renderPage(title, content) {
         <span>🛍️ Demo Market</span>
         <span class="brand-badge">Card Only</span>
       </a>
-      <div style="font-size: 0.85rem; color: #9ca3af;">
+      <div class="brand-subtext" style="font-size: 0.825rem; color: #9ca3af;">
         Direct Mock Merchant for Cartwise AI
       </div>
     </div>
@@ -276,9 +411,20 @@ function renderPage(title, content) {
   <main class="main-container">
     ${content}
   </main>
-  <footer>
-    <p>Demo Market &bull; Simulated Merchant Store for PayPal AI Hackathon 2026</p>
-    <p style="margin-top: 0.5rem; font-size: 0.75rem;">Created for testing the Cartwise "Buy-For-Me" autonomous checkout agent.</p>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-powered-wrap">
+        <span>Hosted & Powered by</span>
+        <a href="https://render.com" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; text-decoration: none;">
+          <img src="/public/images/render-logo.png" alt="Render" class="render-logo-img" />
+        </a>
+      </div>
+
+      <div class="footer-bottom">
+        <p>Demo Market &bull; Simulated Card-Only Merchant for Cartwise AI Shopping Concierge</p>
+        <p style="margin-top: 0.35rem;">PayPal AI Hackathon 2026 &bull; Lagos, Nigeria &bull; MIT License</p>
+      </div>
+    </div>
   </footer>
 </body>
 </html>`;
@@ -331,14 +477,14 @@ app.get('/', (req, res) => {
   `).join('');
 
   const content = `
-    <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: gap; gap: 1rem;">
+    <div class="catalog-header" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
       <div>
         <h1 style="font-size: 1.85rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">Explore All Products</h1>
         <p style="color: var(--text-muted); font-size: 0.95rem;">
           Curated electronics, audio, and gadgets. All products ship globally including Lagos, Nigeria.
         </p>
       </div>
-      <div style="background: #1e293b; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.8rem; border: 1px solid #334155;">
+      <div style="background: #1e293b; padding: 0.6rem 1rem; border-radius: 0.5rem; font-size: 0.8rem; border: 1px solid #334155; white-space: nowrap;">
         💳 <strong>Card Form Only</strong> &bull; No PayPal Checkout
       </div>
     </div>
@@ -369,19 +515,21 @@ app.get('/product/:id', (req, res) => {
 
   const content = `
     <div style="margin-bottom: 1.5rem;">
-      <a href="/" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">← Back to All Products</a>
+      <a href="/" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+        <span>←</span> <span>Back to All Products</span>
+      </a>
     </div>
-    <div style="display: grid; grid-template-columns: minmax(300px, 1fr) minmax(340px, 1.2fr); gap: 2.5rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; padding: 2rem;">
+    <div class="product-detail-grid">
       <!-- Product Image -->
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0d121f; border-radius: 1rem; padding: 2rem; border: 1px solid #1f2937;">
-        <div style="width: 260px; height: 260px;">
+      <div class="product-detail-image-box">
+        <div style="width: 220px; height: 220px; display: flex; align-items: center; justify-content: center;">
           ${getProductSvg(product.iconType)}
         </div>
-        <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
+        <div style="margin-top: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
           <span class="badge ${product.inStock ? 'badge-in-stock' : 'badge-out-stock'}">
-            ${product.inStock ? `In Stock (${product.stockCount} available)` : 'Out of Stock'}
+            ${product.inStock ? `In Stock (${product.stockCount} left)` : 'Out of Stock'}
           </span>
-          <span class="badge" style="background: #1e293b; color: #94a3b8;">SKU: ${product.variants[0].sku}</span>
+          <span class="badge" style="background: #1e293b; color: #94a3b8; border: 1px solid #334155;">SKU: ${product.variants[0].sku}</span>
         </div>
       </div>
 
@@ -390,25 +538,25 @@ app.get('/product/:id', (req, res) => {
         <div style="font-size: 0.8rem; color: var(--accent); font-weight: 700; text-transform: uppercase;">
           ${product.brand} &bull; ${product.category}
         </div>
-        <h1 style="font-size: 1.75rem; font-weight: 800; color: #fff; margin: 0.5rem 0 1rem; line-height: 1.3;">
+        <h1 style="font-size: 1.75rem; font-weight: 800; color: #fff; margin: 0.5rem 0 0.75rem; line-height: 1.3;">
           ${product.title}
         </h1>
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
           <div style="font-size: 2rem; font-weight: 800; color: #fff;">$${product.price.toFixed(2)}</div>
-          <div style="font-size: 0.9rem; color: var(--text-muted);">
-            Shipping: <strong>$${product.shippingCost.toFixed(2)}</strong>
+          <div style="font-size: 0.9rem; color: var(--accent); font-weight: 600;">
+            + $${product.shippingCost.toFixed(2)} shipping to Lagos, NG
           </div>
         </div>
 
-        <p style="color: #d1d5db; line-height: 1.6; margin-bottom: 1.5rem; font-size: 0.95rem;">
+        <p style="color: #d1d5db; line-height: 1.6; margin-bottom: 1.25rem; font-size: 0.925rem;">
           ${product.description}
         </p>
 
-        <ul style="list-style: none; margin-bottom: 2rem; font-size: 0.9rem; color: #9ca3af;">
+        <ul style="list-style: none; margin-bottom: 1.5rem; font-size: 0.875rem; color: #9ca3af;">
           ${featuresList}
         </ul>
 
-        <form action="/checkout" method="GET" style="border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
+        <form action="/checkout" method="GET" style="border-top: 1px solid var(--card-border); padding-top: 1.25rem;">
           <input type="hidden" name="productId" value="${product.id}">
           
           <div class="form-row">
@@ -429,20 +577,20 @@ app.get('/product/:id', (req, res) => {
           </div>
 
           ${product.inStock ? `
-            <button type="submit" class="btn" id="buyNowBtn" style="width: 100%; padding: 1rem; font-size: 1.05rem;">
+            <button type="submit" class="btn" id="buyNowBtn" style="width: 100%; padding: 0.9rem; font-size: 1.05rem; margin-top: 0.5rem;">
               Proceed to Checkout ($${(product.price + product.shippingCost).toFixed(2)})
             </button>
           ` : `
-            <div style="background: #311313; border: 1px solid #7f1d1d; color: #fca5a5; padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: 600;">
-              This item is currently Out of Stock.
+            <div style="background: #311313; border: 1px solid #7f1d1d; color: #fca5a5; padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: 600; margin-top: 0.5rem;">
+              ⚠️ This item is currently Out of Stock.
             </div>
           `}
         </form>
 
         <!-- Admin toggle for hackathon live demo failure simulation -->
-        <div style="margin-top: 2rem; padding: 1rem; background: #0f172a; border-radius: 0.5rem; border: 1px dashed #334155; font-size: 0.75rem;">
-          <span style="color: #eab308; font-weight: 700;">Hackathon Test Control:</span>
-          <button onclick="toggleStock('${product.id}')" style="margin-left: 0.75rem; background: #374151; color: #fff; border: none; padding: 0.35rem 0.65rem; border-radius: 0.25rem; cursor: pointer;">
+        <div style="margin-top: 1.5rem; padding: 0.85rem 1rem; background: #0f172a; border-radius: 0.5rem; border: 1px dashed #334155; font-size: 0.75rem;">
+          <div style="color: #eab308; font-weight: 700; margin-bottom: 0.35rem;">Hackathon Test Control:</div>
+          <button onclick="toggleStock('${product.id}')" style="background: #374151; color: #fff; border: 1px solid #4b5563; padding: 0.45rem 0.85rem; border-radius: 0.35rem; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
             Toggle Stock Status (Simulate Stockout)
           </button>
         </div>
@@ -476,17 +624,17 @@ app.get('/checkout', (req, res) => {
 
   const content = `
     <div style="max-width: 900px; margin: 0 auto;">
-      <h1 style="font-size: 1.85rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">Secure Checkout</h1>
-      <p style="color: var(--text-muted); margin-bottom: 2rem;">Demo Market Store &bull; Standard Credit/Debit Card Order</p>
+      <h1 style="font-size: 1.85rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem;">Secure Checkout</h1>
+      <p style="color: var(--text-muted); margin-bottom: 1.75rem; font-size: 0.9rem;">Demo Market Store &bull; Standard Credit/Debit Card Order</p>
 
       ${!product.inStock ? `
-        <div style="background: #311313; border: 1px solid #7f1d1d; color: #fca5a5; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 2rem; text-align: center;">
-          <h3 style="margin-bottom: 0.5rem;">⚠️ Cannot Proceed: Item Out of Stock</h3>
+        <div style="background: #311313; border: 1px solid #7f1d1d; color: #fca5a5; padding: 1.25rem; border-radius: 0.75rem; margin-bottom: 1.5rem; text-align: center;">
+          <h3 style="margin-bottom: 0.35rem;">⚠️ Cannot Proceed: Item Out of Stock</h3>
           <p>The product <strong>${product.title}</strong> has sold out.</p>
         </div>
       ` : ''}
 
-      <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 2rem;">
+      <div class="checkout-grid">
         <!-- Checkout Form -->
         <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1rem; padding: 1.75rem;">
           <form id="checkoutForm" action="/api/checkout" method="POST">
