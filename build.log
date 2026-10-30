@@ -35,21 +35,18 @@ Warning: SDK processing. This version only understands SDK XML versions up to 3 
 > Task :app:mergeExtDexDebug UP-TO-DATE
 > Task :app:mergeLibDexDebug UP-TO-DATE
 > Task :app:mergeDebugJniLibFolders UP-TO-DATE
-> Task :app:compileDebugKotlin
 > Task :app:mergeDebugNativeLibs UP-TO-DATE
 > Task :app:stripDebugDebugSymbols UP-TO-DATE
 > Task :app:validateSigningDebug UP-TO-DATE
 > Task :app:writeDebugAppMetadata UP-TO-DATE
 > Task :app:writeDebugSigningConfigVersions UP-TO-DATE
-
 > Task :app:compileDebugKotlin
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/OrdersHistoryScreen.kt:37:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:187:36 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:386:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:545:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:563:21 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:582:21 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:834:17 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/OrdersHistoryScreen.kt:40:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:207:40 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:589:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:752:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:1052:46 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:1261:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
 
 > Task :app:compileDebugJavaWithJavac NO-SOURCE
 > Task :app:dexBuilderDebug
@@ -61,5 +58,5 @@ w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/S
 > Task :app:createDebugApkListingFileRedirect UP-TO-DATE
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 2m 49s
+BUILD SUCCESSFUL in 2m 39s
 37 actionable tasks: 4 executed, 33 up-to-date

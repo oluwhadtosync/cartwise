@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Kernel Cloud Browser Terminal / Isometric Box (Indigo / Purple) -->
+    <!-- Top Face -->
+    <path
+        android:fillColor="#818CF8"
+        android:pathData="M12,2L21,7.2L12,12.4L3,7.2L12,2z" />
+    <!-- Left Face -->
+    <path
+        android:fillColor="#4F46E5"
+        android:pathData="M3,7.2L12,12.4V22L3,16.8V7.2z" />
+    <!-- Right Face -->
+    <path
+        android:fillColor="#3730A3"
+        android:pathData="M12,12.4L21,7.2V16.8L12,22V12.4z" />
+    <!-- Browser Prompt Dot / Terminal Dash -->
+    <path
+        android:fillColor="#E0E7FF"
+        android:pathData="M10,6.5L14,8.8L10,11.1L8,10L10.5,8.8L8,7.6L10,6.5z" />
+</vector>

@@ -75,6 +75,7 @@ data class CartwiseOrder(
     val paypalCaptureId: String? = null,
     val paypalApproveUrl: String? = null,
     val status: String,
+    val cardUsed: String = "123456*****2234",
     val shippingAddress: ShippingAddress? = null,
     val liveViewUrl: String? = null,
     val failureReason: String? = null,

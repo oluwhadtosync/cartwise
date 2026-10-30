@@ -1,18 +1,25 @@
 package com.cartwise.app.ui.screens
 
+import android.net.http.SslError
+import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -22,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -30,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.cartwise.app.R
 import com.cartwise.app.data.CartwiseOrder
 import com.cartwise.app.data.Deal
 import com.cartwise.app.data.TimelineStep
@@ -45,25 +55,29 @@ fun OnboardingScreen(
     onMaxPriceChanged: (Double) -> Unit,
     onGetStarted: () -> Unit
 ) {
+    val scrollState = rememberScrollState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(24.dp)
+            .padding(horizontal = 20.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 40.dp)
+                modifier = Modifier.padding(top = 28.dp)
             ) {
                 // Brand Badge
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(68.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.linearGradient(listOf(PrimaryIndigo, AccentCyan))
@@ -74,48 +88,48 @@ fun OnboardingScreen(
                         imageVector = Icons.Default.ShoppingBag,
                         contentDescription = "Cartwise",
                         tint = Color.White,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(34.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = "Cartwise",
-                    fontSize = 32.sp,
+                    fontSize = 30.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = TextPrimary
                 )
 
                 Text(
-                    text = "AI Shopping Agent &bull; Powered by PayPal",
-                    fontSize = 14.sp,
+                    text = "AI Shopping Agent • Powered by PayPal",
+                    fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = AccentCyan,
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Text(
                     text = "Tell Cartwise what you want. It finds the cheapest real deal across the web and buys for you — even from stores that don't accept PayPal.\n\nYou pay safely with PayPal.",
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
-                    lineHeight = 22.sp,
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                    lineHeight = 21.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
-                Spacer(modifier = Modifier.height(36.dp))
+                Spacer(modifier = Modifier.height(26.dp))
 
-                // Safety Guardrail Setting: Max Price
+                // Safety Guardrail Setting: Autonomous Buy Limit
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = CardDark),
                     shape = RoundedCornerShape(16.dp),
                     border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(CardBorder, PrimaryIndigo)))
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -130,7 +144,7 @@ fun OnboardingScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Auto-Approval Limit",
+                                    text = "Autonomous Buy Limit",
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary
@@ -147,18 +161,18 @@ fun OnboardingScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "Agent will never place an order exceeding this amount without asking your permission first.",
+                            text = "Agent autonomously buys verified deals up to $${maxPriceLimit.toInt()}. Higher totals always require your explicit confirmation.",
                             fontSize = 12.sp,
                             color = TextMuted,
                             lineHeight = 16.sp
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         Slider(
                             value = maxPriceLimit.toFloat(),
                             onValueChange = { onMaxPriceChanged(it.toDouble()) },
-                            valueRange = 20f..300f,
+                            valueRange = 5f..150f,
                             steps = 28,
                             colors = SliderDefaults.colors(
                                 thumbColor = AccentCyan,
@@ -169,22 +183,34 @@ fun OnboardingScreen(
                 }
             }
 
-            Button(
-                onClick = onGetStarted,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
+                    .padding(top = 24.dp, bottom = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Start Shopping with Cartwise",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(Icons.Default.ArrowForward, contentDescription = null)
+                Button(
+                    onClick = onGetStarted,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
+                ) {
+                    Text(
+                        text = "Start Shopping with Cartwise",
+                        fontSize = 15.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.ArrowForward, contentDescription = null)
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Official Hackathon Partner Logos
+                PoweredByPartnersBar()
             }
         }
     }
@@ -211,6 +237,9 @@ fun AskScreen(
     onQuickPromptSelected: (String) -> Unit,
     onViewHistory: () -> Unit
 ) {
+    var pendingPrompt by remember { mutableStateOf<String?>(null) }
+    val scrollState = rememberScrollState()
+
     val suggestedPrompts = listOf(
         "Find me wireless noise-cancelling earbuds under $40 that ship to Lagos",
         "Smart fitness tracker with heart rate monitor below $30",
@@ -218,17 +247,86 @@ fun AskScreen(
         "Mechanical gaming keyboard with RGB under $50"
     )
 
+    // Accidental Tap Confirmation Dialog
+    if (pendingPrompt != null) {
+        AlertDialog(
+            onDismissRequest = { pendingPrompt = null },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = AccentCyan,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Confirm Suggested Search",
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    fontSize = 17.sp
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Do you want Cartwise AI to find and rank the best landed deals for:",
+                        fontSize = 13.sp,
+                        color = TextSecondary,
+                        lineHeight = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        color = BgDark,
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                    ) {
+                        Text(
+                            text = "\"${pendingPrompt}\"",
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AccentCyan,
+                            modifier = Modifier.padding(12.dp),
+                            lineHeight = 19.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val promptToSearch = pendingPrompt ?: ""
+                        pendingPrompt = null
+                        onQuickPromptSelected(promptToSearch)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Search Deals", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingPrompt = null }) {
+                    Text("Cancel", color = TextMuted)
+                }
+            },
+            containerColor = CardDark,
+            shape = RoundedCornerShape(18.dp)
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
+            .verticalScroll(scrollState)
             .padding(20.dp)
     ) {
         // Top Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 24.dp),
+                .padding(top = 14.dp, bottom = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -261,7 +359,7 @@ fun AskScreen(
             lineHeight = 32.sp
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         // Search Input Card
         Card(
@@ -311,22 +409,32 @@ fun AskScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = "Suggested Searches",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TextSecondary,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Suggested Searches",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = TextSecondary
+            )
+            Text(
+                text = "Tap to verify",
+                fontSize = 11.sp,
+                color = TextMuted
+            )
+        }
 
         suggestedPrompts.forEach { prompt ->
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 10.dp)
-                    .clickable { onQuickPromptSelected(prompt) },
+                    .clickable { pendingPrompt = prompt }, // Shows confirmation modal to prevent accidental tap
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = CardDark),
                 border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(CardBorder, CardBorder)))
@@ -340,6 +448,101 @@ fun AskScreen(
                     Text(prompt, fontSize = 13.sp, color = TextPrimary, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
                 }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Official Hackathon Partner Logos
+        PoweredByPartnersBar(modifier = Modifier.padding(bottom = 16.dp))
+    }
+}
+
+// -------------------------------------------------------------
+// PARTNERS LOGO BAR (PAYPAL, RENDER, CHANNEL3, KERNEL)
+// -------------------------------------------------------------
+
+@Composable
+fun PoweredByPartnersBar(
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(modifier = Modifier.size(24.dp, 1.dp).background(CardBorder))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "POWERED BY",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextMuted,
+                letterSpacing = 1.4.sp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(modifier = Modifier.size(24.dp, 1.dp).background(CardBorder))
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Moving animated ticker: scrolls smoothly across screen infinitely to save space
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .basicMarquee(
+                    iterations = Int.MAX_VALUE,
+                    velocity = 35.dp
+                )
+                .padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(2) {
+                // PayPal Real Logo
+                Image(
+                    painter = painterResource(id = R.drawable.logo_paypal),
+                    contentDescription = "PayPal",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(76.dp)
+                )
+
+                // Render Real Logo
+                Image(
+                    painter = painterResource(id = R.drawable.logo_render),
+                    contentDescription = "Render",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(18.dp)
+                        .width(76.dp)
+                )
+
+                // Channel3 Real Logo
+                Image(
+                    painter = painterResource(id = R.drawable.logo_channel3),
+                    contentDescription = "Channel3",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(18.dp)
+                        .width(76.dp)
+                )
+
+                // Kernel Real Logo
+                Image(
+                    painter = painterResource(id = R.drawable.logo_kernel),
+                    contentDescription = "Kernel",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(16.dp)
+                        .width(70.dp)
+                )
             }
         }
     }
@@ -523,28 +726,67 @@ fun DealCard(deal: Deal, onSelect: () -> Unit) {
 @Composable
 fun ConfirmScreen(
     deal: Deal,
+    cancelNotice: String? = null,
+    onDismissCancelNotice: () -> Unit = {},
     onPayWithPayPal: () -> Unit,
     onBack: () -> Unit
 ) {
     val serviceFee = 3.00
     val totalHold = deal.price + deal.shippingCost + serviceFee
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(20.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 20.dp)
     ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+        // Back Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+            }
+            Text("Order Breakdown", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+        }
+
+        // Scrollable Breakdown details
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(scrollState)
+        ) {
+            // Cancellation Notice Banner (shown if user cancelled on PayPal)
+            if (!cancelNotice.isNullOrBlank()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 14.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF451A03)),
+                    border = BorderStroke(1.dp, Color(0xFFB45309))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = cancelNotice,
+                            fontSize = 12.5.sp,
+                            color = Color(0xFFFDE68A),
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = onDismissCancelNotice, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color(0xFFFBBF24), modifier = Modifier.size(16.dp))
+                        }
+                    }
                 }
-                Text("Order Breakdown", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             }
 
             // Product Summary Card
@@ -560,7 +802,7 @@ fun ConfirmScreen(
                     Text(deal.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Divider(color = CardBorder)
+                    HorizontalDivider(color = CardBorder)
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -575,11 +817,11 @@ fun ConfirmScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Cartwise Autonomous Service Fee", color = TextSecondary, fontSize = 14.sp)
-                        Text("$${serviceFee}0", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text("$${"%.2f".format(serviceFee)}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Divider(color = CardBorder)
+                    HorizontalDivider(color = CardBorder)
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -589,7 +831,31 @@ fun ConfirmScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Purchasing Card Details Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                border = BorderStroke(1.dp, Color(0xFF1E3A8A))
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.CreditCard, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text("Autonomous Purchasing Card", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text("Cartwise Corporate Visa • 123456*****2234", fontSize = 12.sp, color = TextSecondary)
+                        Text("Single-use hold funded via your PayPal authorization", fontSize = 11.sp, color = AccentCyan)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             // PayPal Escrow Guarantee Box
             Box(
@@ -615,32 +881,59 @@ fun ConfirmScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Official "Pay with PayPal" Branded Button
-        Button(
-            onClick = onPayWithPayPal,
+        // Bottom Action Area: Official Branded "Pay with PayPal" Button
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(28.dp), // Official PayPal pill shape
-            colors = ButtonDefaults.buttonColors(containerColor = PayPalGold)
+                .padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Pay with",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PayPalBlue
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "PayPal",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = PayPalBlue
-                )
+            Button(
+                onClick = onPayWithPayPal,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = RoundedCornerShape(27.dp), // Official PayPal pill shape
+                colors = ButtonDefaults.buttonColors(containerColor = PayPalGold),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_paypal_btn),
+                        contentDescription = "PayPal",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Pay with",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF003087)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = "PayPal",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF0079C1)
+                    )
+                }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "🔒 Authorized hold in escrow • Voided if not fulfilled",
+                fontSize = 11.sp,
+                color = TextMuted
+            )
         }
     }
 }
@@ -657,12 +950,14 @@ fun AgentLiveScreen(
     isComplete: Boolean,
     onViewReceipt: () -> Unit
 ) {
+    val latestStep = timeline.lastOrNull()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
     ) {
-        // Header
+        // Top Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -678,42 +973,179 @@ fun AgentLiveScreen(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
-                    .background(if (isComplete) SuccessBg else Color(0xFF78350F))
+                    .background(if (isComplete) SuccessBg else if (order.status == "VOIDED") DangerBg else Color(0xFF78350F))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
-                    if (isComplete) "COMPLETED" else "LIVE STREAM",
+                    if (isComplete) "COMPLETED" else if (order.status == "VOIDED") "VOIDED" else "LIVE STREAM",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = if (isComplete) SuccessGreen else Color(0xFFFCD34D)
+                    color = if (isComplete) SuccessGreen else if (order.status == "VOIDED") DangerRed else Color(0xFFFCD34D)
                 )
             }
         }
 
-        // Top Half: Kernel Cloud Browser Live View
-        Box(
+        // Top Half: Simulated/Real Browser Window Frame
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(240.dp)
-                .background(Color.Black)
+                .padding(horizontal = 16.dp)
+                .height(230.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0B0F19)),
+            border = BorderStroke(1.dp, Color(0xFF1E293B))
         ) {
-            if (!liveViewUrl.isNullOrBlank()) {
-                AndroidView(
-                    factory = { context ->
-                        WebView(context).apply {
-                            settings.javaScriptEnabled = true
-                            settings.domStorageEnabled = true
-                            settings.loadWithOverviewMode = true
-                            settings.useWideViewPort = true
-                            webViewClient = WebViewClient()
-                            loadUrl(liveViewUrl)
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Browser Chrome / Address Bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF111827))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Window dots
+                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFEF4444)))
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFF59E0B)))
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF10B981)))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    // URL Box
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF1F2937))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "🔒 https://${order.merchantName.lowercase().replace(" ", "")}.com/checkout",
+                            fontSize = 11.sp,
+                            color = Color(0xFF94A3B8),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(if (isComplete) SuccessGreen else AccentCyan)
+                    )
+                }
+
+                // Browser Viewport
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF030712))
+                ) {
+                    // If liveViewUrl is valid HTTP, embed WebView
+                    if (!liveViewUrl.isNullOrBlank() && liveViewUrl.startsWith("http")) {
+                        AndroidView(
+                            factory = { context ->
+                                WebView(context).apply {
+                                    settings.javaScriptEnabled = true
+                                    settings.domStorageEnabled = true
+                                    settings.databaseEnabled = true
+                                    settings.loadWithOverviewMode = true
+                                    settings.useWideViewPort = true
+                                    settings.mediaPlaybackRequiresUserGesture = false
+                                    settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                    webViewClient = object : WebViewClient() {
+                                        override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+                                            handler?.proceed()
+                                        }
+                                    }
+                                    loadUrl(liveViewUrl)
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    // Live DOM Overlay HUD (guarantees the user always sees rich animated action, never black void)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color(0xCC050811), Color(0xEE090D1A))
+                                )
+                            )
+                            .padding(14.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Storefront, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(order.merchantName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF1E293B))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text("CARD GATEWAY", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF38BDF8))
+                                }
+                            }
+
+                            // Active agent step highlight in viewport
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFF0F172A))
+                                    .border(1.dp, Color(0xFF1E3A8A), RoundedCornerShape(10.dp))
+                                    .padding(10.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (isComplete) Icons.Default.CheckCircle else if (order.status == "VOIDED") Icons.Default.Cancel else Icons.Default.SmartToy,
+                                        contentDescription = null,
+                                        tint = if (isComplete) SuccessGreen else if (order.status == "VOIDED") DangerRed else AccentCyan,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = latestStep?.stepName ?: "Autonomous Purchasing in Progress",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = latestStep?.description ?: "Executing DOM runner via Kernel CDP...",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF94A3B8),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            // Card in use in viewport
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Card: ${order.cardUsed}", fontSize = 11.sp, color = TextSecondary)
+                                Text("Escrow Hold: $${order.totalAmount}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF38BDF8))
+                            }
                         }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = PrimaryIndigo)
+                    }
                 }
             }
         }
@@ -753,6 +1185,18 @@ fun AgentLiveScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
                 ) {
                     Text("View Order Receipt", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            } else if (order.status == "VOIDED") {
+                Button(
+                    onClick = onViewReceipt,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .padding(top = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = DangerRed)
+                ) {
+                    Text("View Voided Receipt", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }
@@ -798,77 +1242,252 @@ fun ReceiptScreen(
     order: CartwiseOrder,
     onDone: () -> Unit
 ) {
-    Box(
+    val isVoided = order.status == "VOIDED"
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+            .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = CardDark),
-            border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(CardBorder, SuccessGreen)))
+        // Top navigation bar with Back icon
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            IconButton(onClick = onDone) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (isVoided) "Voided Order Details" else "Order Receipt",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = CardDark),
+                border = CardDefaults.outlinedCardBorder().copy(
+                    brush = Brush.linearGradient(
+                        listOf(CardBorder, if (isVoided) DangerRed else SuccessGreen)
+                    )
+                )
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(SuccessBg),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(36.dp))
-                }
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .background(if (isVoided) DangerBg else SuccessBg),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isVoided) Icons.Default.Close else Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = if (isVoided) DangerRed else SuccessGreen,
+                            modifier = Modifier.size(34.dp)
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                Text("Purchase Confirmed!", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
-                Text("Bought autonomously with Cartwise", fontSize = 12.sp, color = AccentCyan)
+                    Text(
+                        text = if (isVoided) "Payment Voided" else "Purchase Confirmed!",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (isVoided) "Escrow Released • You Were NOT Charged" else "Bought autonomously with Cartwise",
+                        fontSize = 12.5.sp,
+                        color = if (isVoided) DangerRed else AccentCyan,
+                        fontWeight = FontWeight.Medium
+                    )
 
-                Spacer(modifier = Modifier.height(20.dp))
-                Divider(color = CardBorder)
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(color = CardBorder)
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Merchant Order ID", color = TextSecondary, fontSize = 13.sp)
-                    Text(order.merchantOrderId ?: "DM-849201", color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
+                    // Dedicated Autonomous Card Used Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                        border = BorderStroke(1.dp, Color(0xFF1E3A8A))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.CreditCard,
+                                contentDescription = null,
+                                tint = AccentCyan,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "Autonomous Purchasing Card",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF94A3B8)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Cartwise Corporate Visa • ${order.cardUsed}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                                Text(
+                                    "Injected into ${order.merchantName} checkout",
+                                    fontSize = 10.5.sp,
+                                    color = AccentCyan
+                                )
+                            }
+                        }
+                    }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("PayPal Capture ID", color = TextSecondary, fontSize = 13.sp)
-                    Text(order.paypalCaptureId ?: "CAP-928103", color = Color(0xFF60A5FA), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                }
+                    // Item Title
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Item", color = TextSecondary, fontSize = 13.sp)
+                        Text(
+                            order.itemTitle,
+                            color = TextPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(start = 24.dp)
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Store", color = TextSecondary, fontSize = 13.sp)
-                    Text(order.merchantName, color = TextPrimary, fontSize = 13.sp)
-                }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Store", color = TextSecondary, fontSize = 13.sp)
+                        Text(order.merchantName, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Total Captured", color = TextSecondary, fontSize = 13.sp)
-                    Text("$${order.totalAmount}", color = SuccessGreen, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-                }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Merchant Order ID", color = TextSecondary, fontSize = 13.sp)
+                        Text(
+                            if (isVoided) "Not Placed (Decline / Stockout)" else (order.merchantOrderId ?: "DM-${order.id.takeLast(6).uppercase()}"),
+                            color = if (isVoided) DangerRed else TextPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Button(
-                    onClick = onDone,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
-                ) {
-                    Text("Shop Another Item", fontWeight = FontWeight.Bold, color = Color.White)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(if (isVoided) "PayPal Void ID" else "PayPal Capture ID", color = TextSecondary, fontSize = 13.sp)
+                        Text(
+                            order.paypalCaptureId ?: (if (isVoided) "VOID-${order.id.takeLast(6).uppercase()}" else "CAP-${order.id.takeLast(6).uppercase()}"),
+                            color = Color(0xFF60A5FA),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (isVoided) "Escrow Released" else "Total Captured", color = TextSecondary, fontSize = 13.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "$${order.totalAmount}",
+                                color = if (isVoided) TextMuted else SuccessGreen,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            if (isVoided) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(SuccessBg)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text("$0.00 CHARGED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
+                                }
+                            }
+                        }
+                    }
+
+                    // Explanatory Card
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (isVoided) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF1E1E2E))
+                                .border(1.dp, Color(0xFF334155), RoundedCornerShape(10.dp))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "💡 Tip: Real third-party stores decline test card ${order.cardUsed} with Insufficient Funds / Invalid Card. Cartwise automatically voided the PayPal authorization so no money left your account. Please use 'Demo Market' to test the complete purchase & capture flow!",
+                                fontSize = 11.5.sp,
+                                color = Color(0xFFF1F5F9),
+                                lineHeight = 16.sp
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF0F172A))
+                                .border(1.dp, Color(0xFF1E3A8A), RoundedCornerShape(10.dp))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "✅ Order confirmed by ${order.merchantName}! PayPal escrow hold was captured and payment completed. Your item is being processed for dispatch to Nigeria.",
+                                fontSize = 11.5.sp,
+                                color = Color(0xFF93C5FD),
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = onDone,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
+                    ) {
+                        Text(if (isVoided) "Back to Orders" else "Shop Another Item", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    PoweredByPartnersBar()
                 }
             }
         }
