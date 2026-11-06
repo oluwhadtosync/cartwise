@@ -1,0 +1,14 @@
+{
+  "name": "cartwise-demo-market",
+  "version": "1.0.0",
+  "description": "Demo Market - Standalone mock e-commerce store that accepts only Credit/Debit card (no PayPal)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
