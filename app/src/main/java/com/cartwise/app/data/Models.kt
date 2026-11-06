@@ -3,10 +3,32 @@ package com.cartwise.app.data
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class ProductVariety(
+    val id: String = "",
+    val name: String,
+    val sku: String = "",
+    val inStock: Boolean = true,
+    val stockCount: Int = 10,
+    val priceOffset: Double = 0.0
+)
+
+@Serializable
+data class WebsiteSafety(
+    val score: Int = 96,
+    val level: String = "SAFE", // "SAFE" (Green), "CAUTION" (Yellow), "RISKY" (Red)
+    val domain: String = "",
+    val sslVerified: Boolean = true,
+    val summary: String = "Verified merchant with encrypted checkout, high trust rating, and PayPal escrow support."
+)
+
+@Serializable
 data class SearchRequest(
     val query: String,
     val country: String = "NG",
-    val maxBudget: Double? = null
+    val maxBudget: Double? = null,
+    val safetyCheck: Boolean = false,
+    val language: String? = null,
+    val model: String = "gemini-3.8-flash"
 )
 
 @Serializable
@@ -26,8 +48,12 @@ data class Deal(
     val rating: Double = 4.8,
     val reviewsCount: Int = 100,
     val inStock: Boolean = true,
+    val stockCount: Int = 25,
     val reasonWhy: String = "",
-    val score: Int = 95
+    val score: Int = 95,
+    val varieties: List<ProductVariety> = emptyList(),
+    val selectedVarietyName: String = "",
+    val safety: WebsiteSafety? = null
 )
 
 @Serializable
@@ -43,18 +69,33 @@ data class CreateOrderRequest(
     val itemUrl: String,
     val itemPrice: Double,
     val shippingCost: Double,
-    val merchantName: String = "Demo Market"
+    val merchantName: String = "Demo Market",
+    val shippingAddress: ShippingAddress? = null,
+    val billingAddress: BillingAddress? = null,
+    val selectedVariety: String? = null
 )
 
 @Serializable
 data class ShippingAddress(
     val fullName: String = "Ada Lovelace",
     val email: String = "ada@cartwise.shopper",
-    val address: String = "14 Marina Street",
+    val address: String = "14 Marina Street, Lagos Island",
     val city: String = "Lagos",
     val state: String = "Lagos",
-    val country: String = "NG",
-    val postalCode: String = "100001"
+    val country: String = "Nigeria",
+    val postalCode: String = "100001",
+    val phone: String = "+234 801 234 5678"
+)
+
+@Serializable
+data class BillingAddress(
+    val cardholderName: String = "Ada Lovelace",
+    val address: String = "14 Marina Street, Lagos Island",
+    val city: String = "Lagos",
+    val state: String = "Lagos",
+    val country: String = "Nigeria",
+    val postalCode: String = "100001",
+    val sameAsShipping: Boolean = true
 )
 
 @Serializable
@@ -77,6 +118,9 @@ data class CartwiseOrder(
     val status: String,
     val cardUsed: String = "123456*****2234",
     val shippingAddress: ShippingAddress? = null,
+    val billingAddress: BillingAddress? = null,
+    val selectedVariety: String? = null,
+    val websiteSafety: WebsiteSafety? = null,
     val liveViewUrl: String? = null,
     val failureReason: String? = null,
     val createdAt: String = "",

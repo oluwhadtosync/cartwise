@@ -37,11 +37,20 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
     /**
      * Search products across stores with natural language query
      */
-    suspend fun search(query: String, maxBudget: Double? = null, country: String = "NG"): SearchResponse =
+    suspend fun search(
+        query: String,
+        maxBudget: Double? = null,
+        country: String = "NG",
+        safetyCheck: Boolean = false,
+        language: String? = null,
+        model: String = "gemini-3.8-flash"
+    ): SearchResponse =
         withContext(Dispatchers.IO) {
-            val body = json.encodeToString(SearchRequest.serializer(), SearchRequest(query, country, maxBudget))
+            val detectedLang = language ?: if (query.any { it in '\u4e00'..'\u9fa5' }) "zh" else "en"
+            val body = json.encodeToString(SearchRequest.serializer(), SearchRequest(query, country, maxBudget, safetyCheck, detectedLang, model))
             val request = Request.Builder()
                 .url("$baseUrl/api/search")
+                .header("Accept-Language", if (detectedLang == "zh") "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7" else "en-US,en;q=0.9")
                 .post(body.toRequestBody("application/json".toMediaType()))
                 .build()
 
@@ -56,13 +65,21 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
     /**
      * Create Cartwise Order with PayPal AUTHORIZE intent
      */
-    suspend fun createOrder(deal: Deal): CartwiseOrder = withContext(Dispatchers.IO) {
+    suspend fun createOrder(
+        deal: Deal,
+        shippingAddress: ShippingAddress? = null,
+        billingAddress: BillingAddress? = null,
+        selectedVariety: String? = null
+    ): CartwiseOrder = withContext(Dispatchers.IO) {
         val reqBody = CreateOrderRequest(
-            itemTitle = deal.title,
+            itemTitle = if (!selectedVariety.isNullOrBlank()) "${deal.title} (${selectedVariety})" else deal.title,
             itemUrl = deal.storeUrl,
             itemPrice = deal.price,
             shippingCost = deal.shippingCost,
-            merchantName = deal.storeName
+            merchantName = deal.storeName,
+            shippingAddress = shippingAddress,
+            billingAddress = billingAddress,
+            selectedVariety = selectedVariety ?: deal.selectedVarietyName
         )
         val body = json.encodeToString(CreateOrderRequest.serializer(), reqBody)
         val request = Request.Builder()

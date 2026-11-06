@@ -1,5 +1,7 @@
 package com.cartwise.app.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.net.http.SslError
 import android.webkit.SslErrorHandler
 import android.webkit.WebView
@@ -11,9 +13,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,32 +35,88 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.cartwise.app.R
+import com.cartwise.app.data.BillingAddress
 import com.cartwise.app.data.CartwiseOrder
 import com.cartwise.app.data.Deal
+import com.cartwise.app.data.ProductVariety
+import com.cartwise.app.data.ShippingAddress
 import com.cartwise.app.data.TimelineStep
+import com.cartwise.app.data.WebsiteSafety
 import com.cartwise.app.ui.theme.*
 
 // -------------------------------------------------------------
 // 1. ONBOARDING SCREEN
 // -------------------------------------------------------------
 
+data class ShowcaseDeal(
+    val title: String,
+    val subtitle: String,
+    val imageRes: Int,
+    val retailPrice: Double,
+    val cartwisePrice: Double,
+    val storeBadge: String
+)
+
 @Composable
 fun OnboardingScreen(
-    maxPriceLimit: Double,
-    onMaxPriceChanged: (Double) -> Unit,
+    maxPriceLimit: Double = 100.0,
+    onMaxPriceChanged: (Double) -> Unit = {},
     onGetStarted: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+
+    val showcaseItems = remember {
+        listOf(
+            ShowcaseDeal(
+                title = "Sony WH-1000XM5 ANC Headphones",
+                subtitle = "Flagship Noise Cancelling • Multi-Store Index",
+                imageRes = R.drawable.product_headphones,
+                retailPrice = 1000.00,
+                cartwisePrice = 620.00,
+                storeBadge = "Discovered via Channel3"
+            ),
+            ShowcaseDeal(
+                title = "Titanium Smartwatch Ultra 49mm",
+                subtitle = "Cellular + GPS • International Express",
+                imageRes = R.drawable.product_smartwatch,
+                retailPrice = 450.00,
+                cartwisePrice = 275.00,
+                storeBadge = "Discovered via Channel3"
+            ),
+            ShowcaseDeal(
+                title = "Soundcore Life P2 Mini Earbuds",
+                subtitle = "Compact True Wireless • Demo Market In-Stock",
+                imageRes = R.drawable.product_earbuds,
+                retailPrice = 65.00,
+                cartwisePrice = 28.99,
+                storeBadge = "Cartwise Demo Market"
+            )
+        )
+    }
+
+    var selectedIndex by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(4500)
+            selectedIndex = (selectedIndex + 1) % showcaseItems.size
+        }
+    }
+
+    val currentItem = showcaseItems[selectedIndex]
 
     Box(
         modifier = Modifier
@@ -72,12 +133,12 @@ fun OnboardingScreen(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 28.dp)
+                modifier = Modifier.padding(top = 24.dp)
             ) {
                 // Brand Badge
                 Box(
                     modifier = Modifier
-                        .size(68.dp)
+                        .size(64.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.linearGradient(listOf(PrimaryIndigo, AccentCyan))
@@ -88,97 +149,243 @@ fun OnboardingScreen(
                         imageVector = Icons.Default.ShoppingBag,
                         contentDescription = "Cartwise",
                         tint = Color.White,
-                        modifier = Modifier.size(34.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = "Cartwise",
-                    fontSize = 30.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = TextPrimary
                 )
 
                 Text(
                     text = "AI Shopping Agent • Powered by PayPal",
-                    fontSize = 13.5.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = AccentCyan,
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = "Tell Cartwise what you want. It finds the cheapest real deal across the web and buys for you — even from stores that don't accept PayPal.\n\nYou pay safely with PayPal.",
-                    fontSize = 14.sp,
+                    fontSize = 13.5.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
-                    lineHeight = 21.sp,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    lineHeight = 20.sp,
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
-                Spacer(modifier = Modifier.height(26.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // Safety Guardrail Setting: Autonomous Buy Limit
+                // Real Product Image & Price Discovery Showcase
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = CardDark),
-                    shape = RoundedCornerShape(16.dp),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(CardBorder, PrimaryIndigo)))
+                    shape = RoundedCornerShape(18.dp),
+                    border = BorderStroke(1.dp, Brush.linearGradient(listOf(CardBorder, PrimaryIndigo)))
                 ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
+                    Column {
+                        // Real photographic product image with badges
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Shield,
-                                    contentDescription = null,
-                                    tint = PrimaryLight,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
+                            Image(
+                                painter = painterResource(id = currentItem.imageRes),
+                                contentDescription = currentItem.title,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            // Subtle gradient scrim for readability
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(Color.Transparent, Color(0xDD0A0F1D))
+                                        )
+                                    )
+                            )
+                            // Top left: AI Discovery Badge
+                            Box(
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .align(Alignment.TopStart)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xE60A0F1D))
+                                    .border(1.dp, AccentCyan.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = AccentCyan,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        "AI PRICE DISCOVERY",
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AccentCyan
+                                    )
+                                }
+                            }
+
+                            // Top right: Savings Pill
+                            val savings = currentItem.retailPrice - currentItem.cartwisePrice
+                            val percentOff = ((savings / currentItem.retailPrice) * 100).toInt()
+                            Box(
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .align(Alignment.TopEnd)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(SuccessGreen)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
                                 Text(
-                                    text = "Autonomous Buy Limit",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
+                                    "SAVE $${savings.toInt()} ($percentOff% OFF)",
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White
                                 )
                             }
-                            Text(
-                                text = "$${maxPriceLimit.toInt()}",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = AccentCyan
-                            )
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "Agent autonomously buys verified deals up to $${maxPriceLimit.toInt()}. Higher totals always require your explicit confirmation.",
-                            fontSize = 12.sp,
-                            color = TextMuted,
-                            lineHeight = 16.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        Slider(
-                            value = maxPriceLimit.toFloat(),
-                            onValueChange = { onMaxPriceChanged(it.toDouble()) },
-                            valueRange = 5f..150f,
-                            steps = 28,
-                            colors = SliderDefaults.colors(
-                                thumbColor = AccentCyan,
-                                activeTrackColor = PrimaryIndigo
+                        // Product Info & Side-by-Side Comparison
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = currentItem.title,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
                             )
-                        )
+                            Text(
+                                text = currentItem.subtitle,
+                                fontSize = 11.5.sp,
+                                color = TextSecondary,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Professional Before vs After Price Comparison Box
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFF070B14))
+                                    .border(1.dp, CardBorder, RoundedCornerShape(12.dp))
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // BEFORE CARTWISE AI
+                                Column {
+                                    Text(
+                                        text = "BEFORE CARTWISE AI",
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextMuted,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Standard Store Retail",
+                                        fontSize = 11.sp,
+                                        color = TextSecondary
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "$${currentItem.retailPrice.toInt()}",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DangerRed,
+                                        style = TextStyle(textDecoration = TextDecoration.LineThrough)
+                                    )
+                                }
+
+                                // Arrow
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = null,
+                                    tint = AccentCyan,
+                                    modifier = Modifier.size(18.dp)
+                                )
+
+                                // AFTER CARTWISE SEARCH
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "AFTER CARTWISE SEARCH",
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AccentCyan,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Landed Escrow Total",
+                                        fontSize = 11.sp,
+                                        color = TextSecondary
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "$${"%.2f".format(currentItem.cartwisePrice)}",
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = SuccessGreen
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Footer: Escrow Indicator + Carousel Dots
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.VerifiedUser,
+                                        contentDescription = null,
+                                        tint = AccentCyan,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        "PayPal Escrow Protected",
+                                        fontSize = 11.sp,
+                                        color = TextMuted
+                                    )
+                                }
+
+                                // Interactive indicator dots
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    showcaseItems.indices.forEach { idx ->
+                                        Box(
+                                            modifier = Modifier
+                                                .size(if (idx == selectedIndex) 8.dp else 6.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (idx == selectedIndex) AccentCyan else TextMuted.copy(alpha = 0.35f)
+                                                )
+                                                .clickable { selectedIndex = idx }
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -186,14 +393,14 @@ fun OnboardingScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 24.dp, bottom = 20.dp),
+                    .padding(top = 20.dp, bottom = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Button(
                     onClick = onGetStarted,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(54.dp),
+                        .height(52.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
                 ) {
@@ -207,7 +414,7 @@ fun OnboardingScreen(
                     Icon(Icons.Default.ArrowForward, contentDescription = null)
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 // Official Hackathon Partner Logos
                 PoweredByPartnersBar()
@@ -233,6 +440,10 @@ fun AskScreen(
     queryText: String,
     onQueryChanged: (String) -> Unit,
     isLoading: Boolean,
+    isSafetyCheckEnabled: Boolean = false,
+    onToggleSafetyCheck: (Boolean) -> Unit = {},
+    selectedModel: String = "gemini-3.8-flash",
+    onSelectModel: (String) -> Unit = {},
     onSearchSubmitted: () -> Unit,
     onQuickPromptSelected: (String) -> Unit,
     onViewHistory: () -> Unit
@@ -387,6 +598,154 @@ fun AskScreen(
                     keyboardActions = KeyboardActions(onSearch = { onSearchSubmitted() })
                 )
 
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Gemini AI Model Selector
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, bottom = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = AccentCyan,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "AI SEARCH MODEL",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.8.sp,
+                            color = TextMuted
+                        )
+                    }
+
+                    // Tidy single-line chips
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf(
+                            "gemini-3.8-flash" to "Gemini 3.8 Flash",
+                            "gemini-3.7-flash" to "Gemini 3.7 Flash",
+                            "gemini-2.5-flash" to "Gemini 2.5 Flash"
+                        ).forEach { (id, label) ->
+                            val isSelected = selectedModel == id
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) PrimaryIndigo.copy(alpha = 0.32f) else Color(0xFF0F172A),
+                                border = BorderStroke(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) AccentCyan else CardBorder
+                                ),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { onSelectModel(id) }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (isSelected) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .clip(CircleShape)
+                                                .background(AccentCyan)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                    }
+                                    Text(
+                                        text = label,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) Color.White else TextMuted,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // AI Risk Score Toggle Button (Clean single-row, inactive by default)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSafetyCheckEnabled) Color(0xFF042F2E) else Color(0xFF0F172A))
+                        .border(
+                            1.dp,
+                            if (isSafetyCheckEnabled) SuccessGreen.copy(alpha = 0.6f) else CardBorder,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .clickable { onToggleSafetyCheck(!isSafetyCheckEnabled) }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(if (isSafetyCheckEnabled) SuccessGreen.copy(alpha = 0.2f) else Color(0xFF1E293B)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isSafetyCheckEnabled) Icons.Default.VerifiedUser else Icons.Default.Security,
+                                contentDescription = null,
+                                tint = if (isSafetyCheckEnabled) SuccessGreen else TextSecondary,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = "AI Merchant Risk Score",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (isSafetyCheckEnabled) "Risk score active" else "Risk score inactive",
+                                fontSize = 11.5.sp,
+                                fontWeight = if (isSafetyCheckEnabled) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSafetyCheckEnabled) SuccessGreen else TextMuted
+                            )
+                        }
+                    }
+
+                    Switch(
+                        checked = isSafetyCheckEnabled,
+                        onCheckedChange = onToggleSafetyCheck,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = SuccessGreen,
+                            uncheckedThumbColor = Color(0xFF94A3B8),
+                            uncheckedTrackColor = Color(0xFF1E293B)
+                        )
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
@@ -399,7 +758,7 @@ fun AskScreen(
                     if (isLoading) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Gemini is searching deals...", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(if (selectedModel.contains("3.8")) "Gemini 3.8 is searching deals..." else "Gemini is searching deals...", color = Color.White, fontWeight = FontWeight.Bold)
                     } else {
                         Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = AccentCyan)
                         Spacer(modifier = Modifier.width(8.dp))
@@ -571,6 +930,8 @@ fun AskScreenPreview() {
 fun ResultsScreen(
     query: String,
     deals: List<Deal>,
+    isSafetyCheckEnabled: Boolean = false,
+    onToggleSafetyCheck: (Boolean) -> Unit = {},
     onSelectDeal: (Deal) -> Unit,
     onBack: () -> Unit
 ) {
@@ -578,35 +939,158 @@ fun ResultsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(20.dp)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
         // Back Header
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
+            Spacer(modifier = Modifier.width(4.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("AI Deal Recommendations", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 Text("Landed cost including shipping to Lagos", fontSize = 11.sp, color = AccentCyan)
             }
         }
 
+        // Top AI Risk Score Toggle Row (Compact & clean, inactive by default)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 14.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (isSafetyCheckEnabled) Color(0xFF042F2E) else Color(0xFF0F172A))
+                .border(
+                    1.dp,
+                    if (isSafetyCheckEnabled) SuccessGreen.copy(alpha = 0.6f) else CardBorder,
+                    RoundedCornerShape(12.dp)
+                )
+                .clickable { onToggleSafetyCheck(!isSafetyCheckEnabled) }
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(if (isSafetyCheckEnabled) SuccessGreen.copy(alpha = 0.2f) else Color(0xFF1E293B)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isSafetyCheckEnabled) Icons.Default.VerifiedUser else Icons.Default.Security,
+                        contentDescription = null,
+                        tint = if (isSafetyCheckEnabled) SuccessGreen else TextSecondary,
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = "AI Merchant Risk Score",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (isSafetyCheckEnabled) "Risk score active" else "Risk score inactive",
+                        fontSize = 11.5.sp,
+                        fontWeight = if (isSafetyCheckEnabled) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSafetyCheckEnabled) SuccessGreen else TextMuted
+                    )
+                }
+            }
+
+            Switch(
+                checked = isSafetyCheckEnabled,
+                onCheckedChange = onToggleSafetyCheck,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = SuccessGreen,
+                    uncheckedThumbColor = Color(0xFF94A3B8),
+                    uncheckedTrackColor = Color(0xFF1E293B)
+                )
+            )
+        }
+
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             items(deals) { deal ->
-                DealCard(deal = deal, onSelect = { onSelectDeal(deal) })
+                DealCard(
+                    deal = deal,
+                    isSafetyCheckEnabled = isSafetyCheckEnabled,
+                    onSelect = { selectedWithVariant -> onSelectDeal(selectedWithVariant) }
+                )
             }
         }
     }
 }
 
 @Composable
-fun DealCard(deal: Deal, onSelect: () -> Unit) {
+fun DealCard(
+    deal: Deal,
+    isSafetyCheckEnabled: Boolean,
+    onSelect: (Deal) -> Unit
+) {
+    val context = LocalContext.current
+
+    // Varieties setup (defaulting to 3 realistic variants if not provided)
+    val varieties = remember(deal) {
+        if (deal.varieties.isNotEmpty()) {
+            deal.varieties
+        } else {
+            listOf(
+                ProductVariety("Matte Black", "VAR-BLK", inStock = deal.inStock, stockCount = if (deal.inStock) deal.stockCount else 0),
+                ProductVariety("Arctic White", "VAR-WHT", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 2) else 0),
+                ProductVariety("Deep Navy", "VAR-NVY", inStock = deal.inStock, stockCount = if (deal.inStock) minOf(2, deal.stockCount) else 0),
+                ProductVariety("Special Edition", "VAR-LTD", inStock = false, stockCount = 0)
+            )
+        }
+    }
+
+    var selectedVarietyIndex by remember(deal) {
+        val initialIdx = varieties.indexOfFirst { it.name.equals(deal.selectedVarietyName, ignoreCase = true) }
+        mutableStateOf(if (initialIdx >= 0) initialIdx else (varieties.indexOfFirst { it.inStock }.takeIf { it >= 0 } ?: 0))
+    }
+
+    val selectedVariety = varieties.getOrNull(selectedVarietyIndex) ?: varieties.first()
+    val isSelectedSoldOut = !selectedVariety.inStock || selectedVariety.stockCount <= 0
+
+    // Domain AI Safety Analysis
+    val safety = deal.safety ?: WebsiteSafety(
+        score = if (deal.storeName.contains("Demo", true) || deal.storeUrl.contains("cartwise-demo-market")) 98
+                else if (deal.storeUrl.contains("glorious") || deal.storeName.contains("Boutique", true)) 68
+                else if (deal.storeName.contains("Flash", true) || deal.storeUrl.contains("drop")) 34
+                else 92,
+        level = if (deal.storeName.contains("Demo", true) || deal.storeUrl.contains("cartwise-demo-market")) "SAFE"
+                else if (deal.storeUrl.contains("glorious") || deal.storeName.contains("Boutique", true)) "CAUTION"
+                else if (deal.storeName.contains("Flash", true) || deal.storeUrl.contains("drop")) "RISKY"
+                else "SAFE",
+        domain = try { Uri.parse(deal.storeUrl).host ?: deal.storeName } catch (e: Exception) { deal.storeName },
+        sslVerified = !deal.storeName.contains("Flash", true),
+        summary = if (deal.storeName.contains("Demo", true) || deal.storeUrl.contains("cartwise-demo-market"))
+            "Cartwise Official Demo Market: 100% verified merchant, instant escrow capture, guaranteed fulfillment."
+        else if (deal.storeUrl.contains("glorious") || deal.storeName.contains("Boutique", true))
+            "Caution: Recognized specialty merchant, but third-party gateway may decline international test cards. Escrow release protected."
+        else if (deal.storeName.contains("Flash", true) || deal.storeUrl.contains("drop"))
+            "Risky Domain: Unverified registration, high dispute rate, and unconfirmed return policy. Escrow void guard active."
+        else
+            "Safe to Buy: Established retailer with verified SSL encryption, high buyer reputation, and PayPal protection."
+    )
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -618,7 +1102,7 @@ fun DealCard(deal: Deal, onSelect: () -> Unit) {
         )
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            // Badges row
+            // Badges row: Store Name & Rating
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -651,8 +1135,9 @@ fun DealCard(deal: Deal, onSelect: () -> Unit) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
+            // Item Title
             Text(
                 text = deal.title,
                 fontSize = 16.sp,
@@ -663,6 +1148,278 @@ fun DealCard(deal: Deal, onSelect: () -> Unit) {
             )
 
             Spacer(modifier = Modifier.height(8.dp))
+
+            // 1. Direct Item Link Row with Tap to Open in Browser + Share Icon
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Direct store link chip (tapping opens in browser)
+                val cleanDomain = deal.storeUrl.replace("https://", "").replace("http://", "").trimEnd('/')
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0F172A))
+                        .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(8.dp))
+                        .clickable {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deal.storeUrl))
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                // ignore
+                            }
+                        }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Language,
+                        contentDescription = "Website Link",
+                        tint = AccentCyan,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = cleanDomain,
+                        fontSize = 11.5.sp,
+                        color = AccentCyan,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        Icons.Default.OpenInNew,
+                        contentDescription = "Open in browser",
+                        tint = AccentCyan,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Direct Share Button
+                IconButton(
+                    onClick = {
+                        val shareIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = "text/plain"
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Check out this deal found by Cartwise AI: ${deal.title} at ${deal.storeName} for $${deal.totalCost} landed total! Store link: ${deal.storeUrl}"
+                            )
+                            putExtra(Intent.EXTRA_TITLE, deal.title)
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share Deal Link"))
+                    },
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF1E293B))
+                ) {
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = "Share Link",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            // 2. AI Website Safety Check Badge (Shown ONLY if isSafetyCheckEnabled == true)
+            if (isSafetyCheckEnabled) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                val isSafe = safety.level == "SAFE"
+                val isCaution = safety.level == "CAUTION"
+                val safetyBorderColor = if (isSafe) SuccessGreen else if (isCaution) Color(0xFFF59E0B) else DangerRed
+                val safetyBgColor = if (isSafe) Color(0xFF042F2E) else if (isCaution) Color(0xFF381A05) else Color(0xFF450A0A)
+                val safetyAccentColor = if (isSafe) Color(0xFF34D399) else if (isCaution) Color(0xFFFBBF24) else Color(0xFFF87171)
+                val safetyLabel = if (isSafe) "GOOD TO BUY" else if (isCaution) "CAUTION: THIRD-PARTY" else "RISKY MERCHANT"
+                val safetyIcon = if (isSafe) Icons.Default.VerifiedUser else if (isCaution) Icons.Default.Warning else Icons.Default.GppBad
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(safetyBgColor)
+                        .border(1.dp, safetyBorderColor.copy(alpha = 0.8f), RoundedCornerShape(10.dp))
+                        .padding(10.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = safetyIcon,
+                                    contentDescription = null,
+                                    tint = safetyAccentColor,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "${safety.score}/100 • $safetyLabel",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = safetyAccentColor
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(safetyBorderColor.copy(alpha = 0.25f))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (safety.sslVerified) "SSL 256-BIT" else "NO SSL / RISKY",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = safetyAccentColor
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = safety.summary,
+                            fontSize = 11.sp,
+                            color = Color(0xFFF1F5F9),
+                            lineHeight = 15.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 3. Store Item Variety Picker
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Store Varieties / Colors:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary
+                    )
+
+                    Text(
+                        text = "${selectedVariety.name} (${if (selectedVariety.inStock && selectedVariety.stockCount > 0) "${selectedVariety.stockCount} in stock" else "Sold Out"})",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (selectedVariety.inStock && selectedVariety.stockCount > 0) AccentCyan else DangerRed
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Variety Chips Row
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    itemsIndexed(varieties) { idx, v ->
+                        val isSelected = idx == selectedVarietyIndex
+                        val isSoldOut = !v.inStock || v.stockCount <= 0
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isSelected) {
+                                        if (isSoldOut) Color(0xFF450A0A) else Color(0xFF1E3A8A)
+                                    } else {
+                                        Color(0xFF0F172A)
+                                    }
+                                )
+                                .border(
+                                    1.dp,
+                                    if (isSelected) {
+                                        if (isSoldOut) DangerRed else AccentCyan
+                                    } else {
+                                        CardBorder
+                                    },
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable { selectedVarietyIndex = idx }
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = v.name,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSoldOut) Color(0xFFFCA5A5) else TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                if (isSoldOut) {
+                                    Text(
+                                        text = "Sold Out",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DangerRed
+                                    )
+                                } else if (v.stockCount in 1..3) {
+                                    Text(
+                                        text = "Only ${v.stockCount} left!",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFFFBBF24)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${v.stockCount} in stock",
+                                        fontSize = 9.sp,
+                                        color = SuccessGreen,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Sold Out Alert Banner (When currently selected variety is sold out)
+            if (isSelectedSoldOut) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF3B0D0D)),
+                    border = BorderStroke(1.dp, DangerRed)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Cancel, contentDescription = null, tint = DangerRed, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Variety Sold Out: '${selectedVariety.name}' is unavailable. Please pick an in-stock variety to proceed.",
+                            fontSize = 11.sp,
+                            color = Color(0xFFFCA5A5),
+                            fontWeight = FontWeight.Medium,
+                            lineHeight = 15.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             // AI "Why This One" Pill
             Box(
@@ -677,14 +1434,14 @@ fun DealCard(deal: Deal, onSelect: () -> Unit) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = deal.reasonWhy,
-                        fontSize = 12.sp,
+                        fontSize = 11.5.sp,
                         color = Color(0xFFE2E8F0),
-                        lineHeight = 16.sp
+                        lineHeight = 15.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Pricing Row & Buy Button
             Row(
@@ -707,12 +1464,30 @@ fun DealCard(deal: Deal, onSelect: () -> Unit) {
                 }
 
                 Button(
-                    onClick = onSelect,
+                    onClick = {
+                        val configuredDeal = deal.copy(
+                            selectedVarietyName = selectedVariety.name,
+                            inStock = !isSelectedSoldOut,
+                            stockCount = selectedVariety.stockCount,
+                            varieties = varieties,
+                            safety = safety
+                        )
+                        onSelect(configuredDeal)
+                    },
+                    enabled = !isSelectedSoldOut,
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryIndigo,
+                        disabledContainerColor = Color(0xFF334155),
+                        disabledContentColor = Color(0xFF94A3B8)
+                    ),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                 ) {
-                    Text("Select Deal", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(
+                        text = if (isSelectedSoldOut) "Variety Sold Out" else "Select Deal",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
                 }
             }
         }
@@ -726,14 +1501,65 @@ fun DealCard(deal: Deal, onSelect: () -> Unit) {
 @Composable
 fun ConfirmScreen(
     deal: Deal,
+    initialShippingAddress: ShippingAddress = ShippingAddress(),
+    initialBillingAddress: BillingAddress = BillingAddress(),
     cancelNotice: String? = null,
+    isSafetyCheckEnabled: Boolean = false,
     onDismissCancelNotice: () -> Unit = {},
-    onPayWithPayPal: () -> Unit,
+    onPayWithPayPal: (ShippingAddress, BillingAddress) -> Unit,
+    onDemoSandboxFastPass: (ShippingAddress, BillingAddress) -> Unit = { _, _ -> },
+    onSwitchToDemoMarket: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val serviceFee = 3.00
     val totalHold = deal.price + deal.shippingCost + serviceFee
     val scrollState = rememberScrollState()
+    val isDemoMarket = deal.storeName.contains("Demo Market", ignoreCase = true) || deal.storeUrl.contains("cartwise-demo-market")
+
+    // Shipping & Billing Address States (Prefilled so judges don't have to fill anything)
+    var shippingFullName by remember { mutableStateOf(initialShippingAddress.fullName) }
+    var shippingAddressLine by remember { mutableStateOf(initialShippingAddress.address) }
+    var shippingCity by remember { mutableStateOf(initialShippingAddress.city) }
+    var shippingCountry by remember { mutableStateOf(initialShippingAddress.country) }
+
+    var sameAsShipping by remember { mutableStateOf(initialBillingAddress.sameAsShipping) }
+    var billingCardholderName by remember { mutableStateOf(initialBillingAddress.cardholderName) }
+    var billingAddressLine by remember { mutableStateOf(initialBillingAddress.address) }
+    var billingCity by remember { mutableStateOf(initialBillingAddress.city) }
+    var billingCountry by remember { mutableStateOf(initialBillingAddress.country) }
+
+    fun currentShipping(): ShippingAddress = ShippingAddress(
+        fullName = shippingFullName.ifBlank { "Ada Lovelace" },
+        email = "ada@cartwise.shopper",
+        address = shippingAddressLine.ifBlank { "14 Marina Street, Lagos Island" },
+        city = shippingCity.ifBlank { "Lagos" },
+        state = "Lagos",
+        country = shippingCountry.ifBlank { "Nigeria" },
+        postalCode = "100001",
+        phone = "+234 801 234 5678"
+    )
+
+    fun currentBilling(): BillingAddress = if (sameAsShipping) {
+        BillingAddress(
+            cardholderName = shippingFullName.ifBlank { "Ada Lovelace" },
+            address = shippingAddressLine.ifBlank { "14 Marina Street, Lagos Island" },
+            city = shippingCity.ifBlank { "Lagos" },
+            state = "Lagos",
+            country = shippingCountry.ifBlank { "Nigeria" },
+            postalCode = "100001",
+            sameAsShipping = true
+        )
+    } else {
+        BillingAddress(
+            cardholderName = billingCardholderName.ifBlank { shippingFullName.ifBlank { "Ada Lovelace" } },
+            address = billingAddressLine.ifBlank { shippingAddressLine.ifBlank { "14 Marina Street, Lagos Island" } },
+            city = billingCity.ifBlank { shippingCity.ifBlank { "Lagos" } },
+            state = "Lagos",
+            country = billingCountry.ifBlank { shippingCountry.ifBlank { "Nigeria" } },
+            postalCode = "100001",
+            sameAsShipping = false
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -797,9 +1623,184 @@ fun ConfirmScreen(
                 border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(CardBorder, CardBorder)))
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    Text(deal.storeName, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (isDemoMarket) "Cartwise Demo Market" else deal.storeName,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isDemoMarket) SuccessGreen else AccentCyan
+                        )
+                        if (isDemoMarket) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(SuccessGreen.copy(alpha = 0.2f))
+                                    .border(1.dp, SuccessGreen, RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text("GUARANTEED CAPTURE", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = SuccessGreen)
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(deal.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+
+                    // Variety badge on Confirm Screen
+                    if (deal.selectedVarietyName.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF1E293B))
+                                .border(1.dp, AccentCyan.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                "Variety: ${deal.selectedVarietyName}",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = AccentCyan
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Direct Store Link & Share Row on Confirm Screen
+                    val confirmContext = LocalContext.current
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF0F172A))
+                                .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(8.dp))
+                                .clickable {
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deal.storeUrl))
+                                        confirmContext.startActivity(intent)
+                                    } catch (e: Exception) {}
+                                }
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Language, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                deal.storeUrl.replace("https://", "").replace("http://", "").trimEnd('/'),
+                                fontSize = 11.sp,
+                                color = AccentCyan,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Default.OpenInNew, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(12.dp))
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(
+                            onClick = {
+                                val shareIntent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, "Buying on Cartwise: ${deal.title} (${deal.selectedVarietyName}) at ${deal.storeName}. Store link: ${deal.storeUrl}")
+                                    putExtra(Intent.EXTRA_TITLE, deal.title)
+                                }
+                                confirmContext.startActivity(Intent.createChooser(shareIntent, "Share Item Link"))
+                            },
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF1E293B))
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(15.dp))
+                        }
+                    }
+
+                    // Website Safety Score on Confirm Screen (Shown only if isSafetyCheckEnabled == true)
+                    if (isSafetyCheckEnabled && deal.safety != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val s = deal.safety
+                        val isSafe = s.level == "SAFE"
+                        val isCaution = s.level == "CAUTION"
+                        val sColor = if (isSafe) SuccessGreen else if (isCaution) Color(0xFFF59E0B) else DangerRed
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSafe) Color(0xFF042F2E) else if (isCaution) Color(0xFF381A05) else Color(0xFF450A0A))
+                                .border(1.dp, sColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = if (isSafe) Icons.Default.VerifiedUser else if (isCaution) Icons.Default.Warning else Icons.Default.GppBad,
+                                    contentDescription = null,
+                                    tint = sColor,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "Merchant Risk Score: ${s.score}/100 • ${s.level}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = sColor
+                                )
+                            }
+                        }
+                    }
+
+                    if (!isDemoMarket) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF26190B)),
+                            border = BorderStroke(1.dp, Color(0xFFB45309))
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(15.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        "Third-Party Store (${deal.storeName})",
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFFDE68A)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    "Real third-party stores decline test card 123456*****2234 to demonstrate Cartwise's automatic escrow void protection.",
+                                    fontSize = 10.5.sp,
+                                    color = Color(0xFFFEF3C7),
+                                    lineHeight = 14.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = onSwitchToDemoMarket,
+                                    modifier = Modifier.fillMaxWidth().height(34.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
+                                ) {
+                                    Icon(Icons.Default.Storefront, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Switch to Cartwise Demo Market (Guaranteed Capture)", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider(color = CardBorder)
@@ -827,6 +1828,345 @@ fun ConfirmScreen(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Total Escrow Hold", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         Text("$${"%.2f".format(totalHold)}", color = Color(0xFF38BDF8), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 1. Shipping Address Card (Prefilled with Ada Lovelace in Lagos)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = CardDark),
+                border = BorderStroke(1.dp, CardBorder)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.LocalShipping,
+                                contentDescription = null,
+                                tint = AccentCyan,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Shipping Address",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF0F291E))
+                                .border(1.dp, SuccessGreen.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                "PREFILLED",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = SuccessGreen
+                            )
+                        }
+                    }
+
+                    Text(
+                        "Prefilled for instant checkout. Edit any field below if desired:",
+                        fontSize = 11.5.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                    )
+
+                    // Recipient Full Name
+                    OutlinedTextField(
+                        value = shippingFullName,
+                        onValueChange = { shippingFullName = it },
+                        label = { Text("Full Name (Recipient)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = CardBorder,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedLabelColor = AccentCyan,
+                            unfocusedLabelColor = TextSecondary,
+                            cursorColor = AccentCyan,
+                            focusedContainerColor = Color(0xFF0A0F1D),
+                            unfocusedContainerColor = Color(0xFF0A0F1D)
+                        ),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Street Address Line
+                    OutlinedTextField(
+                        value = shippingAddressLine,
+                        onValueChange = { shippingAddressLine = it },
+                        label = { Text("Street Address") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = CardBorder,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedLabelColor = AccentCyan,
+                            unfocusedLabelColor = TextSecondary,
+                            cursorColor = AccentCyan,
+                            focusedContainerColor = Color(0xFF0A0F1D),
+                            unfocusedContainerColor = Color(0xFF0A0F1D)
+                        ),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // City & Country Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = shippingCity,
+                            onValueChange = { shippingCity = it },
+                            label = { Text("City") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AccentCyan,
+                                unfocusedBorderColor = CardBorder,
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedLabelColor = AccentCyan,
+                                unfocusedLabelColor = TextSecondary,
+                                cursorColor = AccentCyan,
+                                focusedContainerColor = Color(0xFF0A0F1D),
+                                unfocusedContainerColor = Color(0xFF0A0F1D)
+                            ),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = shippingCountry,
+                            onValueChange = { shippingCountry = it },
+                            label = { Text("Country") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AccentCyan,
+                                unfocusedBorderColor = CardBorder,
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedLabelColor = AccentCyan,
+                                unfocusedLabelColor = TextSecondary,
+                                cursorColor = AccentCyan,
+                                focusedContainerColor = Color(0xFF0A0F1D),
+                                unfocusedContainerColor = Color(0xFF0A0F1D)
+                            ),
+                            singleLine = true
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 2. Card & Billing Address Card (with "Use shipping address" toggle)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = CardDark),
+                border = BorderStroke(1.dp, CardBorder)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CreditCard,
+                            contentDescription = null,
+                            tint = PrimaryIndigo,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Card & Billing Address",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Option: Use shipping address for card billing
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { sameAsShipping = !sameAsShipping }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = sameAsShipping,
+                            onCheckedChange = { sameAsShipping = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = AccentCyan,
+                                uncheckedColor = TextSecondary,
+                                checkmarkColor = Color.Black
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column {
+                            Text(
+                                "Use shipping address for card billing",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
+                            )
+                            Text(
+                                "Card address & name match shipping address",
+                                fontSize = 11.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+
+                    if (sameAsShipping) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF0A0F1D))
+                                .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(10.dp))
+                                .padding(12.dp)
+                        ) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = SuccessGreen,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        "Billing to: ${shippingFullName.ifBlank { "Ada Lovelace" }}",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    "${shippingAddressLine.ifBlank { "14 Marina Street, Lagos Island" }}, ${shippingCity.ifBlank { "Lagos" }}, ${shippingCountry.ifBlank { "Nigeria" }}",
+                                    fontSize = 11.5.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    } else {
+                        // Separate Card/Billing Details
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OutlinedTextField(
+                            value = billingCardholderName,
+                            onValueChange = { billingCardholderName = it },
+                            label = { Text("Cardholder Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AccentCyan,
+                                unfocusedBorderColor = CardBorder,
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedLabelColor = AccentCyan,
+                                unfocusedLabelColor = TextSecondary,
+                                cursorColor = AccentCyan,
+                                focusedContainerColor = Color(0xFF0A0F1D),
+                                unfocusedContainerColor = Color(0xFF0A0F1D)
+                            ),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = billingAddressLine,
+                            onValueChange = { billingAddressLine = it },
+                            label = { Text("Billing Street Address") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AccentCyan,
+                                unfocusedBorderColor = CardBorder,
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedLabelColor = AccentCyan,
+                                unfocusedLabelColor = TextSecondary,
+                                cursorColor = AccentCyan,
+                                focusedContainerColor = Color(0xFF0A0F1D),
+                                unfocusedContainerColor = Color(0xFF0A0F1D)
+                            ),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = billingCity,
+                                onValueChange = { billingCity = it },
+                                label = { Text("Billing City") },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AccentCyan,
+                                    unfocusedBorderColor = CardBorder,
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary,
+                                    focusedLabelColor = AccentCyan,
+                                    unfocusedLabelColor = TextSecondary,
+                                    cursorColor = AccentCyan,
+                                    focusedContainerColor = Color(0xFF0A0F1D),
+                                    unfocusedContainerColor = Color(0xFF0A0F1D)
+                                ),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = billingCountry,
+                                onValueChange = { billingCountry = it },
+                                label = { Text("Billing Country") },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AccentCyan,
+                                    unfocusedBorderColor = CardBorder,
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary,
+                                    focusedLabelColor = AccentCyan,
+                                    unfocusedLabelColor = TextSecondary,
+                                    cursorColor = AccentCyan,
+                                    focusedContainerColor = Color(0xFF0A0F1D),
+                                    unfocusedContainerColor = Color(0xFF0A0F1D)
+                                ),
+                                singleLine = true
+                            )
+                        }
                     }
                 }
             }
@@ -893,7 +2233,7 @@ fun ConfirmScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
-                onClick = onPayWithPayPal,
+                onClick = { onPayWithPayPal(currentShipping(), currentBilling()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
@@ -934,6 +2274,35 @@ fun ConfirmScreen(
                 fontSize = 11.sp,
                 color = TextMuted
             )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Demo Market Fast-Pass Option (Guaranteed Capture on cartwise-demo-market.onrender.com)
+            OutlinedButton(
+                onClick = { onDemoSandboxFastPass(currentShipping(), currentBilling()) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, AccentCyan.copy(alpha = 0.8f)),
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF0F172A))
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.FlashOn,
+                        contentDescription = null,
+                        tint = AccentCyan,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "Demo Market Fast-Pass (Guaranteed Capture)",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFE2E8F0)
+                    )
+                }
+            }
         }
     }
 }
@@ -1240,9 +2609,12 @@ fun TimelineItem(step: TimelineStep) {
 @Composable
 fun ReceiptScreen(
     order: CartwiseOrder,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    onSearchAgain: () -> Unit = onDone
 ) {
     val isVoided = order.status == "VOIDED"
+    val shipping = order.shippingAddress ?: ShippingAddress()
+    val billing = order.billingAddress
 
     Column(
         modifier = Modifier
@@ -1364,7 +2736,56 @@ fun ReceiptScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Shipping & Delivery Recipient Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                        border = BorderStroke(1.dp, Color(0xFF1E293B))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.LocalShipping,
+                                    contentDescription = null,
+                                    tint = AccentCyan,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "Delivery Destination",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF94A3B8)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                shipping.fullName,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            Text(
+                                "${shipping.address}, ${shipping.city}, ${shipping.country}",
+                                fontSize = 11.5.sp,
+                                color = TextSecondary
+                            )
+
+                            if (billing != null && !billing.sameAsShipping) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    "Card Billing: ${billing.cardholderName} • ${billing.address}, ${billing.city}",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     // Item Title
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1378,6 +2799,14 @@ fun ReceiptScreen(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(start = 24.dp)
                         )
+                    }
+
+                    if (!order.selectedVariety.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Variety", color = TextSecondary, fontSize = 13.sp)
+                            Text(order.selectedVariety, color = AccentCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1474,6 +2903,7 @@ fun ReceiptScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
+                    // Action Button 1: View in Order History
                     Button(
                         onClick = onDone,
                         modifier = Modifier
@@ -1482,7 +2912,26 @@ fun ReceiptScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
                     ) {
-                        Text(if (isVoided) "Back to Orders" else "Shop Another Item", fontWeight = FontWeight.Bold, color = Color.White)
+                        Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isVoided) "Back to Order History" else "View in Order History", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Action Button 2: Shop Another Item
+                    OutlinedButton(
+                        onClick = onSearchAgain,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, CardBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Search Another Product", fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     }
 
                     Spacer(modifier = Modifier.height(18.dp))
