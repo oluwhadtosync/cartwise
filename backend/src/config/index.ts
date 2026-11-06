@@ -52,8 +52,8 @@ export const config = {
   // Google Gemini AI
   gemini: {
     apiKey: getSecret('GEMINI_API_KEY', ''),
-    // Using current free Flash model (gemini-3.5-flash / gemini-3.8-flash)
-    model: process.env.GEMINI_MODEL || 'gemini-3.5-flash'
+    // Default to Gemini 3.8 Flash (Latest paid tier model)
+    model: process.env.GEMINI_MODEL || 'gemini-3.8-flash'
   },
 
   // Channel3 Product Search API

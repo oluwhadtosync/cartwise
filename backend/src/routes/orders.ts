@@ -22,12 +22,13 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
       shippingAddress = {
         fullName: 'Ada Lovelace',
         email: 'ada@cartwise.shopper',
-        address: '14 Marina Street',
+        address: '14 Marina Street, Lagos Island',
         city: 'Lagos',
         state: 'Lagos',
-        country: 'NG',
+        country: 'Nigeria',
         postalCode: '100001'
-      }
+      },
+      billingAddress
     } = req.body;
 
     if (!itemTitle || itemPrice === undefined) {
@@ -65,6 +66,7 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
       paypalApproveUrl: ppOrder.approveUrl,
       status: 'PENDING_APPROVAL',
       shippingAddress,
+      billingAddress,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

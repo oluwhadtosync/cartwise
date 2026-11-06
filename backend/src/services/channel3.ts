@@ -44,25 +44,29 @@ export class Channel3Service {
 
   /**
    * Search products via Channel3 API + merge Demo Market catalog
+   * Completely immune to VPN/geolocation misrouting
    */
-  async search(query: string, maxBudget?: number, country: string = 'NG'): Promise<any[]> {
-    const cacheKey = `${query.toLowerCase().trim()}_${maxBudget || 'none'}_${country}`;
+  async search(query: string, maxBudget?: number, country: string = 'NG', queryEn?: string): Promise<any[]> {
+    const cleanQuery = query.trim();
+    const cleanQueryEn = (queryEn || '').trim();
+    const cacheKey = `${cleanQuery.toLowerCase()}_${cleanQueryEn.toLowerCase()}_${maxBudget || 'none'}_${country}`;
 
     // Check cache
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL_MS) {
-      console.log(`[Channel3] Returning cached results for "${query}"`);
+      console.log(`[Channel3] Returning cached results for "${cleanQuery}"`);
       return cached.data;
     }
 
     let products: any[] = [];
 
-    // 1. Query Channel3 API if configured
+    // 1. Query Channel3 API if configured (use English query terms for US/global merchants)
     if (this.isConfigured()) {
       try {
-        console.log(`[Channel3] Querying API for: "${query}"`);
+        const apiQuery = cleanQueryEn || cleanQuery;
+        console.log(`[Channel3] Querying API for: "${apiQuery}" (original: "${cleanQuery}")`);
         const payload: Record<string, any> = {
-          query,
+          query: apiQuery,
           limit: 10
         };
         if (maxBudget) {
@@ -75,7 +79,8 @@ export class Channel3Service {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': config.channel3.apiKey
+            'x-api-key': config.channel3.apiKey,
+            'Accept-Language': 'en-US,en;q=0.9'
           },
           body: JSON.stringify(payload),
           signal: AbortSignal.timeout(8000)
@@ -95,14 +100,31 @@ export class Channel3Service {
     // 2. If DEMO_MODE=true or no Channel3 results, merge Demo Market products
     if (config.demoMode || products.length === 0) {
       const demoProducts = await this.fetchDemoMarketProducts();
-      const queryLower = query.toLowerCase();
-      const keywords = queryLower.split(/\s+/).filter(w => w.length > 2);
+      const queryLower = cleanQuery.toLowerCase();
+      const isChineseQuery = /[\u4e00-\u9fa5\u3400-\u4dbf]/.test(cleanQuery);
+      const enKeywords = (cleanQueryEn || cleanQuery).toLowerCase().split(/\s+/).filter(w => w.length > 2);
 
-      // Filter and score demo products matching keywords
+      // Filter and score demo products matching keywords in both English & Chinese
       const matchedDemo = demoProducts.filter(p => {
-        const text = `${p.title} ${p.description} ${p.category} ${p.brand?.name || ''}`.toLowerCase();
-        const matchesKeyword = keywords.length === 0 || keywords.some(k => text.includes(k));
-        const withinBudget = maxBudget ? p.offers?.[0]?.price <= maxBudget : true;
+        const textEn = `${p.title || ''} ${p.description || ''} ${p.category || ''} ${p.brand?.name || p.brand || ''}`.toLowerCase();
+        const textZh = `${p.titleZh || ''} ${p.descriptionZh || ''} ${(p.keywordsZh || []).join(' ')}`.toLowerCase();
+
+        let matchesKeyword = false;
+        if (isChineseQuery) {
+          // Check Chinese keywords & title
+          matchesKeyword = textZh.includes(queryLower) ||
+            (p.keywordsZh || []).some((kw: string) => queryLower.includes(kw.toLowerCase()) || kw.toLowerCase().includes(queryLower));
+          // If not matched directly, check translated English keywords
+          if (!matchesKeyword && enKeywords.length > 0) {
+            matchesKeyword = enKeywords.some(k => textEn.includes(k));
+          }
+        } else {
+          // Standard English keyword matching
+          matchesKeyword = enKeywords.length === 0 || enKeywords.some(k => textEn.includes(k));
+        }
+
+        const offerPrice = p.offers?.[0]?.price !== undefined ? p.offers[0].price : p.price;
+        const withinBudget = maxBudget ? offerPrice <= maxBudget : true;
         return matchesKeyword && withinBudget;
       });
 

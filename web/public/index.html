@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartwise — Autonomous AI Shopping Agent (PayPal Hackathon 2026)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bgDark: '#070b14',
+            cardDark: '#0f172a',
+            cardBorder: '#1e293b',
+            primaryIndigo: '#4f46e5',
+            accentCyan: '#38bdf8',
+            successGreen: '#10b981',
+            textPrimary: '#f8fafc',
+            textSecondary: '#94a3b8',
+            textMuted: '#64748b'
+          },
+          fontFamily: {
+            sans: ['Inter', -apple-system, BlinkMacSystemFont, 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #070b14;
+      color: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#070b14] flex flex-col justify-between antialiased selection:bg-indigo-600 selection:text-white">
+
+  <!-- Main Responsive Layout Wrapper (Scales gracefully from phone to full desktop) -->
+  <div class="w-full max-w-6xl mx-auto min-h-screen flex flex-col px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+
+    <!-- ======================================================== -->
+    <!-- GLOBAL RESPONSIVE TOP NAV BAR                            -->
+    <!-- ======================================================== -->
+    <header class="flex items-center justify-between py-3 mb-6 border-b border-gray-800/80">
+      <!-- Left: Brand & Location -->
+      <div onclick="navigateTo('onboarding')" class="flex items-center gap-3 cursor-pointer group" title="Return to Overview">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-105 transition-transform">
+          <i data-lucide="shopping-bag" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-black text-white tracking-tight">Cartwise</span>
+            <span class="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800">
+              AI Shopping Agent
+            </span>
+          </div>
+          <div class="text-xs text-gray-400 font-medium flex items-center gap-1.5">
+            <span>Lagos, Nigeria 🇳🇬</span>
+            <span class="text-gray-600">&bull;</span>
+            <span class="text-emerald-400 font-semibold">PayPal Escrow Protected</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Direct Demo Market Link, Android APK CTA, Order History -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Live Demo Market External Link -->
+        <a 
+          href="https://cartwise-demo-market.onrender.com" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-cyan-500/60 text-xs font-semibold text-gray-200 hover:text-cyan-300 transition shadow-sm"
+          title="Visit Cartwise Demo Market Store (merchant used for live checkout tests)"
+        >
+          <i data-lucide="store" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span class="hidden sm:inline">Demo Market Store</span>
+          <i data-lucide="external-link" class="w-3 h-3 text-gray-500"></i>
+        </a>
+
+        <!-- Android APK Button -->
+        <button 
+          onclick="showApkModal()" 
+          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-950/60 border border-indigo-800/80 hover:bg-indigo-900/60 text-xs font-semibold text-indigo-300 transition"
+          title="Cartwise Android App (APK download info)"
+        >
+          <i data-lucide="smartphone" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span class="hidden md:inline">Android APK</span>
+        </button>
+
+        <!-- Orders History -->
+        <button 
+          onclick="navigateTo('orders')" 
+          class="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 text-xs font-semibold text-gray-200 transition"
+          title="Order History"
+        >
+          <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i>
+          <span class="hidden sm:inline">Orders</span>
+          <span id="badge-orders-count" class="px-1.5 py-0.2 rounded-full bg-indigo-600 text-[10px] font-bold text-white">0</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 0: ONBOARDING / OVERVIEW SCREEN (Rich 2-Col Hero) -->
+    <!-- ======================================================== -->
+    <div id="view-onboarding" class="space-y-8 sm:space-y-10">
+      
+      <!-- 2-Column Responsive Desktop Hero Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        
+        <!-- Left Column: Value Proposition & Actions -->
+        <div class="lg:col-span-7 space-y-5 text-center lg:text-left">
+          
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/70 border border-cyan-800/60 text-[11px] font-bold text-cyan-300 tracking-wide uppercase">
+            <i data-lucide="award" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>PayPal AI Hackathon 2026 Submission</span>
+          </div>
+
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.15]">
+            Autonomous AI Shopping Agent.<br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400">
+              Buys for you across the web.
+            </span><br>
+            You pay safely with PayPal.
+          </h1>
+
+          <p class="text-sm sm:text-base text-gray-300 leading-relaxed max-w-xl mx-auto lg:mx-0">
+            Tell Cartwise what you want in plain English. <strong>Google Gemini 3.8</strong> and <strong>Channel3</strong> discover the cheapest real deals with shipping to Nigeria, boot an isolated cloud browser via <strong>Kernel</strong>, and autonomously complete store checkout &mdash; while holding your funds safely in <strong>PayPal escrow</strong>.
+          </p>
+
+          <!-- Primary Call to Action Buttons -->
+          <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
+            <button 
+              onclick="navigateTo('ask')"
+              class="w-full sm:w-auto px-7 h-[52px] rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-[15px] shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2 group cursor-pointer"
+            >
+              <span>Start Shopping with Cartwise</span>
+              <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+            </button>
+
+            <a 
+              href="https://cartwise-demo-market.onrender.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="w-full sm:w-auto px-5 h-[52px] rounded-xl bg-[#0f172a] hover:bg-[#1e293b] border border-[#1e293b] hover:border-cyan-500/50 text-gray-200 font-semibold text-sm transition flex items-center justify-center gap-2"
+            >
+              <i data-lucide="store" class="w-4 h-4 text-cyan-400"></i>
+              <span>Visit Demo Market Store ↗</span>
+            </a>
+          </div>
+
+          <!-- Feature Cards Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-left">
+            <div class="p-3.5 rounded-xl bg-[#0f172a]/80 border border-[#1e293b]">
+              <div class="flex items-center gap-2 text-cyan-400 text-xs font-bold mb-1">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                <span>Zero-Risk Escrow</span>
+              </div>
+              <div class="text-[11.5px] text-gray-400 leading-snug">PayPal Orders v2 hold (<code class="font-mono text-[10px]">intent=AUTHORIZE</code>). Charged only after order is secured.</div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-[#0f172a]/80 border border-[#1e293b]">
+              <div class="flex items-center gap-2 text-indigo-400 text-xs font-bold mb-1">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Gemini 3.8 Reasoning</span>
+              </div>
+              <div class="text-[11.5px] text-gray-400 leading-snug">Calculates true landed cost (item + express shipping to Nigeria) across stores.</div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-[#0f172a]/80 border border-[#1e293b]">
+              <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold mb-1">
+                <i data-lucide="globe" class="w-4 h-4"></i>
+                <span>Kernel Cloud Browser</span>
+              </div>
+              <div class="text-[11.5px] text-gray-400 leading-snug">Autonomous Playwright browser sessions inject Cartwise purchasing card and buy for you.</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Real Photographic Product Showcase Card -->
+        <div class="lg:col-span-5 w-full max-w-md mx-auto">
+          <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] overflow-hidden shadow-2xl">
+            <!-- Photographic product image banner with badges -->
+            <div class="relative w-full h-48 bg-[#070b14] overflow-hidden">
+              <img 
+                id="showcase-img" 
+                src="/images/product_headphones.png" 
+                alt="Product Showcase" 
+                class="w-full h-full object-cover transition-opacity duration-300"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/30 to-transparent"></div>
+              
+              <!-- Top Left: AI Discovery Badge -->
+              <div class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-[#070b14]/85 border border-cyan-500/50 flex items-center gap-1.5 backdrop-blur-sm">
+                <i data-lucide="sparkles" class="w-3 h-3 text-cyan-400"></i>
+                <span class="text-[9.5px] font-extrabold text-cyan-400 tracking-wider uppercase">AI PRICE DISCOVERY</span>
+              </div>
+
+              <!-- Top Right: Savings Pill -->
+              <div id="showcase-savings-pill" class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10.5px] font-extrabold shadow-md">
+                SAVE $380 (38% OFF)
+              </div>
+            </div>
+
+            <!-- Product Details & Side-by-Side Comparison Box -->
+            <div class="p-4 sm:p-5 space-y-4">
+              <div>
+                <h3 id="showcase-title" class="text-base font-bold text-white leading-snug">Sony WH-1000XM5 ANC Headphones</h3>
+                <p id="showcase-subtitle" class="text-xs text-gray-400 mt-0.5">Flagship Noise Cancelling • Multi-Store Index</p>
+              </div>
+
+              <!-- Side-by-Side Professional Before vs After Price Comparison Box -->
+              <div class="p-3.5 rounded-xl bg-[#070b14] border border-[#1e293b] flex items-center justify-between">
+                <!-- BEFORE CARTWISE AI -->
+                <div class="space-y-0.5">
+                  <div class="text-[9.5px] font-bold text-gray-500 tracking-wider uppercase">BEFORE CARTWISE AI</div>
+                  <div class="text-[11px] text-gray-400">Standard Store Retail</div>
+                  <div id="showcase-retail-price" class="text-base font-bold text-rose-500 line-through">$1000</div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="w-8 h-8 rounded-full bg-[#0f172a] border border-gray-800 flex items-center justify-center text-cyan-400 shrink-0">
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </div>
+
+                <!-- AFTER CARTWISE SEARCH -->
+                <div class="space-y-0.5 text-right">
+                  <div class="text-[9.5px] font-bold text-cyan-400 tracking-wider uppercase">AFTER CARTWISE SEARCH</div>
+                  <div class="text-[11px] text-gray-400">Landed Escrow Total</div>
+                  <div id="showcase-cartwise-price" class="text-xl font-extrabold text-emerald-400">$620.00</div>
+                </div>
+              </div>
+
+              <!-- Footer: Escrow Indicator + Carousel Dots -->
+              <div class="flex items-center justify-between pt-1">
+                <div class="flex items-center gap-1.5 text-gray-400 text-xs">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-cyan-400"></i>
+                  <span>PayPal Escrow Protected</span>
+                </div>
+
+                <!-- Interactive Carousel Dots -->
+                <div class="flex items-center gap-2" id="showcase-dots">
+                  <button onclick="setShowcaseIndex(0)" class="w-2.5 h-2.5 bg-cyan-400 rounded-full transition-all" aria-label="Slide 1"></button>
+                  <button onclick="setShowcaseIndex(1)" class="w-1.5 h-1.5 bg-gray-600 hover:bg-gray-400 rounded-full transition-all" aria-label="Slide 2"></button>
+                  <button onclick="setShowcaseIndex(2)" class="w-1.5 h-1.5 bg-gray-600 hover:bg-gray-400 rounded-full transition-all" aria-label="Slide 3"></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- GET THE CARTWISE ANDROID APP (Above Powered By)          -->
+      <!-- ======================================================== -->
+      <div id="section-android-app" class="rounded-2xl bg-gradient-to-r from-indigo-950/60 via-[#0f172a] to-cyan-950/40 border border-indigo-800/60 p-5 sm:p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-5">
+          <div class="flex items-center gap-4 text-center sm:text-left">
+            <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0 p-3">
+              <i data-lucide="smartphone" class="w-7 h-7 text-[#070b14]"></i>
+            </div>
+            <div>
+              <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <h3 class="text-base sm:text-lg font-bold text-white">Get the Cartwise Android App</h3>
+                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
+                  v1.0 Native
+                </span>
+              </div>
+              <p class="text-xs text-gray-300 mt-1 max-w-xl leading-relaxed">
+                Autonomous background agent execution, real-time Playwright live-view streaming, persistent local order storage, and one-tap biometric escrow checkout on your Android phone.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
+            <button 
+              onclick="showApkModal()"
+              class="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Download Android APK</span>
+            </button>
+            <span class="text-[11px] text-gray-400 text-center sm:text-left">(Direct APK link ready for judges)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- POWERED BY: STATIC TWO ROWS / LINES (NO SCROLLING)       -->
+      <!-- ======================================================== -->
+      <div class="pt-4 pb-6 space-y-4">
+        
+        <div class="text-center space-y-1">
+          <div class="flex items-center justify-center gap-2">
+            <div class="h-[1px] w-12 bg-gray-800"></div>
+            <span class="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest">POWERED BY</span>
+            <div class="h-[1px] w-12 bg-gray-800"></div>
+          </div>
+          <p class="text-xs text-gray-400 font-medium">Official PayPal AI Hackathon 2026 Cloud & AI Architecture</p>
+        </div>
+
+        <!-- Static Two Rows / Lines -->
+        <div class="space-y-3 max-w-4xl mx-auto">
+          
+          <!-- Line 1: PayPal, Google Gemini 3.8, Render (3 Columns) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            
+            <!-- PayPal -->
+            <div class="p-3.5 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 transition flex items-center gap-3">
+              <div class="h-9 w-20 flex items-center justify-center shrink-0">
+                <img src="/images/logo_paypal.png" alt="PayPal" class="max-h-7 max-w-full object-contain" />
+              </div>
+              <div class="border-l border-gray-800 pl-3">
+                <div class="text-xs font-bold text-white leading-tight">PayPal Sandbox</div>
+                <div class="text-[10.5px] text-gray-400 mt-0.5">Orders v2 Escrow (<code class="font-mono text-[9.5px]">intent=AUTHORIZE</code>)</div>
+              </div>
+            </div>
+
+            <!-- Google Gemini 3.8 -->
+            <div class="p-3.5 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 transition flex items-center gap-3">
+              <div class="h-9 w-20 flex items-center justify-center shrink-0">
+                <img src="/images/logo_gemini.svg" alt="Google Gemini" class="max-h-7 max-w-full object-contain" />
+              </div>
+              <div class="border-l border-gray-800 pl-3">
+                <div class="text-xs font-bold text-white leading-tight">Google Gemini 3.8</div>
+                <div class="text-[10.5px] text-gray-400 mt-0.5">Natural Language Reasoning & Deal Ranking</div>
+              </div>
+            </div>
+
+            <!-- Render -->
+            <div class="p-3.5 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 transition flex items-center gap-3">
+              <div class="h-9 w-20 flex items-center justify-center shrink-0">
+                <img src="/images/logo_render.png" alt="Render" class="max-h-6 max-w-full object-contain" />
+              </div>
+              <div class="border-l border-gray-800 pl-3">
+                <div class="text-xs font-bold text-white leading-tight">Render Cloud</div>
+                <div class="text-[10.5px] text-gray-400 mt-0.5">Automated Blueprint & Hosted Microservices</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Line 2: Channel3, Kernel (2 Columns Centered) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+            
+            <!-- Channel3 -->
+            <div class="p-3.5 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 transition flex items-center gap-3">
+              <div class="h-9 w-20 flex items-center justify-center shrink-0">
+                <img src="/images/logo_channel3.png" alt="Channel3" class="max-h-6 max-w-full object-contain" />
+              </div>
+              <div class="border-l border-gray-800 pl-3">
+                <div class="text-xs font-bold text-white leading-tight">Channel3 Catalog</div>
+                <div class="text-[10.5px] text-gray-400 mt-0.5">Live Multi-Store Product Index & Inventory</div>
+              </div>
+            </div>
+
+            <!-- Kernel -->
+            <div class="p-3.5 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 transition flex items-center gap-3">
+              <div class="h-9 w-20 flex items-center justify-center shrink-0">
+                <img src="/images/logo_kernel.png" alt="Kernel" class="max-h-6 max-w-full object-contain" />
+              </div>
+              <div class="border-l border-gray-800 pl-3">
+                <div class="text-xs font-bold text-white leading-tight">Kernel Browser</div>
+                <div class="text-[10.5px] text-gray-400 mt-0.5">Isolated Cloud Playwright Browser Sessions</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 1: ASK SCREEN (Search & Deal Finder)               -->
+    <!-- ======================================================== -->
+    <div id="view-ask" class="hidden max-w-2xl mx-auto w-full space-y-6">
+      
+      <!-- Back to Overview Breadcrumb -->
+      <button onclick="navigateTo('onboarding')" class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition py-1">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Overview
+      </button>
+
+      <!-- Main Question Headline -->
+      <div class="space-y-1">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+          What would you like<br class="hidden sm:inline">
+          Cartwise to buy for you?
+        </h2>
+        <p class="text-xs text-gray-400">Natural language search &bull; Landed cost ranking with shipping to Nigeria</p>
+      </div>
+
+      <!-- Search Input Card -->
+      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-4 sm:p-5 shadow-xl space-y-4">
+        
+        <!-- Textarea Search Prompt -->
+        <div class="relative">
+          <textarea 
+            id="search-input" 
+            rows="3"
+            class="w-full bg-transparent border-none text-white text-[15px] placeholder-gray-500 focus:outline-none resize-none font-medium leading-relaxed"
+            placeholder="e.g. Find noise-cancelling earbuds under $40 that ship to Lagos..."
+            onkeydown="if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); handleSearchSubmit(event); }"
+          ></textarea>
+        </div>
+
+        <!-- Gemini Model Selector Row (Clean, tidy, verified models) -->
+        <div class="pt-2 border-t border-gray-800/80">
+          <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i>
+              AI SEARCH MODEL
+            </span>
+            <span id="active-model-badge" class="text-cyan-400 font-bold text-[11px]">Gemini 3.8 Flash (Active)</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button 
+              type="button" 
+              onclick="selectGeminiModel('gemini-3.8-flash')" 
+              id="model-btn-38-flash"
+              class="px-2.5 py-2 rounded-xl text-xs font-bold border transition bg-indigo-600/30 border-cyan-400 text-cyan-300 shadow-sm whitespace-nowrap text-center cursor-pointer"
+            >
+              ✨ 3.8 Flash
+            </button>
+            <button 
+              type="button" 
+              onclick="selectGeminiModel('gemini-3.7-flash')" 
+              id="model-btn-37-flash"
+              class="px-2.5 py-2 rounded-xl text-xs font-medium border transition bg-[#070b14] border-gray-800 text-gray-400 hover:text-gray-200 whitespace-nowrap text-center cursor-pointer"
+            >
+              3.7 Flash
+            </button>
+            <button 
+              type="button" 
+              onclick="selectGeminiModel('gemini-2.5-flash')" 
+              id="model-btn-25-flash"
+              class="px-2.5 py-2 rounded-xl text-xs font-medium border transition bg-[#070b14] border-gray-800 text-gray-400 hover:text-gray-200 whitespace-nowrap text-center cursor-pointer"
+            >
+              2.5 Flash
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Merchant Risk Score Single-Row Card (Inactive by default) -->
+        <div 
+          id="risk-score-card"
+          onclick="toggleRiskScoreClick()"
+          class="flex items-center justify-between p-3.5 rounded-xl bg-[#070b14] border border-[#1e293b] cursor-pointer transition select-none"
+        >
+          <div class="flex items-center gap-3">
+            <div id="risk-score-icon-wrap" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center transition">
+              <i data-lucide="shield" id="risk-score-icon" class="w-4 h-4 text-gray-400"></i>
+            </div>
+            <div>
+              <div class="text-[13px] font-semibold text-white leading-tight">AI Merchant Risk Score</div>
+              <div id="risk-score-status-text" class="text-[11.5px] text-gray-400 font-normal mt-0.5">
+                Risk score inactive
+              </div>
+            </div>
+          </div>
+
+          <!-- Switch -->
+          <label class="relative inline-flex items-center cursor-pointer pointer-events-none">
+            <input type="checkbox" id="risk-score-toggle" class="sr-only peer">
+            <div class="w-10 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
+          </label>
+        </div>
+
+        <!-- Full-Width "Find Best Landed Deal" Button -->
+        <button 
+          id="btn-search-main"
+          onclick="handleSearchSubmit(event)"
+          class="w-full h-[50px] rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-[14px] shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+        >
+          <i data-lucide="sparkles" class="w-4 h-4 text-cyan-300"></i>
+          <span id="btn-search-label">Find Best Landed Deal</span>
+        </button>
+
+      </div>
+
+      <!-- Suggested Searches Section -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between text-xs px-0.5">
+          <span class="font-semibold text-gray-300 text-xs">Suggested Searches</span>
+          <span class="text-gray-500 text-[11px]">Click to search</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          
+          <div onclick="selectSuggestedPrompt('Find me wireless noise-cancelling earbuds under $40 that ship to Lagos')" class="p-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
+            <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+            <span class="text-xs text-gray-200 font-medium flex-1 line-clamp-2">Wireless noise-cancelling earbuds under $40 that ship to Lagos</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 shrink-0"></i>
+          </div>
+
+          <div onclick="selectSuggestedPrompt('NovaFit Pro Smart Fitness Tracker Band under $35')" class="p-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
+            <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+            <span class="text-xs text-gray-200 font-medium flex-1 line-clamp-2">NovaFit Pro Smart Fitness Tracker Band under $35</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 shrink-0"></i>
+          </div>
+
+          <div onclick="selectSuggestedPrompt('HyperCharge 20000mAh Ultra-Fast Power Bank 65W')" class="p-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
+            <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+            <span class="text-xs text-gray-200 font-medium flex-1 line-clamp-2">HyperCharge 20000mAh Ultra-Fast Power Bank 65W</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 shrink-0"></i>
+          </div>
+
+          <div onclick="selectSuggestedPrompt('SwiftType Compact Mechanical Gaming Keyboard')" class="p-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
+            <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+            <span class="text-xs text-gray-200 font-medium flex-1 line-clamp-2">SwiftType Compact Mechanical Gaming Keyboard</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 shrink-0"></i>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Quick Demo Market Banner in Search -->
+      <div class="p-3.5 rounded-xl bg-[#0f172a] border border-cyan-900/40 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="store" class="w-4 h-4 text-cyan-400"></i>
+          <span class="text-xs text-gray-300">Looking for verified Demo Market items?</span>
+        </div>
+        <a href="https://cartwise-demo-market.onrender.com" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+          Open Demo Market ↗
+        </a>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 2: RESULTS SCREEN (Deals Grid)                    -->
+    <!-- ======================================================== -->
+    <div id="view-results" class="hidden space-y-5">
+      
+      <!-- Top Nav Back Header -->
+      <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+        <button onclick="navigateTo('ask')" class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold py-1">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Search
+        </button>
+
+        <!-- Inline Safety Toggle on Results -->
+        <div class="flex items-center gap-2 bg-[#0f172a] px-3.5 py-1.5 rounded-full border border-gray-800">
+          <i data-lucide="shield" class="w-3.5 h-3.5 text-gray-400"></i>
+          <span class="text-[11px] font-semibold text-gray-300">Risk Score</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="results-risk-toggle" class="sr-only peer" onchange="syncRiskScoreToggle(this.checked)">
+            <div class="w-8 h-4 bg-gray-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-white">
+          Showing top deals for <span id="results-query-label" class="text-indigo-400">"..."</span>
+        </h2>
+        <p class="text-xs text-gray-400">Landed cost with delivery to Nigeria &bull; Escrow hold ready</p>
+      </div>
+
+      <!-- Deals List Container (Responsive Multi-Column Grid on Tablet/Desktop) -->
+      <div id="deals-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Rendered dynamically in app.js -->
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 3: CONFIRM & ADDRESS SCREEN                       -->
+    <!-- ======================================================== -->
+    <div id="view-confirm" class="hidden max-w-2xl mx-auto w-full space-y-5">
+      
+      <button onclick="navigateTo('results')" class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold py-1">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Deals
+      </button>
+
+      <!-- Deal Summary Card -->
+      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-3.5">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex-1">
+            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider" id="confirm-brand">Brand</div>
+            <h3 id="confirm-title" class="text-base font-bold text-white line-clamp-2">Product Title</h3>
+          </div>
+          <span id="confirm-variety-pill" class="text-xs px-3 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 font-bold shrink-0">
+            Matte Black
+          </span>
+        </div>
+
+        <div class="p-3 rounded-xl bg-[#070b14] border border-[#1e293b] text-xs space-y-2 font-mono">
+          <div class="flex justify-between text-gray-400">
+            <span>Item Price</span>
+            <span id="confirm-item-price" class="text-gray-200 font-semibold">$34.99</span>
+          </div>
+          <div class="flex justify-between text-gray-400">
+            <span>Shipping to Nigeria</span>
+            <span id="confirm-shipping-price" class="text-gray-200 font-semibold">$5.00</span>
+          </div>
+          <div class="flex justify-between text-emerald-400 font-bold pt-2 border-t border-gray-800 font-sans">
+            <span>Total Landed Cost</span>
+            <span id="confirm-total-cost" class="font-mono text-lg text-emerald-400">$39.99</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shipping Address (Prefilled) -->
+      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-3.5">
+        <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+          <div class="text-xs font-bold text-white flex items-center gap-1.5">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-400"></i> Shipping Address
+          </div>
+          <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-950 text-emerald-400 border border-emerald-800">
+            PREFILLED
+          </span>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Full Name</label>
+            <input id="ship-name" type="text" value="Ada Lovelace" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Street Address</label>
+            <input id="ship-address" type="text" value="14 Marina Street, Lagos Island" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-semibold text-gray-400 mb-1">City</label>
+              <input id="ship-city" type="text" value="Lagos" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-gray-400 mb-1">Country</label>
+              <input id="ship-country" type="text" value="Nigeria" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cardholder & Billing -->
+      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-3">
+        <div class="text-xs font-bold text-white flex items-center gap-1.5 pb-2 border-b border-gray-800">
+          <i data-lucide="credit-card" class="w-3.5 h-3.5 text-indigo-400"></i> Cardholder & Billing
+        </div>
+        <label class="flex items-center gap-2.5 cursor-pointer py-1">
+          <input id="billing-same-check" type="checkbox" checked onchange="toggleBillingFields(this.checked)" class="w-4 h-4 rounded text-indigo-600 bg-gray-900 border-gray-700">
+          <span class="text-xs font-medium text-gray-300">Use shipping address for card billing</span>
+        </label>
+        <div id="billing-fields" class="hidden space-y-2.5 pt-2 border-t border-gray-800 text-xs">
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Cardholder Name</label>
+            <input id="bill-name" type="text" value="Ada Lovelace" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Billing Address</label>
+            <input id="bill-address" type="text" value="14 Marina Street, Lagos Island" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+          </div>
+        </div>
+      </div>
+
+      <!-- Escrow Guarantee & Action -->
+      <div class="space-y-3 pt-1">
+        <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-900/50 text-xs text-indigo-300 leading-relaxed flex items-start gap-2.5">
+          <i data-lucide="shield-check" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+          <div><strong>Zero-Risk Escrow:</strong> Authorized hold only (<code class="font-mono text-[10px]">intent=AUTHORIZE</code>). Card is NOT charged until order is secured.</div>
+        </div>
+
+        <button 
+          onclick="triggerEscrowAuthorization()" 
+          id="btn-authorize-fast"
+          class="w-full h-[52px] rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-[15px] shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <i data-lucide="lock" class="w-4 h-4"></i>
+          <span id="btn-authorize-label">Authorize Escrow Hold with PayPal ($39.99)</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 4: AGENT LIVE EXECUTION TIMELINE                  -->
+    <!-- ======================================================== -->
+    <div id="view-agent" class="hidden max-w-3xl mx-auto w-full space-y-6">
+      
+      <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Cartwise Autonomous Purchasing Agent
+          </h2>
+          <p class="text-xs text-gray-400">Playwright browser execution via Kernel &bull; PayPal Escrow Hold Active</p>
+        </div>
+      </div>
+
+      <!-- Live Kernel Browser Session Stream / Simulation -->
+      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] overflow-hidden shadow-2xl">
+        <div class="px-4 py-2.5 bg-[#070b14] border-b border-gray-800 flex items-center justify-between text-xs text-gray-400 font-mono">
+          <div class="flex items-center gap-2">
+            <div class="flex gap-1.5">
+              <div class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
+            </div>
+            <span class="text-gray-500 text-[11px]">|</span>
+            <span id="agent-browser-url" class="truncate text-gray-300">https://cartwise-demo-market.onrender.com/checkout</span>
+          </div>
+          <span class="text-[10px] text-cyan-400 uppercase font-bold tracking-wider">KERNEL CLOUD BROWSER</span>
+        </div>
+
+        <div class="relative w-full h-64 sm:h-80 bg-[#070b14] flex items-center justify-center overflow-hidden">
+          <iframe id="agent-live-frame" src="" class="w-full h-full border-none hidden"></iframe>
+          <div id="agent-sim-screen" class="text-center p-6 space-y-3">
+            <div class="w-12 h-12 rounded-full bg-indigo-600/20 border border-indigo-500 flex items-center justify-center mx-auto text-cyan-400 animate-spin">
+              <i data-lucide="loader-2" class="w-6 h-6"></i>
+            </div>
+            <div class="text-sm font-bold text-white" id="agent-sim-title">Booting Isolated Cloud Browser...</div>
+            <div class="text-xs text-gray-400 font-mono max-w-sm mx-auto" id="agent-sim-desc">
+              Injecting Cartwise single-use purchasing card into merchant checkout form...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution Timeline Steps -->
+      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+          <i data-lucide="list-checks" class="w-4 h-4 text-cyan-400"></i>
+          Autonomous Execution Timeline
+        </h3>
+        <div id="agent-steps-container" class="space-y-3">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 5: RECEIPT SCREEN                                 -->
+    <!-- ======================================================== -->
+    <div id="view-receipt" class="hidden max-w-2xl mx-auto w-full space-y-5">
+      <div id="receipt-card-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 6: ORDER HISTORY SCREEN                           -->
+    <!-- ======================================================== -->
+    <div id="view-orders" class="hidden max-w-3xl mx-auto w-full space-y-6">
+      
+      <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+        <div class="flex items-center gap-2.5">
+          <button onclick="navigateTo('onboarding')" class="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+          </button>
+          <div>
+            <h2 class="text-xl font-bold text-white">Order History</h2>
+            <p class="text-xs text-gray-400">Persistent local records of your autonomous in-app purchases</p>
+          </div>
+        </div>
+
+        <button onclick="clearOrderHistory()" class="text-xs text-rose-400 hover:text-rose-300 font-medium">
+          Clear History
+        </button>
+      </div>
+
+      <div id="orders-list-container" class="space-y-4">
+        <!-- Rendered dynamically -->
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ANDROID APK DOWNLOAD / INFO                       -->
+  <!-- ======================================================== -->
+  <div id="apk-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-md rounded-2xl bg-[#0f172a] border border-[#1e293b] p-6 shadow-2xl space-y-5">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center text-[#070b14] font-black">
+            <i data-lucide="smartphone" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white">Cartwise Android App</h3>
+            <span class="text-xs text-emerald-400 font-semibold">Hackathon Debug Build v1.0</span>
+          </div>
+        </div>
+        <button onclick="hideApkModal()" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-gray-300 leading-relaxed">
+        <p>
+          The native Android application is built with <strong>Jetpack Compose</strong> and compiled natively for ARM64 Linux / Android.
+        </p>
+        <div class="p-3 rounded-xl bg-[#070b14] border border-gray-800 space-y-1.5 font-mono text-[11px]">
+          <div class="text-gray-400">Package: <span class="text-gray-200">com.cartwise.app</span></div>
+          <div class="text-gray-400">Build: <span class="text-emerald-400">app-debug.apk (20.1 MB)</span></div>
+          <div class="text-gray-400">Target: <span class="text-cyan-300">Android 8.0 - Android 16</span></div>
+          <div class="text-gray-400">Location: <span class="text-gray-300 break-all">android/app/build/outputs/apk/debug/app-debug.apk</span></div>
+        </div>
+        <p class="text-[11.5px] text-gray-400">
+          The direct APK download link will be attached to the Devpost submission for judges to test on physical Android devices.
+        </p>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="hideApkModal()" class="flex-1 py-2.5 rounded-xl bg-[#1e293b] hover:bg-gray-700 text-xs font-semibold text-white transition">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script -->
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -866,8 +866,13 @@ app.get('/api/products', (req, res) => {
   const formatted = products.map(p => ({
     id: p.id,
     title: p.title,
+    titleZh: p.titleZh,
     description: p.description,
+    descriptionZh: p.descriptionZh,
+    keywordsZh: p.keywordsZh || [],
     category: p.category,
+    variants: p.variants || [],
+    stockCount: p.stockCount,
     brand: {
       id: `brand_${p.brand.toLowerCase()}`,
       name: p.brand

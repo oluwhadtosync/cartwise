@@ -16,9 +16,19 @@ export interface ShippingAddress {
   address: string;
   city: string;
   state: string;
-  country: string; // ISO code, e.g. "NG", "US"
+  country: string; // ISO code or full name
   postalCode?: string;
   phone?: string;
+}
+
+export interface BillingAddress {
+  cardholderName: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode?: string;
+  sameAsShipping: boolean;
 }
 
 export interface CartwiseOrder {
@@ -39,6 +49,7 @@ export interface CartwiseOrder {
   paypalApproveUrl?: string;
   status: OrderStatus;
   shippingAddress: ShippingAddress;
+  billingAddress?: BillingAddress;
   liveViewUrl?: string;
   reviewScreenshot?: string;
   failureReason?: string;
@@ -57,10 +68,30 @@ export interface AuditLogEntry {
   metadata?: Record<string, any>;
 }
 
+export interface ProductVariety {
+  id?: string;
+  name: string;
+  sku?: string;
+  inStock: boolean;
+  stockCount: number;
+  priceOffset?: number;
+}
+
+export interface WebsiteSafety {
+  score: number; // 0 - 100
+  level: 'SAFE' | 'CAUTION' | 'RISKY';
+  domain: string;
+  sslVerified: boolean;
+  summary: string;
+}
+
 export interface DealResult {
   id: string;
   title: string;
+  titleZh?: string;
   description: string;
+  descriptionZh?: string;
+  keywordsZh?: string[];
   brand: string;
   category: string;
   price: number;
@@ -73,6 +104,10 @@ export interface DealResult {
   rating: number;
   reviewsCount: number;
   inStock: boolean;
+  stockCount?: number;
+  varieties?: ProductVariety[];
+  selectedVarietyName?: string;
+  safety?: WebsiteSafety;
   shipsToCountry: boolean;
   reasonWhy: string; // AI explanation "why this deal"
   score: number;
@@ -82,4 +117,7 @@ export interface SearchQueryRequest {
   query: string;
   country?: string; // defaults to "NG" (Lagos, Nigeria)
   maxBudget?: number;
+  safetyCheck?: boolean;
+  language?: 'en' | 'zh';
+  model?: string; // e.g. "gemini-3.8-flash", "gemini-3.8-pro", "gemini-2.5-flash", "gemini-2.5-pro"
 }

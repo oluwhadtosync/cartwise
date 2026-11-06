@@ -47,3 +47,21 @@ services:
         sync: false
       - key: KERNEL_API_KEY
         sync: false
+
+  # 3. Cartwise Web (Autonomous Shopping Agent Web Companion)
+  - type: web
+    name: cartwise-web
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: web
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_URL
+        fromService:
+          type: web
+          name: cartwise-backend
+          property: host
