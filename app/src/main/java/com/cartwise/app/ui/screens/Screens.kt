@@ -6,6 +6,7 @@ import android.net.http.SslError
 import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -35,8 +36,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -1518,6 +1521,8 @@ fun ConfirmScreen(
 
     // Shipping & Billing Address States (Prefilled so judges don't have to fill anything)
     var shippingFullName by remember { mutableStateOf(initialShippingAddress.fullName) }
+    var shippingPhone by remember { mutableStateOf(initialShippingAddress.phone.ifBlank { "+234 801 234 5678" }) }
+    var shippingEmail by remember { mutableStateOf(initialShippingAddress.email.ifBlank { "ada.lovelace@gmail.com" }) }
     var shippingAddressLine by remember { mutableStateOf(initialShippingAddress.address) }
     var shippingCity by remember { mutableStateOf(initialShippingAddress.city) }
     var shippingCountry by remember { mutableStateOf(initialShippingAddress.country) }
@@ -1530,13 +1535,13 @@ fun ConfirmScreen(
 
     fun currentShipping(): ShippingAddress = ShippingAddress(
         fullName = shippingFullName.ifBlank { "Ada Lovelace" },
-        email = "ada@cartwise.shopper",
+        email = shippingEmail.ifBlank { "ada.lovelace@gmail.com" },
         address = shippingAddressLine.ifBlank { "14 Marina Street, Lagos Island" },
         city = shippingCity.ifBlank { "Lagos" },
         state = "Lagos",
         country = shippingCountry.ifBlank { "Nigeria" },
         postalCode = "100001",
-        phone = "+234 801 234 5678"
+        phone = shippingPhone.ifBlank { "+234 801 234 5678" }
     )
 
     fun currentBilling(): BillingAddress = if (sameAsShipping) {
@@ -1904,6 +1909,66 @@ fun ConfirmScreen(
                             unfocusedContainerColor = Color(0xFF0A0F1D)
                         ),
                         singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Phone Number with Country Code (Required for courier & merchant guest checkout)
+                    OutlinedTextField(
+                        value = shippingPhone,
+                        onValueChange = { shippingPhone = it },
+                        label = { Text("Phone Number (with Country Code)") },
+                        placeholder = { Text("+234 801 234 5678") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = CardBorder,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedLabelColor = AccentCyan,
+                            unfocusedLabelColor = TextSecondary,
+                            cursorColor = AccentCyan,
+                            focusedContainerColor = Color(0xFF0A0F1D),
+                            unfocusedContainerColor = Color(0xFF0A0F1D)
+                        ),
+                        singleLine = true
+                    )
+                    Text(
+                        "Required with country code for courier dispatch & merchant guest checkout",
+                        fontSize = 10.5.sp,
+                        color = Color(0xFF94A3B8),
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Guest Recovery Email
+                    OutlinedTextField(
+                        value = shippingEmail,
+                        onValueChange = { shippingEmail = it },
+                        label = { Text("Email (Merchant Guest Recovery)") },
+                        placeholder = { Text("ada.lovelace@gmail.com") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = CardBorder,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedLabelColor = AccentCyan,
+                            unfocusedLabelColor = TextSecondary,
+                            cursorColor = AccentCyan,
+                            focusedContainerColor = Color(0xFF0A0F1D),
+                            unfocusedContainerColor = Color(0xFF0A0F1D)
+                        ),
+                        singleLine = true
+                    )
+                    Text(
+                        "Used by AI agent to bind guest order tracking on merchant store",
+                        fontSize = 10.5.sp,
+                        color = Color(0xFF94A3B8),
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -2773,6 +2838,12 @@ fun ReceiptScreen(
                                 fontSize = 11.5.sp,
                                 color = TextSecondary
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                "Phone: ${order.guestPhone ?: shipping.phone.ifBlank { "+234 801 234 5678" }} • Email: ${order.guestEmail ?: shipping.email.ifBlank { "ada.lovelace@gmail.com" }}",
+                                fontSize = 11.sp,
+                                color = AccentCyan
+                            )
 
                             if (billing != null && !billing.sameAsShipping) {
                                 Spacer(modifier = Modifier.height(6.dp))
@@ -2861,6 +2932,297 @@ fun ReceiptScreen(
                                 ) {
                                     Text("$0.00 CHARGED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
                                 }
+                            }
+                        }
+                    }
+
+                    // Dedicated Merchant Guest Order Recovery Card
+                    var isPasswordVisible by remember { mutableStateOf(false) }
+                    val context = LocalContext.current
+                    val clipboardManager = LocalClipboardManager.current
+                    val guestEmail = order.guestEmail ?: shipping.email.ifBlank { "ada.lovelace@gmail.com" }
+                    val guestPhone = order.guestPhone ?: shipping.phone.ifBlank { "+234 801 234 5678" }
+                    val merchantPassword = order.merchantPassword ?: "Cw*9824!qM26"
+                    val merchantOrderId = order.merchantOrderId ?: "DM-${order.id.takeLast(6).uppercase()}"
+                    val recoveryUrl = order.merchantRecoveryUrl ?: "https://cartwise-demo-market.onrender.com/track?orderId=$merchantOrderId&email=$guestEmail"
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0B1222)),
+                        border = BorderStroke(1.dp, Color(0xFF1E3A8A).copy(alpha = 0.8f))
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFF083344)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.VpnKey,
+                                            contentDescription = null,
+                                            tint = AccentCyan,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            "Merchant Guest Order Recovery",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                        Text(
+                                            "For manual order lookup on merchant store",
+                                            fontSize = 10.sp,
+                                            color = TextSecondary
+                                        )
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(0xFF0C2A38))
+                                        .border(1.dp, AccentCyan.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        "GUEST CHECKOUT",
+                                        fontSize = 8.5.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = AccentCyan
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = Color(0xFF1E293B))
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Store & Order ID Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Merchant Store", fontSize = 11.5.sp, color = TextSecondary)
+                                Text(order.merchantName, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Merchant Order ID", fontSize = 11.5.sp, color = TextSecondary)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        merchantOrderId,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    IconButton(
+                                        onClick = {
+                                            clipboardManager.setText(AnnotatedString(merchantOrderId))
+                                            Toast.makeText(context, "Order ID copied", Toast.LENGTH_SHORT).show()
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy Order ID", tint = AccentCyan, modifier = Modifier.size(13.dp))
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // Guest Email Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Guest Email Used", fontSize = 11.5.sp, color = TextSecondary)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        guestEmail,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFE2E8F0)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    IconButton(
+                                        onClick = {
+                                            clipboardManager.setText(AnnotatedString(guestEmail))
+                                            Toast.makeText(context, "Guest Email copied", Toast.LENGTH_SHORT).show()
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy Email", tint = AccentCyan, modifier = Modifier.size(13.dp))
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // Phone Filled Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Phone Filled (w/ code)", fontSize = 11.5.sp, color = TextSecondary)
+                                Text(
+                                    guestPhone,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFFCBD5E1)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HorizontalDivider(color = Color(0xFF1E293B).copy(alpha = 0.6f))
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Merchant Password Row (Masked with Tap to View)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Merchant Password", fontSize = 11.5.sp, color = TextSecondary)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color(0xFF3B1E08))
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            if (order.merchantPasswordRequired) "AI ENFORCED" else "GUEST",
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFFDBA74)
+                                        )
+                                    }
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = if (isPasswordVisible) merchantPassword else "••••••••••••",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isPasswordVisible) SuccessGreen else TextPrimary,
+                                        letterSpacing = if (isPasswordVisible) 0.5.sp else 2.sp
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    TextButton(
+                                        onClick = { isPasswordVisible = !isPasswordVisible },
+                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(26.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                            contentDescription = "Toggle password visibility",
+                                            tint = AccentCyan,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(
+                                            if (isPasswordVisible) "Hide" else "Tap to view",
+                                            fontSize = 10.sp,
+                                            color = AccentCyan,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            clipboardManager.setText(AnnotatedString(merchantPassword))
+                                            Toast.makeText(context, "Password copied", Toast.LENGTH_SHORT).show()
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy Password", tint = AccentCyan, modifier = Modifier.size(13.dp))
+                                    }
+                                }
+                            }
+
+                            Text(
+                                "Password automatically generated by Cartwise AI because this merchant required account creation during checkout.",
+                                fontSize = 10.sp,
+                                color = Color(0xFF94A3B8),
+                                lineHeight = 13.sp,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 10.dp)
+                            )
+
+                            // Manual Recovery Instructions Box
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF070B14))
+                                    .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(8.dp))
+                                    .padding(10.dp)
+                            ) {
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.Info,
+                                            contentDescription = null,
+                                            tint = AccentCyan,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "How to manually recover or track on merchant site:",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        "1. Open merchant order lookup page.\n2. Enter Guest Email ($guestEmail) & Order ID ($merchantOrderId).\n3. If prompted for password, enter the AI-generated password revealed above.",
+                                        fontSize = 10.sp,
+                                        color = TextSecondary,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Open Merchant Lookup Button
+                            OutlinedButton(
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(recoveryUrl))
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(40.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, AccentCyan.copy(alpha = 0.7f)),
+                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF082F49).copy(alpha = 0.5f))
+                            ) {
+                                Icon(Icons.Default.OpenInNew, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Open Merchant Order Lookup ↗", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
                             }
                         }
                     }

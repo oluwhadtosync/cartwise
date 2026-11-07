@@ -123,6 +123,11 @@ data class CartwiseOrder(
     val websiteSafety: WebsiteSafety? = null,
     val liveViewUrl: String? = null,
     val failureReason: String? = null,
+    val guestEmail: String? = null,
+    val guestPhone: String? = null,
+    val merchantPasswordRequired: Boolean = false,
+    val merchantPassword: String? = null,
+    val merchantRecoveryUrl: String? = null,
     val createdAt: String = "",
     val updatedAt: String = ""
 )
@@ -160,6 +165,11 @@ data class AgentSseEvent(
     val liveViewUrl: String? = null,
     val merchantOrderId: String? = null,
     val captureId: String? = null,
+    val guestEmail: String? = null,
+    val guestPhone: String? = null,
+    val merchantPasswordRequired: Boolean? = null,
+    val merchantPassword: String? = null,
+    val merchantRecoveryUrl: String? = null,
     val reason: String? = null,
     val voided: Boolean? = null
 )

@@ -568,6 +568,11 @@ class MainActivity : ComponentActivity() {
                     shippingAddress = shippingAddress,
                     billingAddress = billingAddress,
                     selectedVariety = chosenVariety,
+                    guestEmail = shippingAddress.email.ifBlank { "ada.lovelace@gmail.com" },
+                    guestPhone = shippingAddress.phone.ifBlank { "+234 801 234 5678" },
+                    merchantPasswordRequired = true,
+                    merchantPassword = "Cw*${(1000..9999).random()}!qM26",
+                    merchantRecoveryUrl = "https://cartwise-demo-market.onrender.com/track",
                     createdAt = nowStr
                 )
                 activeOrder.value = mockOrder
@@ -619,10 +624,21 @@ class MainActivity : ComponentActivity() {
                         }
                         "SUCCESS" -> {
                             isAgentComplete.value = true
+                            val dmOrderId = event.merchantOrderId ?: "DM-${orderId.takeLast(6).uppercase()}"
+                            val gEmail = event.guestEmail ?: activeOrder.value?.shippingAddress?.email ?: "ada.lovelace@gmail.com"
+                            val gPhone = event.guestPhone ?: activeOrder.value?.shippingAddress?.phone ?: "+234 801 234 5678"
+                            val mPassword = event.merchantPassword ?: "Cw*${(1000..9999).random()}!qM26"
+                            val recUrl = event.merchantRecoveryUrl ?: "https://cartwise-demo-market.onrender.com/track?orderId=$dmOrderId&email=$gEmail"
+
                             val updated = activeOrder.value?.copy(
                                 status = "CAPTURED",
-                                merchantOrderId = event.merchantOrderId ?: "DM-${orderId.takeLast(6).uppercase()}",
+                                merchantOrderId = dmOrderId,
                                 paypalCaptureId = event.captureId ?: "CAP-${orderId.takeLast(6).uppercase()}",
+                                guestEmail = gEmail,
+                                guestPhone = gPhone,
+                                merchantPasswordRequired = event.merchantPasswordRequired ?: true,
+                                merchantPassword = mPassword,
+                                merchantRecoveryUrl = recUrl,
                                 createdAt = nowStr
                             )
                             if (updated != null) {
@@ -683,11 +699,13 @@ class MainActivity : ComponentActivity() {
             kotlinx.coroutines.delay(1200)
             timelineSteps.add(TimelineStep(stepNumber = 3, stepName = "Stock Verified", description = if (variety.isNotBlank()) "Selected variety '$variety' in stock. Added to cart." else "Item in stock. Added to cart."))
             kotlinx.coroutines.delay(1300)
-            timelineSteps.add(TimelineStep(stepNumber = 4, stepName = "Filled Shipping Address", description = "Delivering to ${shipping.fullName}, ${shipping.address}, ${shipping.city}, ${shipping.country}."))
-            kotlinx.coroutines.delay(1400)
-            timelineSteps.add(TimelineStep(stepNumber = 5, stepName = "Injected Payment Card", description = "Cartwise Corporate Visa 123456*****2234 ($cardholder) filled into checkout form."))
+            timelineSteps.add(TimelineStep(stepNumber = 4, stepName = "Filled Guest Delivery Details", description = "Guest Checkout: Prefilled ${shipping.fullName} in ${shipping.city}, ${shipping.country} (Phone: ${shipping.phone}, Email: ${shipping.email})."))
             kotlinx.coroutines.delay(1200)
-            timelineSteps.add(TimelineStep(stepNumber = 6, stepName = "Guardrail Price Check", description = "Verified: Landed cost is within authorized limit of $${order?.totalAmount ?: 42.99}."))
+            timelineSteps.add(TimelineStep(stepNumber = 5, stepName = "Merchant Guest Account Policy", description = "Merchant enforced account creation during checkout. Cartwise AI generated and injected secure guest credentials."))
+            kotlinx.coroutines.delay(1200)
+            timelineSteps.add(TimelineStep(stepNumber = 6, stepName = "Injected Payment Card", description = "Cartwise Corporate Visa 123456*****2234 ($cardholder) filled into checkout form."))
+            kotlinx.coroutines.delay(1200)
+            timelineSteps.add(TimelineStep(stepNumber = 7, stepName = "Guardrail Price Check", description = "Verified: Landed cost is within authorized limit of $${order?.totalAmount ?: 42.99}."))
             kotlinx.coroutines.delay(1400)
 
             val nowStr = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date())
@@ -696,7 +714,7 @@ class MainActivity : ComponentActivity() {
                 // Real third party merchant declined our test card
                 timelineSteps.add(
                     TimelineStep(
-                        stepNumber = 7,
+                        stepNumber = 8,
                         stepName = "Merchant Gateway Declined",
                         description = "Card details filled successfully, but ${order?.merchantName} reported: Insufficient Funds / Invalid Test Card.",
                         status = "FAILED"
@@ -705,7 +723,7 @@ class MainActivity : ComponentActivity() {
                 kotlinx.coroutines.delay(900)
                 timelineSteps.add(
                     TimelineStep(
-                        stepNumber = 8,
+                        stepNumber = 9,
                         stepName = "PayPal Hold VOIDED",
                         description = "PayPal authorization hold was automatically VOIDED — you were NOT charged! 💡 Tip: Please use the Demo Market to test the complete card checkout flow.",
                         status = "FAILED"
@@ -716,6 +734,8 @@ class MainActivity : ComponentActivity() {
                     failureReason = "${order?.merchantName} declined test card (Insufficient Funds). PayPal hold was VOIDED.",
                     selectedVariety = order?.selectedVariety,
                     websiteSafety = order?.websiteSafety,
+                    guestEmail = shipping.email.ifBlank { "ada.lovelace@gmail.com" },
+                    guestPhone = shipping.phone.ifBlank { "+234 801 234 5678" },
                     createdAt = nowStr
                 )
                 if (voided != null) {
@@ -726,9 +746,14 @@ class MainActivity : ComponentActivity() {
                 // Demo Market: Order Confirmed and captured
                 val dmOrderId = "DM-${System.currentTimeMillis().toString().takeLast(6)}"
                 val capId = "CAP-${System.currentTimeMillis().toString().takeLast(6)}"
-                timelineSteps.add(TimelineStep(stepNumber = 7, stepName = "Store Confirmed Order", description = "Store confirmed purchase! Order #$dmOrderId."))
+                val gEmail = shipping.email.ifBlank { "ada.lovelace@gmail.com" }
+                val gPhone = shipping.phone.ifBlank { "+234 801 234 5678" }
+                val mPass = "Cw*${(1000..9999).random()}!qM26"
+                val recUrl = "https://cartwise-demo-market.onrender.com/track?orderId=$dmOrderId&email=$gEmail"
+
+                timelineSteps.add(TimelineStep(stepNumber = 8, stepName = "Store Confirmed Order", description = "Store confirmed purchase! Order #$dmOrderId. Guest recovery secured."))
                 kotlinx.coroutines.delay(800)
-                timelineSteps.add(TimelineStep(stepNumber = 8, stepName = "PayPal Hold Captured", description = "Captured on PayPal (Capture #$capId)."))
+                timelineSteps.add(TimelineStep(stepNumber = 9, stepName = "PayPal Hold Captured", description = "Captured on PayPal (Capture #$capId)."))
                 isAgentComplete.value = true
                 val captured = activeOrder.value?.copy(
                     status = "CAPTURED",
@@ -736,6 +761,11 @@ class MainActivity : ComponentActivity() {
                     paypalCaptureId = capId,
                     selectedVariety = order?.selectedVariety,
                     websiteSafety = order?.websiteSafety,
+                    guestEmail = gEmail,
+                    guestPhone = gPhone,
+                    merchantPasswordRequired = true,
+                    merchantPassword = mPass,
+                    merchantRecoveryUrl = recUrl,
                     createdAt = nowStr
                 )
                 if (captured != null) {

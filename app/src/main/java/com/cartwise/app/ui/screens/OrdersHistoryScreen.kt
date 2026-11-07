@@ -278,6 +278,8 @@ fun OrdersHistoryScreen(
                             } else {
                                 "Ada Lovelace • Lagos, Nigeria"
                             }
+                            val guestPhone = order.guestPhone ?: shipping?.phone ?: "+234 801 234 5678"
+
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     Icons.Default.Place,
@@ -292,6 +294,23 @@ fun OrdersHistoryScreen(
                                     color = TextSecondary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(3.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Phone,
+                                    contentDescription = null,
+                                    tint = AccentCyan,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    "Guest Phone: $guestPhone",
+                                    fontSize = 11.5.sp,
+                                    color = AccentCyan
                                 )
                             }
 
