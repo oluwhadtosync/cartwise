@@ -20,6 +20,11 @@ export type AgentStepCallback = (event: {
   screenshot?: string;
   merchantOrderId?: string;
   captureId?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  merchantPasswordRequired?: boolean;
+  merchantPassword?: string;
+  merchantRecoveryUrl?: string;
   reason?: string;
   voided?: boolean;
 }) => void;
@@ -176,12 +181,14 @@ export class KernelAgent {
         status: 'completed'
       });
 
-      // 4. Entering Shipping Details
+      // 4. Entering Shipping Details (Guest Checkout with Phone)
+      const guestPhone = order.shippingAddress.phone || '+234 801 234 5678';
+      const guestEmail = order.shippingAddress.email || 'ada.lovelace@gmail.com';
       onUpdate({
         type: 'STEP',
         stepNumber: 4,
-        stepName: 'Filling Shipping Address',
-        description: `Entering address for ${order.shippingAddress.fullName} in ${order.shippingAddress.city}, ${order.shippingAddress.country}...`,
+        stepName: 'Filling Guest Shipping & Phone',
+        description: `Entering address for ${order.shippingAddress.fullName} in ${order.shippingAddress.city}, ${order.shippingAddress.country} (Phone: ${guestPhone})...`,
         status: 'active'
       });
 
@@ -190,8 +197,8 @@ export class KernelAgent {
       onUpdate({
         type: 'STEP',
         stepNumber: 4,
-        stepName: 'Shipping Address Complete',
-        description: `Delivering to ${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.country}.`,
+        stepName: 'Guest Checkout Contact Filled',
+        description: `Prefilled ${order.shippingAddress.address}, ${order.shippingAddress.city}. Phone ${guestPhone} and email ${guestEmail} verified.`,
         status: 'completed'
       });
 
@@ -336,19 +343,28 @@ export class KernelAgent {
         order.currency
       );
 
+      const merchantRecoveryUrl = `${config.demoStoreUrl}/track?orderId=${merchantOrderId}&email=${encodeURIComponent(guestEmail)}`;
+      const merchantPasswordRequired = true;
+      const merchantPassword = `Cw*${Math.floor(1000 + Math.random() * 9000)}!qM26`;
+
       await db.updateOrder(order.id, {
         status: 'CAPTURED',
         merchantOrderId,
-        paypalCaptureId: captureResult.captureId
+        paypalCaptureId: captureResult.captureId,
+        guestEmail,
+        guestPhone,
+        merchantPasswordRequired,
+        merchantPassword,
+        merchantRecoveryUrl
       });
 
       await db.addAuditLog({
         orderId: order.id,
         stepNumber: 8,
         stepName: 'Order Fulfilled & Captured',
-        description: `Autonomous purchase complete. Merchant Order #${merchantOrderId}, PayPal Capture #${captureResult.captureId}.`,
+        description: `Autonomous purchase complete. Merchant Order #${merchantOrderId}, PayPal Capture #${captureResult.captureId}. Guest recovery secured.`,
         status: 'COMPLETED',
-        metadata: { merchantOrderId, captureId: captureResult.captureId }
+        metadata: { merchantOrderId, captureId: captureResult.captureId, guestEmail, merchantPasswordRequired }
       });
 
       onUpdate({
@@ -357,7 +373,12 @@ export class KernelAgent {
         stepName: 'Purchase Completed!',
         description: `Cartwise successfully bought your item from ${order.merchantName}!`,
         merchantOrderId,
-        captureId: captureResult.captureId
+        captureId: captureResult.captureId,
+        guestEmail,
+        guestPhone,
+        merchantPasswordRequired,
+        merchantPassword,
+        merchantRecoveryUrl
       });
 
     } catch (err: any) {

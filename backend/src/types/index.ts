@@ -53,6 +53,11 @@ export interface CartwiseOrder {
   liveViewUrl?: string;
   reviewScreenshot?: string;
   failureReason?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  merchantPasswordRequired?: boolean;
+  merchantPassword?: string;
+  merchantRecoveryUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

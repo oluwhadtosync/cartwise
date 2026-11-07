@@ -108,6 +108,15 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSavedShipping();
   updateRiskScoreUI();
   updateModelSelectorUI();
+  
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', updateSearchButtonState);
+    searchInput.addEventListener('keyup', updateSearchButtonState);
+    searchInput.addEventListener('change', updateSearchButtonState);
+  }
+  updateSearchButtonState();
+
   lucide.createIcons();
 });
 
@@ -128,6 +137,8 @@ function navigateTo(screen) {
 
   if (screen === 'orders') {
     renderOrderHistory();
+  } else if (screen === 'ask') {
+    updateSearchButtonState();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -243,10 +254,31 @@ function updateRiskScoreUI() {
   lucide.createIcons();
 }
 
+// Search Button Faded State Controller (Fades until text is entered)
+function updateSearchButtonState() {
+  const input = document.getElementById('search-input');
+  const btn = document.getElementById('btn-search-main');
+  if (!btn) return;
+  const hasText = input && input.value.trim().length > 0;
+  if (isSearching) {
+    btn.disabled = true;
+    btn.className = 'w-full h-[50px] rounded-xl bg-indigo-600 text-white font-bold text-[14px] shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-wait opacity-80';
+  } else if (hasText) {
+    btn.disabled = false;
+    btn.className = 'w-full h-[50px] rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-[14px] shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer opacity-100';
+  } else {
+    btn.disabled = true;
+    btn.className = 'w-full h-[50px] rounded-xl bg-indigo-600/40 text-white/50 font-bold text-[14px] transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-40 select-none';
+  }
+}
+
 // Suggested Search Trigger
 function selectSuggestedPrompt(prompt) {
   const input = document.getElementById('search-input');
-  if (input) input.value = prompt;
+  if (input) {
+    input.value = prompt;
+    updateSearchButtonState();
+  }
   executeSearch(prompt);
 }
 
@@ -266,8 +298,8 @@ async function executeSearch(query) {
 
   const btn = document.getElementById('btn-search-main');
   const label = document.getElementById('btn-search-label');
-  btn.disabled = true;
-  label.textContent = selectedGeminiModel.includes('3.8') ? 'Gemini 3.8 is searching deals...' : 'Gemini is searching deals...';
+  updateSearchButtonState();
+  if (label) label.textContent = selectedGeminiModel.includes('3.8') ? 'Gemini 3.8 is searching deals...' : 'Gemini is searching deals...';
 
   try {
     const isZh = /[\u4e00-\u9fa5]/.test(query);
@@ -298,8 +330,8 @@ async function executeSearch(query) {
     searchResults = getFallbackDeals(query);
   } finally {
     isSearching = false;
-    btn.disabled = false;
-    label.textContent = 'Find Best Landed Deal';
+    updateSearchButtonState();
+    if (label) label.textContent = 'Find Best Landed Deal';
 
     // Set default selected variety
     searchResults.forEach(d => {
@@ -419,7 +451,7 @@ function renderDeals() {
         <!-- AI Why This Deal Card -->
         <div class="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-900/50 text-xs text-indigo-300 flex items-start gap-2">
           <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5"></i>
-          <span class="leading-relaxed"><strong>Why this deal:</strong> ${deal.reasonWhy || 'Best overall landed cost with verified delivery to Nigeria.'}</span>
+          <span class="leading-relaxed"><strong>Why this deal:</strong> ${deal.reasonWhy || 'Best overall landed cost with verified delivery to your location.'}</span>
         </div>
 
         <!-- Variety Selector -->
@@ -512,6 +544,8 @@ function triggerEscrowAuthorization() {
   if (!selectedDeal) return;
 
   const shipName = document.getElementById('ship-name').value || 'Ada Lovelace';
+  const shipPhone = document.getElementById('ship-phone')?.value || '+234 801 234 5678';
+  const shipEmail = document.getElementById('ship-email')?.value || 'ada.lovelace@gmail.com';
   const shipAddr = document.getElementById('ship-address').value || '14 Marina Street, Lagos Island';
   const shipCity = document.getElementById('ship-city').value || 'Lagos';
   const shipCountry = document.getElementById('ship-country').value || 'Nigeria';
@@ -520,14 +554,28 @@ function triggerEscrowAuthorization() {
   const billName = sameAsShipping ? shipName : (document.getElementById('bill-name').value || shipName);
   const billAddr = sameAsShipping ? shipAddr : (document.getElementById('bill-address').value || shipAddr);
 
-  saveShippingAddress({ fullName: shipName, address: shipAddr, city: shipCity, country: shipCountry });
+  saveShippingAddress({
+    fullName: shipName,
+    phone: shipPhone,
+    email: shipEmail,
+    address: shipAddr,
+    city: shipCity,
+    country: shipCountry
+  });
 
   navigateTo('agent');
 
   executeAgentSimulation({
     deal: selectedDeal,
     variety: selectedVariety,
-    shippingAddress: { fullName: shipName, address: shipAddr, city: shipCity, country: shipCountry },
+    shippingAddress: {
+      fullName: shipName,
+      phone: shipPhone,
+      email: shipEmail,
+      address: shipAddr,
+      city: shipCity,
+      country: shipCountry
+    },
     billingAddress: { cardholderName: billName, address: billAddr }
   });
 }
@@ -578,12 +626,15 @@ function executeAgentSimulation({ deal, variety, shippingAddress }) {
     setStepState(2, 'completed');
     setStepState(3, 'active');
     addLog(`Navigating to ${deal.storeName}...`);
-    addLog(`Selected variety: "${variety}". Pre-populating shipping to Lagos, Nigeria.`);
+    addLog(`Selected variety: "${variety}".`);
+    addLog(`Guest Checkout: Entering recipient ${shippingAddress.fullName} (Phone: ${shippingAddress.phone || '+234 801 234 5678'}, Email: ${shippingAddress.email || 'ada.lovelace@gmail.com'})...`);
   }, 2400);
 
   setTimeout(() => {
     setStepState(3, 'completed');
     setStepState(4, 'active');
+    addLog('Merchant policy inspection: Checking guest checkout & account requirement...');
+    addLog('Merchant password enforced: AI generating and injecting secure merchant account password.');
     addLog('Injecting Cartwise purchasing card: 123456*****2234...');
   }, 3800);
 
@@ -591,22 +642,31 @@ function executeAgentSimulation({ deal, variety, shippingAddress }) {
     if (isDemo) {
       setStepState(4, 'completed');
       setStepState(5, 'active');
-      addLog('Merchant confirmed purchase! Order ID: DM-' + Math.floor(100000 + Math.random() * 900000));
+      const dmOrderId = 'DM-' + Math.floor(100000 + Math.random() * 900000);
+      addLog('Merchant confirmed purchase! Order ID: ' + dmOrderId);
       addLog('Executing PayPal Capture POST /v2/payments/authorizations/{id}/capture...');
 
       setTimeout(() => {
         setStepState(5, 'completed');
-        addLog('Capture confirmed! Receipt generated.');
+        addLog('Capture confirmed! Receipt generated with guest recovery credentials.');
+
+        const generatedPassword = 'Cw*' + Math.floor(1000 + Math.random() * 9000) + '!qM26';
+        const recoveryUrl = deal.storeUrl ? (deal.storeUrl.includes('cartwise-demo-market') ? 'https://cartwise-demo-market.onrender.com/track' : deal.storeUrl + '/track') : 'https://cartwise-demo-market.onrender.com/track';
 
         const order = {
           id: 'cw_' + Date.now(),
-          merchantOrderId: 'DM-' + Math.floor(100000 + Math.random() * 900000),
+          merchantOrderId: dmOrderId,
           paypalCaptureId: 'CAP-' + Math.floor(100000 + Math.random() * 900000),
           status: 'CAPTURED',
           deal,
           variety,
           totalAmount: deal.totalCost,
           shippingAddress,
+          guestEmail: shippingAddress.email || 'ada.lovelace@gmail.com',
+          guestPhone: shippingAddress.phone || '+234 801 234 5678',
+          merchantPasswordRequired: true,
+          merchantPassword: generatedPassword,
+          merchantRecoveryUrl: recoveryUrl,
           timestamp: new Date().toLocaleString()
         };
 
@@ -635,6 +695,9 @@ function executeAgentSimulation({ deal, variety, shippingAddress }) {
           originalAmount: deal.totalCost,
           failureReason: 'Merchant declined test card (Insufficient Funds). PayPal escrow automatically released.',
           shippingAddress,
+          guestEmail: shippingAddress.email || 'ada.lovelace@gmail.com',
+          guestPhone: shippingAddress.phone || '+234 801 234 5678',
+          merchantPasswordRequired: false,
           timestamp: new Date().toLocaleString()
         };
 
@@ -652,6 +715,10 @@ function renderReceiptScreen(order) {
   if (!container) return;
 
   const isCaptured = order.status === 'CAPTURED';
+  const guestEmail = order.guestEmail || order.shippingAddress?.email || 'ada.lovelace@gmail.com';
+  const guestPhone = order.guestPhone || order.shippingAddress?.phone || '+234 801 234 5678';
+  const merchantPassword = order.merchantPassword || 'Cw*9824!qM26';
+  const hasPassword = Boolean(order.merchantPasswordRequired);
 
   if (isCaptured) {
     container.innerHTML = `
@@ -666,6 +733,7 @@ function renderReceiptScreen(order) {
         <p class="text-xs text-gray-400">Escrow captured &bull; Merchant receipt secured</p>
       </div>
 
+      <!-- Payment & Transaction Details Card -->
       <div class="bg-[#070b14] rounded-xl p-3.5 border border-[#1e293b] space-y-2 text-xs">
         <div class="flex justify-between pb-1.5 border-b border-gray-900">
           <span class="text-gray-400">Merchant Order ID</span>
@@ -677,11 +745,11 @@ function renderReceiptScreen(order) {
         </div>
         <div class="flex justify-between pb-1.5 border-b border-gray-900">
           <span class="text-gray-400">Item</span>
-          <span class="font-semibold text-white truncate max-w-[180px]">${order.deal.title} (${order.variety})</span>
+          <span class="font-semibold text-white truncate max-w-[200px]">${order.deal?.title || 'Purchased Item'} (${order.variety})</span>
         </div>
         <div class="flex justify-between pb-1.5 border-b border-gray-900">
           <span class="text-gray-400">Recipient</span>
-          <span class="text-gray-200">${order.shippingAddress.fullName}, ${order.shippingAddress.city}</span>
+          <span class="text-gray-200">${order.shippingAddress?.fullName}, ${order.shippingAddress?.city}</span>
         </div>
         <div class="flex justify-between pt-1 font-bold text-sm">
           <span class="text-white">Amount Paid</span>
@@ -689,11 +757,121 @@ function renderReceiptScreen(order) {
         </div>
       </div>
 
+      <!-- Dedicated Merchant Guest Order Recovery Card -->
+      <div class="rounded-xl bg-[#0b1222] border border-[#1e293b] p-4 space-y-3 text-xs shadow-lg">
+        <div class="flex items-center justify-between pb-2 border-b border-gray-800/80">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-cyan-950 border border-cyan-800 flex items-center justify-center text-cyan-400">
+              <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
+            </div>
+            <div>
+              <span class="font-bold text-white text-[12.5px]">Merchant Guest Order Recovery</span>
+              <p class="text-[10px] text-gray-400">Credentials needed to manually look up & track on merchant site</p>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-cyan-950 text-cyan-300 border border-cyan-800">
+            GUEST CHECKOUT
+          </span>
+        </div>
+
+        <div class="space-y-2 font-mono text-[11.5px]">
+          <div class="flex items-center justify-between py-1 border-b border-gray-800/40">
+            <span class="font-sans text-gray-400">Merchant Store</span>
+            <span class="font-sans font-semibold text-white">${order.deal?.storeName || 'Demo Market'}</span>
+          </div>
+
+          <div class="flex items-center justify-between py-1 border-b border-gray-800/40">
+            <span class="font-sans text-gray-400">Merchant Order ID</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-white font-bold">${order.merchantOrderId}</span>
+              <button onclick="navigator.clipboard.writeText('${order.merchantOrderId}'); showToast('Order ID copied');" class="p-1 hover:text-white text-gray-400 cursor-pointer" title="Copy Order ID">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between py-1 border-b border-gray-800/40">
+            <span class="font-sans text-gray-400">Guest Email Used</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-gray-200">${guestEmail}</span>
+              <button onclick="navigator.clipboard.writeText('${guestEmail}'); showToast('Guest email copied');" class="p-1 hover:text-white text-gray-400 cursor-pointer" title="Copy Email">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between py-1 border-b border-gray-800/40">
+            <span class="font-sans text-gray-400">Phone Filled (w/ code)</span>
+            <span class="text-gray-300">${guestPhone}</span>
+          </div>
+
+          <!-- Merchant Password with Asterisks and Tap to View -->
+          <div class="py-1.5 border-b border-gray-800/40">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-sans text-gray-400">Merchant Password</span>
+                <span class="ml-1 text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 font-sans uppercase font-bold">
+                  ${hasPassword ? 'AI ENFORCED' : 'GUEST'}
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="receipt-pass-masked" class="text-gray-300 font-bold tracking-widest">••••••••••••</span>
+                <span id="receipt-pass-plain" class="text-emerald-400 font-bold hidden">${merchantPassword}</span>
+                
+                <button 
+                  onclick="toggleReceiptPassword()" 
+                  id="btn-toggle-pass"
+                  class="px-2 py-0.5 rounded bg-[#1e293b] hover:bg-gray-700 text-[10px] font-sans font-semibold text-cyan-300 inline-flex items-center gap-1 cursor-pointer transition"
+                >
+                  <i data-lucide="eye" class="w-3 h-3" id="icon-toggle-pass"></i>
+                  <span id="text-toggle-pass">Tap to view</span>
+                </button>
+
+                <button 
+                  onclick="navigator.clipboard.writeText('${merchantPassword}'); showToast('Password copied');"
+                  class="p-1 hover:text-white text-gray-400 cursor-pointer" 
+                  title="Copy Password"
+                >
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+            <p class="font-sans text-[10.5px] text-gray-400 mt-1 leading-tight">
+              ${hasPassword 
+                ? 'Password automatically created by Cartwise AI because this merchant required account creation during checkout.' 
+                : 'Pure guest checkout: Merchant allowed order completion without a mandatory password.'}
+            </p>
+          </div>
+        </div>
+
+        <!-- Recovery Instructions Box -->
+        <div class="p-2.5 rounded-lg bg-[#070b14] border border-gray-800/70 text-[11px] text-gray-300 space-y-1 font-sans">
+          <div class="font-bold text-gray-200 flex items-center gap-1.5">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400"></i> How to manually recover or track on merchant store:
+          </div>
+          <ol class="list-decimal list-inside text-[10.5px] text-gray-400 space-y-0.5 pl-1">
+            <li>Visit the merchant's <em>"Track Guest Order"</em> or sign-in page.</li>
+            <li>Enter your Guest Email (<code class="text-gray-200">${guestEmail}</code>) and Merchant Order ID (<code class="text-gray-200">${order.merchantOrderId}</code>).</li>
+            <li>When asked for password, use the AI-generated password revealed above.</li>
+          </ol>
+        </div>
+
+        <a 
+          href="${order.merchantRecoveryUrl || (order.deal?.storeUrl ? order.deal.storeUrl + '/track' : 'https://cartwise-demo-market.onrender.com/track')}" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="w-full py-2.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-800/80 text-cyan-300 font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          <span>Open Merchant Order Lookup ↗</span>
+        </a>
+      </div>
+
       <div class="space-y-2 pt-1">
-        <button onclick="navigateTo('orders')" class="w-full h-[46px] rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5">
+        <button onclick="navigateTo('orders')" class="w-full h-[46px] rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer">
           <i data-lucide="history" class="w-4 h-4"></i> View in Order History
         </button>
-        <button onclick="navigateTo('ask')" class="w-full h-[40px] rounded-xl bg-gray-900 hover:bg-gray-800 text-gray-300 font-semibold text-xs border border-gray-800 transition">
+        <button onclick="navigateTo('ask')" class="w-full h-[40px] rounded-xl bg-gray-900 hover:bg-gray-800 text-gray-300 font-semibold text-xs border border-gray-800 transition cursor-pointer">
           Shop Again
         </button>
       </div>
@@ -721,6 +899,10 @@ function renderReceiptScreen(order) {
           <span class="font-mono font-bold text-white">${order.paypalAuthId}</span>
         </div>
         <div class="flex justify-between pb-1.5 border-b border-gray-900">
+          <span class="text-gray-400">Guest Checkout Contact</span>
+          <span class="text-gray-200">${guestPhone} &bull; ${guestEmail}</span>
+        </div>
+        <div class="flex justify-between pb-1.5 border-b border-gray-900">
           <span class="text-gray-400">Status</span>
           <span class="font-bold text-amber-400">RELEASED / VOIDED</span>
         </div>
@@ -731,16 +913,58 @@ function renderReceiptScreen(order) {
       </div>
 
       <div class="space-y-2 pt-1">
-        <button onclick="navigateTo('orders')" class="w-full h-[46px] rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs border border-gray-700 transition flex items-center justify-center gap-1.5">
+        <button onclick="navigateTo('orders')" class="w-full h-[46px] rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs border border-gray-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
           <i data-lucide="history" class="w-4 h-4"></i> View in Order History
         </button>
-        <button onclick="navigateTo('ask')" class="w-full h-[40px] rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition">
+        <button onclick="navigateTo('ask')" class="w-full h-[40px] rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition cursor-pointer">
           Shop Again
         </button>
       </div>
     `;
   }
   lucide.createIcons();
+}
+
+function toggleReceiptPassword() {
+  const masked = document.getElementById('receipt-pass-masked');
+  const plain = document.getElementById('receipt-pass-plain');
+  const textBtn = document.getElementById('text-toggle-pass');
+
+  if (!masked || !plain) return;
+
+  const isMasked = !masked.classList.contains('hidden');
+  if (isMasked) {
+    masked.classList.add('hidden');
+    plain.classList.remove('hidden');
+    if (textBtn) textBtn.textContent = 'Hide';
+  } else {
+    masked.classList.remove('hidden');
+    plain.classList.add('hidden');
+    if (textBtn) textBtn.textContent = 'Tap to view';
+  }
+}
+
+function showToast(message) {
+  let toast = document.getElementById('cw-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'cw-toast';
+    toast.className = 'fixed bottom-6 right-6 z-50 bg-[#0f172a] text-white border border-gray-700 px-3.5 py-2 rounded-xl text-xs shadow-2xl transition-all duration-300 opacity-0 pointer-events-none';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.remove('opacity-0', 'pointer-events-none');
+  setTimeout(() => {
+    toast.classList.add('opacity-0', 'pointer-events-none');
+  }, 2200);
+}
+
+function viewReceiptForOrder(orderId) {
+  const order = orderHistory.find(o => o.id === orderId);
+  if (order) {
+    renderReceiptScreen(order);
+    navigateTo('receipt');
+  }
 }
 
 // Order History Persistence
@@ -802,31 +1026,46 @@ function renderOrderHistory() {
 
   container.innerHTML = orderHistory.map(o => {
     const isCaptured = o.status === 'CAPTURED';
+    const guestPhone = o.guestPhone || o.shippingAddress?.phone || '+234 801 234 5678';
+    const guestEmail = o.guestEmail || o.shippingAddress?.email || 'ada.lovelace@gmail.com';
+
     return `
-      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-3.5 shadow-xl space-y-2.5">
+      <div onclick="viewReceiptForOrder('${o.id}')" class="rounded-2xl bg-[#0f172a] border border-[#1e293b] hover:border-cyan-500/50 p-4 shadow-xl space-y-2.5 cursor-pointer transition group">
         <div class="flex items-center justify-between pb-2 border-b border-gray-800">
-          <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-            isCaptured ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'
-          }">
-            ${isCaptured ? 'CAPTURED • PAID' : 'VOIDED • $0 CHARGED'}
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+              isCaptured ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'
+            }">
+              ${isCaptured ? 'CAPTURED • PAID' : 'VOIDED • $0 CHARGED'}
+            </span>
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-cyan-950 text-cyan-300 border border-cyan-800">
+              GUEST ORDER
+            </span>
+          </div>
           <span class="text-xs font-mono font-bold ${isCaptured ? 'text-emerald-400' : 'text-gray-400'}">
             $${o.totalAmount.toFixed(2)}
           </span>
         </div>
 
         <div>
-          <h4 class="text-xs font-bold text-white line-clamp-1">${o.deal.title}</h4>
-          <div class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1.5">
-            <span class="px-1.5 py-0.2 rounded bg-[#070b14] text-gray-300 font-semibold">${o.variety}</span>
+          <h4 class="text-xs font-bold text-white group-hover:text-cyan-300 transition line-clamp-1">${o.deal?.title || 'Purchased Item'}</h4>
+          <div class="text-[11px] text-gray-400 mt-0.5 flex flex-wrap items-center gap-1.5">
+            <span class="px-1.5 py-0.2 rounded bg-[#070b14] text-gray-300 font-semibold">${o.variety || 'Default'}</span>
             <span>&bull;</span>
-            <span>${o.deal.storeName}</span>
+            <span class="text-cyan-400 font-medium">${o.deal?.storeName || 'Merchant'}</span>
+            <span>&bull;</span>
+            <span>${o.timestamp || ''}</span>
           </div>
         </div>
 
-        <div class="pt-1 text-[11px] text-gray-400 flex items-center justify-between border-t border-gray-900">
-          <div class="truncate max-w-[180px]">${o.shippingAddress.fullName} (${o.shippingAddress.city})</div>
-          <div class="font-mono text-gray-500 text-[10px]">${isCaptured ? o.merchantOrderId : o.paypalAuthId}</div>
+        <div class="pt-2 text-[11px] text-gray-400 flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-t border-gray-900 font-mono">
+          <div class="truncate text-gray-300 text-[10.5px]">
+            Guest: <span class="text-white">${o.shippingAddress?.fullName || 'Recipient'}</span> &bull; ${guestPhone}
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-cyan-400 text-[10.5px]">${isCaptured ? o.merchantOrderId : o.paypalAuthId}</span>
+            <span class="text-gray-500 text-[10px] group-hover:text-cyan-300">View Receipt ↗</span>
+          </div>
         </div>
       </div>
     `;
@@ -841,6 +1080,8 @@ function loadSavedShipping() {
     if (raw) {
       const addr = JSON.parse(raw);
       if (addr.fullName) document.getElementById('ship-name').value = addr.fullName;
+      if (addr.phone && document.getElementById('ship-phone')) document.getElementById('ship-phone').value = addr.phone;
+      if (addr.email && document.getElementById('ship-email')) document.getElementById('ship-email').value = addr.email;
       if (addr.address) document.getElementById('ship-address').value = addr.address;
       if (addr.city) document.getElementById('ship-city').value = addr.city;
       if (addr.country) document.getElementById('ship-country').value = addr.country;
@@ -932,7 +1173,7 @@ function getFallbackDeals(query) {
       reviewsCount: 312,
       inStock: true,
       stockCount: 25,
-      reasonWhy: "Best value pick: lowest total landed cost ($39.99) with verified shipping to Nigeria.",
+      reasonWhy: "Best value pick: lowest total landed cost ($39.99) with verified shipping to your location.",
       selectedVarietyName: "Matte Black",
       varieties: [
         { name: "Matte Black", sku: "SP-AIR-BLK", stockCount: 25, inStock: true },
