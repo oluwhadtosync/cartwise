@@ -90,9 +90,11 @@ function updateShowcaseUI() {
     dotsContainer.innerHTML = showcaseItems.map((_, idx) => `
       <button 
         onclick="setShowcaseIndex(${idx})" 
-        class="${idx === showcaseIndex ? 'w-2.5 h-2.5 bg-cyan-400' : 'w-1.5 h-1.5 bg-gray-600 hover:bg-gray-400'} rounded-full transition-all"
+        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-800/60 transition cursor-pointer"
         aria-label="Slide ${idx + 1}"
-      ></button>
+      >
+        <span class="${idx === showcaseIndex ? 'w-2.5 h-2.5 bg-cyan-400 ring-2 ring-cyan-400/30' : 'w-2 h-2 bg-gray-500 hover:bg-gray-400'} rounded-full block transition-all"></span>
+      </button>
     `).join('');
   }
 }
@@ -117,6 +119,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   updateSearchButtonState();
 
+  // Support URL Hash or ?view= for direct deep-linking
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialView = urlParams.get('view') || window.location.hash.replace(/^#/, '');
+  if (initialView && ['onboarding', 'ask', 'results', 'confirm', 'agent', 'receipt', 'orders'].includes(initialView)) {
+    if (initialView === 'results' && searchResults.length === 0) {
+      searchResults = getFallbackDeals('earbuds');
+      renderDeals();
+    } else if (initialView === 'confirm' && !selectedDeal) {
+      searchResults = getFallbackDeals('earbuds');
+      selectedDeal = searchResults[0];
+      selectedVariety = selectedDeal.varieties[0].name;
+      proceedToConfirm(selectedDeal.id);
+    }
+    navigateTo(initialView);
+  }
+
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (hash && hash !== currentScreen && ['onboarding', 'ask', 'results', 'confirm', 'agent', 'receipt', 'orders'].includes(hash)) {
+      navigateTo(hash);
+    }
+  });
+
   lucide.createIcons();
 });
 
@@ -135,10 +160,21 @@ function navigateTo(screen) {
     }
   });
 
+  if (window.location.hash !== `#${screen}` && screen !== 'onboarding') {
+    history.pushState(null, '', `#${screen}`);
+  } else if (screen === 'onboarding' && window.location.hash) {
+    history.pushState(null, '', window.location.pathname);
+  }
+
   if (screen === 'orders') {
     renderOrderHistory();
   } else if (screen === 'ask') {
     updateSearchButtonState();
+  } else if (screen === 'results') {
+    if (searchResults.length === 0) {
+      searchResults = getFallbackDeals('earbuds');
+      renderDeals();
+    }
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -400,8 +436,8 @@ function renderDeals() {
     const varietiesHtml = (deal.varieties || []).map(v => {
       const active = v.name === deal.selectedVarietyName;
       let stockText = '';
-      if (!v.inStock || v.stockCount <= 0) stockText = '<span class="text-[9px] text-rose-400 font-bold ml-1">(Sold Out)</span>';
-      else if (v.stockCount <= 3) stockText = `<span class="text-[9px] text-amber-400 font-bold ml-1">(${v.stockCount} left)</span>`;
+      if (!v.inStock || v.stockCount <= 0) stockText = '<span class="text-[10px] text-rose-400 font-bold ml-1">(Sold Out)</span>';
+      else if (v.stockCount <= 3) stockText = `<span class="text-[10px] text-amber-400 font-bold ml-1">(${v.stockCount} left)</span>`;
 
       return `
         <button 
@@ -769,7 +805,7 @@ function renderReceiptScreen(order) {
               <p class="text-[10px] text-gray-400">Credentials needed to manually look up & track on merchant site</p>
             </div>
           </div>
-          <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-cyan-950 text-cyan-300 border border-cyan-800">
+          <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-cyan-950 text-cyan-300 border border-cyan-800">
             GUEST CHECKOUT
           </span>
         </div>
@@ -806,37 +842,37 @@ function renderReceiptScreen(order) {
           </div>
 
           <!-- Merchant Password with Asterisks and Tap to View -->
-          <div class="py-1.5 border-b border-gray-800/40">
-            <div class="flex items-center justify-between">
-              <div>
+          <div class="py-2 border-b border-gray-800/40 space-y-1.5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div class="flex items-center gap-1.5">
                 <span class="font-sans text-gray-400">Merchant Password</span>
-                <span class="ml-1 text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 font-sans uppercase font-bold">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-sans uppercase font-bold border border-amber-800/60">
                   ${hasPassword ? 'AI ENFORCED' : 'GUEST'}
                 </span>
               </div>
-              <div class="flex items-center gap-2">
-                <span id="receipt-pass-masked" class="text-gray-300 font-bold tracking-widest">••••••••••••</span>
-                <span id="receipt-pass-plain" class="text-emerald-400 font-bold hidden">${merchantPassword}</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="receipt-pass-masked" class="text-gray-300 font-bold tracking-widest text-xs">••••••••••••</span>
+                <span id="receipt-pass-plain" class="text-emerald-400 font-bold text-xs hidden">${merchantPassword}</span>
                 
                 <button 
                   onclick="toggleReceiptPassword()" 
                   id="btn-toggle-pass"
-                  class="px-2 py-0.5 rounded bg-[#1e293b] hover:bg-gray-700 text-[10px] font-sans font-semibold text-cyan-300 inline-flex items-center gap-1 cursor-pointer transition"
+                  class="px-2.5 py-1 rounded-lg bg-[#1e293b] hover:bg-gray-700 text-[11px] font-sans font-semibold text-cyan-300 inline-flex items-center gap-1 cursor-pointer transition min-h-[30px]"
                 >
-                  <i data-lucide="eye" class="w-3 h-3" id="icon-toggle-pass"></i>
+                  <i data-lucide="eye" class="w-3.5 h-3.5" id="icon-toggle-pass"></i>
                   <span id="text-toggle-pass">Tap to view</span>
                 </button>
 
                 <button 
                   onclick="navigator.clipboard.writeText('${merchantPassword}'); showToast('Password copied');"
-                  class="p-1 hover:text-white text-gray-400 cursor-pointer" 
+                  class="p-1.5 hover:text-white text-gray-400 cursor-pointer min-h-[30px] min-w-[30px] flex items-center justify-center" 
                   title="Copy Password"
                 >
-                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
             </div>
-            <p class="font-sans text-[10.5px] text-gray-400 mt-1 leading-tight">
+            <p class="font-sans text-[11px] text-gray-400 leading-tight">
               ${hasPassword 
                 ? 'Password automatically created by Cartwise AI because this merchant required account creation during checkout.' 
                 : 'Pure guest checkout: Merchant allowed order completion without a mandatory password.'}
@@ -1033,12 +1069,12 @@ function renderOrderHistory() {
       <div onclick="viewReceiptForOrder('${o.id}')" class="rounded-2xl bg-[#0f172a] border border-[#1e293b] hover:border-cyan-500/50 p-4 shadow-xl space-y-2.5 cursor-pointer transition group">
         <div class="flex items-center justify-between pb-2 border-b border-gray-800">
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
               isCaptured ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'
             }">
               ${isCaptured ? 'CAPTURED • PAID' : 'VOIDED • $0 CHARGED'}
             </span>
-            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-cyan-950 text-cyan-300 border border-cyan-800">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-cyan-950 text-cyan-300 border border-cyan-800">
               GUEST ORDER
             </span>
           </div>
