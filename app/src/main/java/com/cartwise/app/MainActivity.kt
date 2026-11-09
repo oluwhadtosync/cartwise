@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
         savedShippingAddress.value = OrderStorage.getShippingAddress(this)
         savedBillingAddress.value = OrderStorage.getBillingAddress(this)
 
-        handleDeepLink(intent)
+        handleIncomingIntent(intent)
 
         setContent {
             CartwiseTheme {
@@ -79,7 +79,13 @@ class MainActivity : ComponentActivity() {
                 BackHandler(enabled = currentScreen.value != Screen.ONBOARDING) {
                     when (currentScreen.value) {
                         Screen.RESULTS -> currentScreen.value = Screen.ASK
-                        Screen.CONFIRM -> currentScreen.value = Screen.RESULTS
+                        Screen.CONFIRM -> {
+                            if (searchResults.isNotEmpty()) {
+                                currentScreen.value = Screen.RESULTS
+                            } else {
+                                currentScreen.value = Screen.ASK
+                            }
+                        }
                         Screen.HISTORY -> currentScreen.value = Screen.ASK
                         Screen.RECEIPT -> currentScreen.value = previousScreen.value
                         Screen.AGENT_LIVE -> currentScreen.value = Screen.ASK
@@ -230,14 +236,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleDeepLink(intent)
+        handleIncomingIntent(intent)
     }
 
     /**
-     * Handle PayPal redirect: cartwise://paypal/return?orderId=... or cancel
+     * Handle incoming intents: PayPal redirect, shared products from Demo Market or browser, and deep links.
      */
-    private fun handleDeepLink(intent: Intent?) {
-        val uri: Uri? = intent?.data
+    private fun handleIncomingIntent(intent: Intent?) {
+        if (intent == null) return
+
+        // 1. PayPal redirect: cartwise://paypal/return?orderId=... or cancel
+        val uri: Uri? = intent.data
         if (uri != null && uri.scheme == "cartwise" && uri.host == "paypal") {
             val path = uri.path ?: ""
             if (path.contains("cancel") || uri.getQueryParameter("cancel") == "true") {
@@ -253,6 +262,136 @@ class MainActivity : ComponentActivity() {
                     onPayPalApprovalCompleted(orderId)
                 }
             }
+            return
+        }
+
+        // 2. Share Sheet Action: android.intent.action.SEND with text/plain
+        if (intent.action == Intent.ACTION_SEND) {
+            val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+                ?: intent.getStringExtra(Intent.EXTRA_SUBJECT)
+                ?: intent.clipData?.getItemAt(0)?.text?.toString()
+
+            if (!sharedText.isNullOrBlank()) {
+                extractSharedItemAndReadyForPayment(sharedText)
+                return
+            }
+        }
+
+        // 3. Direct Deep Link / Web URL: android.intent.action.VIEW
+        if (intent.action == Intent.ACTION_VIEW && uri != null) {
+            handleProductDeepLink(uri)
+            return
+        }
+    }
+
+    /**
+     * Handle direct product deep links:
+     * - cartwise://product?id=...
+     * - cartwise://buy?id=...
+     * - https://cartwise-demo-market.onrender.com/product/prod-...
+     */
+    private fun handleProductDeepLink(uri: Uri) {
+        var productId = uri.getQueryParameter("id")
+        val fallbackTitle = uri.getQueryParameter("title")
+        val fallbackPrice = uri.getQueryParameter("price")?.toDoubleOrNull()
+        val fallbackShipping = uri.getQueryParameter("shipping")?.toDoubleOrNull()
+
+        if (productId.isNullOrBlank()) {
+            val path = uri.path ?: ""
+            if (path.contains("/product/")) {
+                productId = path.substringAfter("/product/").substringBefore("/").substringBefore("?")
+            } else if (uri.lastPathSegment != null && uri.lastPathSegment != "product" && uri.lastPathSegment != "buy") {
+                productId = uri.lastPathSegment
+            }
+        }
+
+        if (!productId.isNullOrBlank()) {
+            extractProductAndReadyForPayment(productId, fallbackTitle, fallbackPrice, fallbackShipping)
+        }
+    }
+
+    /**
+     * Parse shared text from Demo Market or browser, extract product ID or URL, and prepare payment
+     */
+    private fun extractSharedItemAndReadyForPayment(text: String) {
+        val prodIdRegex = Regex("""prod-[a-zA-Z0-9\-]+""")
+        val urlRegex = Regex("""https?://[^\s]+""")
+
+        val matchedId = prodIdRegex.find(text)?.value
+
+        if (!matchedId.isNullOrBlank()) {
+            extractProductAndReadyForPayment(matchedId)
+        } else {
+            val matchedUrl = urlRegex.find(text)?.value
+            if (!matchedUrl.isNullOrBlank()) {
+                try {
+                    val parsedUri = Uri.parse(matchedUrl)
+                    handleProductDeepLink(parsedUri)
+                } catch (e: Exception) {
+                    searchQuery.value = text
+                    executeSearch(text)
+                }
+            } else {
+                // If it's general text, run search for it
+                searchQuery.value = text
+                executeSearch(text)
+            }
+        }
+    }
+
+    /**
+     * Extract product into Deal, calculate landed cost, and transition immediately to Screen.CONFIRM
+     */
+    private fun extractProductAndReadyForPayment(
+        productId: String,
+        fallbackTitle: String? = null,
+        fallbackPrice: Double? = null,
+        fallbackShipping: Double? = null
+    ) {
+        val knownDeal = DemoCatalog.items[productId]
+
+        if (knownDeal != null) {
+            val dealToUse = if (fallbackTitle != null || fallbackPrice != null) {
+                knownDeal.copy(
+                    title = fallbackTitle ?: knownDeal.title,
+                    price = fallbackPrice ?: knownDeal.price,
+                    shippingCost = fallbackShipping ?: knownDeal.shippingCost,
+                    totalCost = (fallbackPrice ?: knownDeal.price) + (fallbackShipping ?: knownDeal.shippingCost)
+                )
+            } else {
+                knownDeal
+            }
+            selectedDeal.value = dealToUse
+            cancelNotice.value = null
+            currentScreen.value = Screen.CONFIRM
+        } else {
+            val fallbackDeal = Deal(
+                id = productId,
+                title = fallbackTitle ?: "Demo Market Item ($productId)",
+                brand = "Demo Market",
+                price = fallbackPrice ?: 29.99,
+                shippingCost = fallbackShipping ?: 5.00,
+                totalCost = (fallbackPrice ?: 29.99) + (fallbackShipping ?: 5.00),
+                currency = "USD",
+                storeName = "Demo Market",
+                storeUrl = "https://cartwise-demo-market.onrender.com/product/$productId",
+                imageUrl = "https://cartwise-demo-market.onrender.com/public/images/products/$productId.png",
+                rating = 4.8,
+                reviewsCount = 120,
+                inStock = true,
+                stockCount = 20,
+                reasonWhy = "Extracted from Demo Market share sheet. Ready for instant PayPal Escrow authorization.",
+                safety = WebsiteSafety(
+                    domain = "cartwise-demo-market.onrender.com",
+                    score = 98,
+                    level = "SAFE",
+                    sslVerified = true,
+                    summary = "Official Cartwise Sandbox Store. 256-bit TLS encrypted, sandbox payment isolation, 100% money-back escrow guarantee."
+                )
+            )
+            selectedDeal.value = fallbackDeal
+            cancelNotice.value = null
+            currentScreen.value = Screen.CONFIRM
         }
     }
 
