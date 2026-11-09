@@ -104,7 +104,7 @@ const products = [
     brand: "SwiftType",
     price: 45.00,
     currency: "USD",
-    category: "electronics",
+    category: "gaming",
     rating: 4.7,
     reviewsCount: 142,
     inStock: false, // Intentionally out of stock to demonstrate failure/guardrail path!
@@ -366,5 +366,10 @@ const products = [
     iconType: "backpack"
   }
 ];
+
+// Ensure every product has its real photo asset attached
+products.forEach(p => {
+  p.image = `/public/images/products/${p.id}.png`;
+});
 
 module.exports = products;
