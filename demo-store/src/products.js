@@ -360,10 +360,53 @@ const products = [
       "Luggage Strap for Attaching to Rolling Suitcases"
     ],
     variants: [
-      { name: "Charcoal Black", sku: "TS-BP-BLK" },
-      { name: "Heather Gray", sku: "TS-BP-GRY" }
+      { name: "Charcoal Black (15.6\")", sku: "TS-BP-BLK-15", priceOffset: 0.0, inStock: true, stockCount: 20 },
+      { name: "Charcoal Black (17.3\" Pro)", sku: "TS-BP-BLK-17", priceOffset: 8.0, inStock: true, stockCount: 10 },
+      { name: "Heather Gray (15.6\")", sku: "TS-BP-GRY-15", priceOffset: 0.0, inStock: true, stockCount: 15 },
+      { name: "Heather Gray (17.3\" Pro)", sku: "TS-BP-GRY-17", priceOffset: 8.0, inStock: true, stockCount: 8 }
     ],
     iconType: "backpack"
+  },
+  {
+    id: "prod-hoodie-13",
+    title: "Apex Pro All-Weather Tech Fleece Zip Hoodie",
+    titleZh: "Apex Pro 全天候科技保暖连帽卫衣",
+    brand: "Apex Pro",
+    price: 49.99,
+    currency: "USD",
+    category: "apparel",
+    rating: 4.9,
+    reviewsCount: 165,
+    inStock: true,
+    stockCount: 50,
+    shippingCost: 5.50,
+    shipsTo: ["NG", "US", "UK", "CA", "GH", "KE"],
+    description: "Windproof and breathable thermal fleece hoodie designed for urban travel and cool climates. Features four-way stretch, storm hood, and zippered anti-theft gadget pockets.",
+    descriptionZh: "防风透气四面弹力科技卫衣，立体剪裁防风帽，专为现代城市通勤与数码设备收纳打造。",
+    keywordsZh: ["卫衣", "连帽衫", "外套", "衣服", "服装", "tech fleece", "hoodie", "clothes"],
+    features: [
+      "Water-repellent DWR Coated Tech Fleece (320 GSM)",
+      "Dedicated Zippered Device Chest Pocket",
+      "Ergonomic Storm Hood with Adjustable Drawstrings",
+      "Reinforced YKK Waterproof Two-Way Zippers",
+      "Breathable Underarm Micro-ventilation Panels"
+    ],
+    colors: ["Stealth Black", "Heather Gray", "Deep Navy"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
+    variants: [
+      { name: "Stealth Black / S", sku: "AP-HD-BLK-S", color: "Stealth Black", size: "S", priceOffset: 0.0, stockCount: 12, inStock: true },
+      { name: "Stealth Black / M", sku: "AP-HD-BLK-M", color: "Stealth Black", size: "M", priceOffset: 0.0, stockCount: 18, inStock: true },
+      { name: "Stealth Black / L", sku: "AP-HD-BLK-L", color: "Stealth Black", size: "L", priceOffset: 0.0, stockCount: 10, inStock: true },
+      { name: "Stealth Black / XL", sku: "AP-HD-BLK-XL", color: "Stealth Black", size: "XL", priceOffset: 4.0, stockCount: 6, inStock: true },
+      { name: "Stealth Black / XXL", sku: "AP-HD-BLK-XXL", color: "Stealth Black", size: "XXL", priceOffset: 6.0, stockCount: 0, inStock: false },
+      { name: "Heather Gray / S", sku: "AP-HD-GRY-S", color: "Heather Gray", size: "S", priceOffset: 0.0, stockCount: 8, inStock: true },
+      { name: "Heather Gray / M", sku: "AP-HD-GRY-M", color: "Heather Gray", size: "M", priceOffset: 0.0, stockCount: 14, inStock: true },
+      { name: "Heather Gray / L", sku: "AP-HD-GRY-L", color: "Heather Gray", size: "L", priceOffset: 0.0, stockCount: 12, inStock: true },
+      { name: "Heather Gray / XL", sku: "AP-HD-GRY-XL", color: "Heather Gray", size: "XL", priceOffset: 4.0, stockCount: 5, inStock: true },
+      { name: "Deep Navy / M", sku: "AP-HD-NVY-M", color: "Deep Navy", size: "M", priceOffset: 0.0, stockCount: 9, inStock: true },
+      { name: "Deep Navy / L", sku: "AP-HD-NVY-L", color: "Deep Navy", size: "L", priceOffset: 0.0, stockCount: 7, inStock: true }
+    ],
+    iconType: "hoodie"
   }
 ];
 
