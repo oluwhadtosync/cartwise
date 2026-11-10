@@ -25,15 +25,18 @@
         },
         extend: {
           colors: {
-            bgDark: '#070b14',
-            cardDark: '#0f172a',
-            cardBorder: '#1e293b',
-            primaryIndigo: '#4f46e5',
-            accentCyan: '#38bdf8',
-            successGreen: '#10b981',
-            textPrimary: '#f8fafc',
-            textSecondary: '#94a3b8',
-            textMuted: '#64748b'
+            stoneCanvas: '#F4F2EC',
+            alabaster: '#FFFFFF',
+            stoneBorder: '#E2DFD7',
+            stoneDarkBorder: '#D5D1C8',
+            forestInk: '#0D1F18',
+            sovereignForest: '#0D261C',
+            deepEmerald: '#0F5132',
+            warmSlate: '#4A5550',
+            mutedStone: '#6B7770',
+            softSage: '#E6F4EA',
+            sageBorder: '#B7E1CD',
+            limeAccent: '#A3E635'
           },
           fontFamily: {
             sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
@@ -50,8 +53,8 @@
     }
     body {
       overflow-x: clip;
-      background-color: #070b14;
-      color: #f8fafc;
+      background-color: #F4F2EC;
+      color: #0D1F18;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
@@ -60,28 +63,35 @@
       height: 5px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: #0f172a;
+      background: #F4F2EC;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #334155;
+      background: #D5D1C8;
       border-radius: 3px;
     }
-    /* Smooth gradient text */
-    .gradient-text {
-      background: linear-gradient(135deg, #818cf8, #38bdf8, #34d399);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    /* Editorial card elevation */
+    .editorial-elevation {
+      box-shadow: 0 2px 8px rgba(13, 38, 28, 0.04);
     }
-    /* Logo bar fade effect with high contrast */
-    .logo-item {
-      opacity: 0.75;
-      filter: grayscale(10%);
-      transition: opacity 0.3s ease, filter 0.3s ease, transform 0.2s ease;
+    /* Floating Halo Search Modal (Option D: Beveled Floating Depth) */
+    .floating-halo {
+      background: #FFFFFF;
+      border: 2px solid #E2DFD7;
+      box-shadow: 
+        0 0 0 4px rgba(255, 255, 255, 0.8),
+        0 0 0 5px #DCD8CF,
+        0 20px 36px -8px rgba(13, 38, 28, 0.16),
+        0 8px 16px -4px rgba(13, 38, 28, 0.08);
+      border-radius: 26px;
     }
-    .logo-item:hover {
+    /* Logo ink filter for crisp monochrome partner logos */
+    .logo-ink {
+      filter: brightness(0);
+      opacity: 0.85;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .logo-ink:hover {
       opacity: 1;
-      filter: grayscale(0%);
       transform: translateY(-1px);
     }
     /* Hide nav AI badge on screens narrower than 380px to guarantee zero horizontal collision */
@@ -92,53 +102,53 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-[#070b14] flex flex-col justify-between antialiased selection:bg-indigo-600 selection:text-white">
+<body class="min-h-screen bg-[#F4F2EC] text-[#0D1F18] flex flex-col justify-between antialiased selection:bg-[#0D261C] selection:text-[#F4F2EC]">
 
   <!-- ======================================================== -->
   <!-- GLOBAL TOP NAV BAR (Sticky, Glassmorphism, Zero-Overflow) -->
   <!-- ======================================================== -->
-  <header class="sticky top-0 z-40 w-full bg-[#070b14]/90 backdrop-blur-md border-b border-gray-800/80 shadow-md shadow-black/30 transition-all">
+  <header class="sticky top-0 z-40 w-full backdrop-blur-md shadow-sm transition-all" style="background-color: rgba(244, 242, 236, 0.92); backdrop-filter: blur(12px); border-bottom: 1px solid #E2DFD7;">
     <div class="w-full max-w-6xl mx-auto flex items-center justify-between px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3 gap-2 min-w-0">
       <!-- Left: Brand -->
       <div onclick="navigateTo('onboarding')" class="flex items-center gap-2 sm:gap-2.5 cursor-pointer group min-w-0 shrink" title="Return to Overview">
-        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-105 transition-transform shrink-0">
-          <i data-lucide="shopping-bag" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#0D261C] flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+          <i data-lucide="shopping-bag" class="w-4 h-4 sm:w-5 sm:h-5 text-[#F4F2EC]"></i>
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-1.5">
-            <span class="text-base sm:text-xl font-black text-white tracking-tight">Cartwise</span>
-            <span class="nav-ai-badge hidden xs:inline-flex items-center text-[10px] uppercase font-bold tracking-wider px-2 py-[2px] rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 shrink-0" style="padding: 2px 8px; font-size: 10px;">
+            <span class="text-base sm:text-xl font-black text-[#0D1F18] tracking-tight">Cartwise</span>
+            <span class="nav-ai-badge hidden xs:inline-flex items-center text-xs uppercase font-bold tracking-wider px-2 py-[2px] rounded-full shrink-0" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD; padding: 2px 8px;">
               AI Agent
             </span>
           </div>
-          <div class="hidden md:block text-xs text-gray-400 font-medium truncate">
+          <div class="hidden md:block text-xs text-[#4A5550] font-medium truncate">
             Autonomous "Buy-For-Me" Shopping
           </div>
         </div>
       </div>
 
-      <!-- Right: Compact Nav Buttons (Consistent dark slate surface #0F172A, #1E293B border, #E2E8F0 text) -->
+      <!-- Right: Compact Nav Buttons (Consistent Alabaster surface, #E2DFD7 border, #0D1F18 text) -->
       <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <!-- Demo Market Link -->
         <a 
           href="https://cartwise-demo-market.onrender.com" 
           target="_blank" 
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-[#0F172A] border border-[#1E293B] hover:border-slate-600 text-xs font-semibold text-[#E2E8F0] hover:text-white transition shrink-0"
+          class="inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-[#FFFFFF] border border-[#E2DFD7] hover:border-[#D5D1C8] hover:bg-[#F9F8F5] text-xs font-semibold text-[#0D1F18] transition shrink-0"
           title="Visit Cartwise Demo Market Store (merchant used for live checkout tests)"
         >
-          <i data-lucide="store" class="w-4 h-4 text-cyan-400"></i>
+          <i data-lucide="store" class="w-4 h-4 text-[#0F5132]"></i>
           <span class="hidden md:inline">Demo Market</span>
-          <i data-lucide="external-link" class="w-2.5 h-2.5 text-gray-400 hidden sm:inline"></i>
+          <i data-lucide="external-link" class="w-2.5 h-2.5 text-[#4A5550] hidden sm:inline"></i>
         </a>
 
         <!-- Android APK Button -->
         <button 
           onclick="showApkModal()" 
-          class="inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-[#0F172A] border border-[#1E293B] hover:border-slate-600 text-xs font-semibold text-[#E2E8F0] hover:text-white transition shrink-0"
+          class="inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-[#FFFFFF] border border-[#E2DFD7] hover:border-[#D5D1C8] hover:bg-[#F9F8F5] text-xs font-semibold text-[#0D1F18] transition shrink-0"
           title="Download Cartwise Android App"
         >
-          <svg class="w-4 h-4 fill-current text-[#10B981] shrink-0" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 fill-current text-[#0F5132] shrink-0" viewBox="0 0 24 24">
             <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
           </svg>
           <span class="hidden sm:inline">Android APK</span>
@@ -147,13 +157,12 @@
         <!-- Orders History -->
         <button 
           onclick="navigateTo('orders')" 
-          class="relative inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-[#0F172A] border border-[#1E293B] hover:border-slate-600 text-xs font-semibold text-[#E2E8F0] hover:text-white transition shrink-0"
+          class="relative inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-[#FFFFFF] border border-[#E2DFD7] hover:border-[#D5D1C8] hover:bg-[#F9F8F5] text-xs font-semibold text-[#0D1F18] transition shrink-0"
           title="Order History"
         >
-          <i data-lucide="history" class="w-4 h-4 text-slate-400"></i>
+          <i data-lucide="history" class="w-4 h-4 text-[#4A5550]"></i>
           <span class="hidden sm:inline">Orders</span>
-          <span id="badge-orders-count" class="px-1.5 py-0.5 rounded-full bg-[#6366F1] text-[10px] font-bold text-white leading-none">0</span>
-        </button>
+          <span id="badge-orders-count" class="px-1.5 py-0.5 rounded-full bg-[#0D261C] text-[10px] font-bold text-[#F4F2EC] leading-none">0</span>
         </button>
       </div>
     </div>
@@ -173,30 +182,30 @@
         <!-- 1. Headline & Value Prop (Row 1 Left on Desktop, Order 1 on Mobile) -->
         <div class="lg:col-span-7 lg:col-start-1 lg:row-start-1 order-1 space-y-4 text-center lg:text-left min-w-0 w-full">
 
-          <h1 class="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.15] break-words">
+          <h1 class="text-2xl sm:text-4xl lg:text-5xl font-black text-[#0D1F18] tracking-tight leading-[1.15] break-words">
             Autonomous AI<br class="hidden sm:inline"> Shopping Agent.<br>
-            <span class="gradient-text">
+            <span class="text-[#0F5132]">
               Buys for you across the web.
             </span><br>
             You pay safely with PayPal.
           </h1>
 
-          <p class="text-sm sm:text-base text-gray-300 leading-relaxed max-w-xl mx-auto lg:mx-0">
+          <p class="text-sm sm:text-base text-[#4A5550] leading-relaxed max-w-xl mx-auto lg:mx-0">
             Tell Cartwise what you want. <strong>Google Gemini 3.8</strong> and <strong>Channel3</strong> discover the cheapest real deals with shipping to your location, boot an isolated cloud browser via <strong>Kernel</strong>, and autonomously complete store checkout &mdash; while holding your funds safely in <strong>PayPal escrow</strong>.
           </p>
 
           <!-- Desktop Quick Trust Pills (Hidden on mobile to save vertical space) -->
-          <div class="hidden lg:flex items-center gap-3 pt-1 text-xs text-gray-400">
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0f172a] border border-[#1e293b]">
-              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <div class="hidden lg:flex items-center gap-3 pt-1 text-xs text-[#4A5550]">
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#E2DFD7] text-[#0D1F18] shadow-sm">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-[#0F5132]"></i>
               <span>Zero Upfront Risk ($0 charged)</span>
             </span>
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0f172a] border border-[#1e293b]">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#E2DFD7] text-[#0D1F18] shadow-sm">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#0F5132]"></i>
               <span>Landed Cost to Your Location</span>
             </span>
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0f172a] border border-[#1e293b]">
-              <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#E2DFD7] text-[#0D1F18] shadow-sm">
+              <i data-lucide="globe" class="w-3.5 h-3.5 text-[#0F5132]"></i>
               <span>Playwright Cloud Browser</span>
             </span>
           </div>
@@ -205,27 +214,26 @@
 
         <!-- 2. Product Showcase Card (BEFORE CTA on Mobile, Right Column on Desktop) -->
         <div class="lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 order-2 w-full max-w-md mx-auto min-w-0">
-          <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] overflow-hidden shadow-2xl">
+          <div class="rounded-2xl bg-[#FFFFFF] border border-[#E2DFD7] overflow-hidden editorial-elevation">
             <!-- Product image banner with real photographic assets -->
-            <div class="relative w-full h-44 sm:h-52 bg-[#070b14] overflow-hidden">
+            <div class="relative w-full h-44 sm:h-52 bg-[#F9F8F5] border-b border-[#E2DFD7] overflow-hidden">
               <img 
                 id="showcase-img" 
                 src="/images/product_headphones.png" 
                 alt="Product Showcase" 
                 class="w-full h-full object-cover transition-opacity duration-300"
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/20 to-transparent"></div>
               
               <!-- Top Floating Badges Bar (Zero-overlap flex container) -->
               <div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between gap-1.5 flex-wrap pointer-events-none">
                 <!-- AI Discovery Badge -->
-                <div class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-[#070b14]/90 border border-cyan-500/50 flex items-center gap-1 backdrop-blur-sm shrink-0">
-                  <i data-lucide="sparkles" class="w-3 h-3 text-cyan-400"></i>
-                  <span class="text-[10px] sm:text-xs font-extrabold text-cyan-300 tracking-wider uppercase">AI PRICE DISCOVERY</span>
+                <div class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-[#FFFFFF]/95 border border-[#E2DFD7] flex items-center gap-1 backdrop-blur-sm shadow-sm shrink-0">
+                  <i data-lucide="sparkles" class="w-3 h-3 text-[#0F5132]"></i>
+                  <span class="text-xs font-extrabold text-[#0D1F18] tracking-wider uppercase">AI PRICE DISCOVERY</span>
                 </div>
 
                 <!-- Savings Pill -->
-                <div id="showcase-savings-pill" class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-emerald-400 text-slate-950 text-[10px] sm:text-xs font-black shadow-md shrink-0">
+                <div id="showcase-savings-pill" class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-black shadow-sm shrink-0" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD;">
                   SAVE $380 (38% OFF)
                 </div>
               </div>
@@ -234,49 +242,49 @@
             <!-- Product Details & Before vs After Price Comparison -->
             <div class="p-4 sm:p-5 space-y-3.5 min-w-0">
               <div>
-                <h3 id="showcase-title" class="text-base font-bold text-white leading-snug">Sony WH-1000XM5 ANC Headphones</h3>
-                <p id="showcase-subtitle" class="text-xs text-gray-400 mt-0.5">Flagship Noise Cancelling • Multi-Store Index</p>
+                <h3 id="showcase-title" class="text-base font-bold text-[#0D1F18] leading-snug">Sony WH-1000XM5 ANC Headphones</h3>
+                <p id="showcase-subtitle" class="text-xs text-[#4A5550] mt-0.5">Flagship Noise Cancelling • Multi-Store Index</p>
               </div>
 
-              <!-- Before vs After Price Comparison Box (Unclipped: height auto, overflow visible, padding 14px) -->
-              <div class="rounded-xl bg-[#070b14] border border-[#1e293b] flex items-center justify-between gap-1 min-w-0" style="height: auto; overflow: visible; padding: 14px;">
+              <!-- Before vs After Price Comparison Box (Soft stone surface #F9F8F5, #E2DFD7 border, #DC2626 before, #047857 after) -->
+              <div class="rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] flex items-center justify-between gap-1 min-w-0" style="height: auto; overflow: visible; padding: 14px;">
                 <!-- BEFORE -->
                 <div class="space-y-0.5 min-w-0">
-                  <div class="text-xs font-bold text-gray-400 tracking-wider uppercase">BEFORE CARTWISE AI</div>
-                  <div class="text-xs text-gray-400">Standard Store Retail</div>
-                  <div id="showcase-retail-price" class="text-base font-bold text-rose-500 line-through">$1000</div>
+                  <div class="text-xs font-bold text-[#4A5550] tracking-wider uppercase">BEFORE CARTWISE AI</div>
+                  <div class="text-xs text-[#4A5550] font-medium">Standard Store Retail</div>
+                  <div id="showcase-retail-price" class="text-base font-bold text-[#DC2626] line-through">$1000</div>
                 </div>
 
                 <!-- Arrow -->
-                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0f172a] border border-gray-800 flex items-center justify-center text-cyan-400 shrink-0 mx-1">
-                  <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFFFFF] border border-[#E2DFD7] flex items-center justify-center text-[#0D1F18] shrink-0 mx-1 shadow-xs">
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-[#0D1F18]"></i>
                 </div>
 
                 <!-- AFTER -->
                 <div class="space-y-0.5 text-right min-w-0">
-                  <div class="text-xs font-bold text-cyan-400 tracking-wider uppercase">AFTER CARTWISE SEARCH</div>
-                  <div class="text-xs text-gray-400">Landed Escrow Total</div>
-                  <div id="showcase-cartwise-price" class="text-lg sm:text-xl font-extrabold text-emerald-400">$620.00</div>
+                  <div class="text-xs font-bold text-[#0F5132] tracking-wider uppercase">AFTER CARTWISE SEARCH</div>
+                  <div class="text-xs text-[#4A5550] font-medium">Landed Escrow Total</div>
+                  <div id="showcase-cartwise-price" class="text-lg sm:text-xl font-extrabold text-[#047857]">$620.00</div>
                 </div>
               </div>
 
-              <!-- Footer: Escrow Indicator (PayPal Sky Blue #38BDF8) + Carousel Dots -->
+              <!-- Footer: Escrow Indicator (Deep Emerald #047857) + Carousel Dots -->
               <div class="flex items-center justify-between pt-0.5">
-                <div class="flex items-center gap-1.5 text-xs font-semibold" style="color: #38BDF8;">
-                  <i data-lucide="shield-check" class="w-4 h-4 shrink-0" style="color: #38BDF8;"></i>
-                  <span class="truncate" style="color: #38BDF8;">PayPal Escrow Protected</span>
+                <div class="flex items-center gap-1.5 text-xs font-semibold" style="color: #047857;">
+                  <i data-lucide="shield-check" class="w-4 h-4 shrink-0" style="color: #047857;"></i>
+                  <span class="truncate" style="color: #047857;">PayPal Escrow Protected</span>
                 </div>
 
                 <!-- Interactive Carousel Dots -->
                 <div class="flex items-center gap-1 shrink-0" id="showcase-dots">
-                  <button onclick="setShowcaseIndex(0)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-800/60 transition cursor-pointer" aria-label="Slide 1">
-                    <span class="w-2.5 h-2.5 bg-cyan-400 rounded-full block transition-all"></span>
+                  <button onclick="setShowcaseIndex(0)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#E2DFD7]/60 transition cursor-pointer" aria-label="Slide 1">
+                    <span class="w-2.5 h-2.5 bg-[#0D261C] rounded-full block transition-all"></span>
                   </button>
-                  <button onclick="setShowcaseIndex(1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-800/60 transition cursor-pointer" aria-label="Slide 2">
-                    <span class="w-2 h-2 bg-gray-500 hover:bg-gray-400 rounded-full block transition-all"></span>
+                  <button onclick="setShowcaseIndex(1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#E2DFD7]/60 transition cursor-pointer" aria-label="Slide 2">
+                    <span class="w-2 h-2 bg-[#D5D1C8] hover:bg-[#A8A29E] rounded-full block transition-all"></span>
                   </button>
-                  <button onclick="setShowcaseIndex(2)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-800/60 transition cursor-pointer" aria-label="Slide 3">
-                    <span class="w-2 h-2 bg-gray-500 hover:bg-gray-400 rounded-full block transition-all"></span>
+                  <button onclick="setShowcaseIndex(2)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#E2DFD7]/60 transition cursor-pointer" aria-label="Slide 3">
+                    <span class="w-2 h-2 bg-[#D5D1C8] hover:bg-[#A8A29E] rounded-full block transition-all"></span>
                   </button>
                 </div>
               </div>
@@ -289,20 +297,21 @@
         <div class="lg:col-span-7 lg:col-start-1 lg:row-start-2 order-3 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 w-full min-w-0">
           <button 
             onclick="navigateTo('ask')"
-            class="w-full sm:w-auto px-7 h-[52px] rounded-xl text-white font-bold text-[15px] transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer"
-            style="background: linear-gradient(90deg, #4F46E5 0%, #0284C7 100%); box-shadow: 0 8px 24px -4px rgba(56, 189, 248, 0.35);"
+            class="w-full sm:w-auto px-7 h-[52px] rounded-xl font-semibold text-[15px] transition-all hover:bg-[#153e2e] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer"
+            style="background: #0D261C; color: #F4F2EC; font-weight: 600; box-shadow: none;"
           >
             <span>Start Shopping with Cartwise</span>
-            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform" style="color: #A3E635;"></i>
           </button>
 
           <a 
             href="https://cartwise-demo-market.onrender.com" 
             target="_blank" 
             rel="noopener noreferrer"
-            class="w-full sm:w-auto px-5 h-[52px] rounded-xl bg-[#0f172a] hover:bg-[#1e293b] border border-[#1e293b] hover:border-cyan-500/50 text-gray-200 font-semibold text-sm transition flex items-center justify-center gap-2"
+            class="w-full sm:w-auto px-5 h-[52px] rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 hover:bg-[#F9F8F5]"
+            style="background: #FFFFFF; border: 1px solid #D5D1C8; color: #0D1F18;"
           >
-            <i data-lucide="store" class="w-4 h-4 text-cyan-400"></i>
+            <i data-lucide="store" class="w-4 h-4 text-[#0F5132]"></i>
             <span>Visit Demo Market Store ↗</span>
           </a>
         </div>
@@ -314,57 +323,57 @@
       <!-- ======================================================== -->
       <div class="space-y-4 pt-4">
         <div class="text-center sm:text-left">
-          <div class="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">AUTONOMOUS ESCROW PIPELINE</div>
-          <h2 class="text-xl sm:text-2xl font-bold text-white mt-1">How Cartwise Buys For You Across the Web</h2>
+          <div class="text-xs font-bold text-[#0F5132] uppercase tracking-widest">AUTONOMOUS ESCROW PIPELINE</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-[#0D1F18] mt-1">How Cartwise Buys For You Across the Web</h2>
         </div>
 
         <!-- 4 Workflow Steps Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          <!-- Step 1 (Electric Indigo: #818CF8 text/icon, rgba(99, 102, 241, 0.15) badge bg) -->
-          <div class="p-4 rounded-2xl bg-[#0f172a] border border-[#1e293b] space-y-2 relative">
+          <!-- Step 1 (Uniform soft sage pill #E6F4EA, #0D261C text, #B7E1CD border, Deep Emerald icon #0F5132) -->
+          <div class="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E2DFD7] space-y-2 relative editorial-elevation">
             <div class="flex items-center justify-between">
-              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center border" style="background-color: rgba(99, 102, 241, 0.15); border-color: rgba(129, 140, 248, 0.35); color: #818CF8;">01</span>
-              <i data-lucide="sparkles" class="w-4 h-4" style="color: #818CF8;"></i>
+              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center shrink-0" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD;">01</span>
+              <i data-lucide="sparkles" class="w-4 h-4 text-[#0F5132]"></i>
             </div>
-            <h3 class="text-sm font-bold text-white">AI Deal Discovery</h3>
-            <p class="text-xs text-gray-400 leading-relaxed">
+            <h3 class="text-sm font-bold text-[#0D1F18]">AI Deal Discovery</h3>
+            <p class="text-xs text-[#4A5550] leading-relaxed">
               Gemini 3.8 & Channel3 scan store catalogs to compute true landed cost (item + express shipping to your location).
             </p>
           </div>
 
-          <!-- Step 2 (Escrow Emerald: #34D399 text/icon, rgba(16, 185, 129, 0.15) badge bg) -->
-          <div class="p-4 rounded-2xl bg-[#0f172a] border border-[#1e293b] space-y-2 relative">
+          <!-- Step 2 (Uniform soft sage pill #E6F4EA, #0D261C text, #B7E1CD border, Deep Emerald icon #0F5132) -->
+          <div class="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E2DFD7] space-y-2 relative editorial-elevation">
             <div class="flex items-center justify-between">
-              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center border" style="background-color: rgba(16, 185, 129, 0.15); border-color: rgba(52, 211, 153, 0.35); color: #34D399;">02</span>
-              <i data-lucide="lock" class="w-4 h-4" style="color: #34D399;"></i>
+              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center shrink-0" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD;">02</span>
+              <i data-lucide="lock" class="w-4 h-4 text-[#0F5132]"></i>
             </div>
-            <h3 class="text-sm font-bold text-white">PayPal Escrow Hold</h3>
-            <p class="text-xs text-gray-400 leading-relaxed">
-              You authorize a temporary hold (<code class="font-mono text-[10px]">intent=AUTHORIZE</code>). You are charged $0.00 upfront.
+            <h3 class="text-sm font-bold text-[#0D1F18]">PayPal Escrow Hold</h3>
+            <p class="text-xs text-[#4A5550] leading-relaxed">
+              You authorize a temporary hold (<code class="font-mono text-xs text-[#0D261C] bg-[#F4F2EC] px-1 py-0.5 rounded">intent=AUTHORIZE</code>). You are charged $0.00 upfront.
             </p>
           </div>
 
-          <!-- Step 3 (Cyber Cyan: #22D3EE text/icon, rgba(6, 182, 212, 0.15) badge bg) -->
-          <div class="p-4 rounded-2xl bg-[#0f172a] border border-[#1e293b] space-y-2 relative">
+          <!-- Step 3 (Uniform soft sage pill #E6F4EA, #0D261C text, #B7E1CD border, Deep Emerald icon #0F5132) -->
+          <div class="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E2DFD7] space-y-2 relative editorial-elevation">
             <div class="flex items-center justify-between">
-              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center border" style="background-color: rgba(6, 182, 212, 0.15); border-color: rgba(34, 211, 238, 0.35); color: #22D3EE;">03</span>
-              <i data-lucide="globe" class="w-4 h-4" style="color: #22D3EE;"></i>
+              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center shrink-0" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD;">03</span>
+              <i data-lucide="globe" class="w-4 h-4 text-[#0F5132]"></i>
             </div>
-            <h3 class="text-sm font-bold text-white">Cloud Browser Checkout</h3>
-            <p class="text-xs text-gray-400 leading-relaxed">
+            <h3 class="text-sm font-bold text-[#0D1F18]">Cloud Browser Checkout</h3>
+            <p class="text-xs text-[#4A5550] leading-relaxed">
               Kernel boots a headless Playwright browser, navigates merchant checkout, and injects Cartwise purchasing card.
             </p>
           </div>
 
-          <!-- Step 4 (PayPal Sky Blue: #38BDF8 text/icon, rgba(56, 189, 248, 0.15) badge bg) -->
-          <div class="p-4 rounded-2xl bg-[#0f172a] border border-[#1e293b] space-y-2 relative">
+          <!-- Step 4 (Uniform soft sage pill #E6F4EA, #0D261C text, #B7E1CD border, Deep Emerald icon #0F5132) -->
+          <div class="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E2DFD7] space-y-2 relative editorial-elevation">
             <div class="flex items-center justify-between">
-              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center border" style="background-color: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.35); color: #38BDF8;">04</span>
-              <i data-lucide="check-circle" class="w-4 h-4" style="color: #38BDF8;"></i>
+              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center shrink-0" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD;">04</span>
+              <i data-lucide="check-circle" class="w-4 h-4 text-[#0F5132]"></i>
             </div>
-            <h3 class="text-sm font-bold text-white">Capture or Instant Void</h3>
-            <p class="text-xs text-gray-400 leading-relaxed">
+            <h3 class="text-sm font-bold text-[#0D1F18]">Capture or Instant Void</h3>
+            <p class="text-xs text-[#4A5550] leading-relaxed">
               If merchant confirms, PayPal captures. If declined, escrow auto-voids instantly &mdash; buyer charged $0.
             </p>
           </div>
@@ -375,52 +384,52 @@
       <!-- ======================================================== -->
       <!-- SECTION: TRADITIONAL VS CARTWISE COMPARISON              -->
       <!-- ======================================================== -->
-      <div class="p-5 sm:p-6 rounded-2xl bg-[#0f172a] border border-[#1e293b] space-y-4">
+      <div class="p-5 sm:p-6 rounded-2xl bg-[#FFFFFF] border border-[#E2DFD7] space-y-4 editorial-elevation">
         <div>
-          <div class="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">WHY SHOPPERS USE CARTWISE</div>
-          <h2 class="text-lg sm:text-xl font-bold text-white mt-1">Cross-Border Shopping Re-Engineered</h2>
+          <div class="text-xs font-bold text-[#0F5132] uppercase tracking-widest">WHY SHOPPERS USE CARTWISE</div>
+          <h2 class="text-lg sm:text-xl font-bold text-[#0D1F18] mt-1">Cross-Border Shopping Re-Engineered</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <!-- Traditional -->
-          <div class="p-4 rounded-xl bg-[#070b14] border border-rose-900/40 space-y-2.5">
-            <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
-              <i data-lucide="x-circle" class="w-4 h-4"></i>
+          <!-- Traditional Foreign Checkout (#FEF2F2 bg, #991B1B text, #FECACA border) -->
+          <div class="p-4 rounded-xl space-y-2.5" style="background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA;">
+            <div class="flex items-center gap-2 font-bold text-sm" style="color: #991B1B;">
+              <i data-lucide="x-circle" class="w-4 h-4" style="color: #991B1B;"></i>
               <span>Traditional Foreign Checkout</span>
             </div>
-            <ul class="space-y-2 text-gray-400">
+            <ul class="space-y-2" style="color: #7F1D1D;">
               <li class="flex items-start gap-2">
-                <span class="text-rose-500 font-bold">&times;</span>
+                <span class="font-bold" style="color: #DC2626;">&times;</span>
                 <span>Unexpected customs tariffs, VAT, and expensive freight forwarding surcharges at the border.</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-rose-500 font-bold">&times;</span>
+                <span class="font-bold" style="color: #DC2626;">&times;</span>
                 <span>Local debit/credit cards declined by international merchants with fraud triggers.</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-rose-500 font-bold">&times;</span>
+                <span class="font-bold" style="color: #DC2626;">&times;</span>
                 <span>Immediate upfront charge even if the product is out of stock or cancelled later.</span>
               </li>
             </ul>
           </div>
 
-          <!-- Cartwise AI Escrow -->
-          <div class="p-4 rounded-xl bg-[#070b14] border border-emerald-900/50 space-y-2.5">
-            <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-              <i data-lucide="check-circle" class="w-4 h-4"></i>
+          <!-- Cartwise Autonomous AI Escrow (#ECFDF5 bg, #065F46 text, #A7F3D0 border) -->
+          <div class="p-4 rounded-xl space-y-2.5" style="background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;">
+            <div class="flex items-center gap-2 font-bold text-sm" style="color: #065F46;">
+              <i data-lucide="check-circle" class="w-4 h-4" style="color: #065F46;"></i>
               <span>Cartwise Autonomous AI Escrow</span>
             </div>
-            <ul class="space-y-2 text-gray-300">
+            <ul class="space-y-2" style="color: #064E3B;">
               <li class="flex items-start gap-2">
-                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span class="font-bold" style="color: #059669;">&#10003;</span>
                 <span><strong>Guaranteed Landed Cost:</strong> Gemini 3.8 calculates all shipping and taxes to your location upfront.</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span class="font-bold" style="color: #059669;">&#10003;</span>
                 <span><strong>Zero-Risk Escrow:</strong> Authorized hold only. You pay $0 until merchant order ID is confirmed.</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span class="font-bold" style="color: #059669;">&#10003;</span>
                 <span><strong>Playwright Cloud Agent:</strong> Cartwise purchasing card bypasses foreign gateway restrictions automatically.</span>
               </li>
             </ul>
@@ -431,22 +440,22 @@
       <!-- ======================================================== -->
       <!-- GET THE CARTWISE ANDROID APP (Above Powered By)          -->
       <!-- ======================================================== -->
-      <div id="section-android-app" class="rounded-2xl bg-gradient-to-r from-indigo-950/60 via-[#0f172a] to-cyan-950/40 border border-indigo-800/60 p-5 sm:p-6 shadow-xl">
+      <div id="section-android-app" class="rounded-2xl bg-[#FFFFFF] border border-[#E2DFD7] p-5 sm:p-6 editorial-elevation">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-5">
           <div class="flex items-center gap-4 text-center sm:text-left">
-            <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0 p-3">
-              <svg class="w-7 h-7 fill-current text-[#070b14]" viewBox="0 0 24 24">
+            <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-[#0D261C] flex items-center justify-center shrink-0 p-3 shadow-xs">
+              <svg class="w-7 h-7 fill-current text-[#A3E635]" viewBox="0 0 24 24">
                 <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
               </svg>
             </div>
             <div>
               <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h3 class="text-base sm:text-lg font-bold text-white">Get the Cartwise Android App</h3>
-                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
+                <h3 class="text-base sm:text-lg font-bold text-[#0D1F18]">Get the Cartwise Android App</h3>
+                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD;">
                   v1.0 Native
                 </span>
               </div>
-              <p class="text-xs text-gray-300 mt-1 max-w-xl leading-relaxed">
+              <p class="text-xs text-[#4A5550] mt-1 max-w-xl leading-relaxed">
                 Autonomous background execution, real-time Playwright live-view streaming, persistent local order history, and one-tap biometric escrow checkout on your Android phone.
               </p>
             </div>
@@ -454,10 +463,10 @@
 
           <div class="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
             <button 
-              onclick="showApkModal()"
-              class="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:from-emerald-600 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
+              onclick="showApkModal()" 
+              class="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#0D261C] hover:bg-[#153e2e] text-[#F4F2EC] font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
             >
-              <svg class="w-4 h-4 fill-current text-slate-950 shrink-0" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 fill-current text-[#A3E635] shrink-0" viewBox="0 0 24 24">
                 <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
               </svg>
               <span>Download Android APK</span>
@@ -474,11 +483,11 @@
     <div id="view-ask" class="hidden space-y-8 pb-10">
       
       <!-- Back to Overview Breadcrumb -->
-      <div class="flex items-center justify-between pb-2 border-b border-gray-800/80">
-        <button onclick="navigateTo('onboarding')" class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition py-1">
+      <div class="flex items-center justify-between pb-2 border-b border-[#E2DFD7]">
+        <button onclick="navigateTo('onboarding')" class="inline-flex items-center gap-1.5 text-xs text-[#0F5132] hover:text-[#0D261C] font-semibold transition py-2.5 px-1 min-h-[44px] cursor-pointer">
           <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Overview
         </button>
-        <span class="text-[11px] text-gray-500 font-mono">Autonomous AI Agent Ready</span>
+        <span class="text-xs text-[#4A5550] font-mono">Autonomous AI Agent Ready</span>
       </div>
 
       <!-- Search Screen Desktop 2-Column Grid -->
@@ -489,42 +498,42 @@
           
           <!-- Headline -->
           <div class="space-y-1">
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0D1F18] leading-tight">
               What would you like<br class="hidden sm:inline">
               Cartwise to buy for you?
             </h2>
-            <p class="text-xs text-gray-400">Natural language search &bull; Landed cost ranking with express shipping to your location</p>
+            <p class="text-xs text-[#4A5550]">Natural language search &bull; Landed cost ranking with express shipping to your location</p>
           </div>
 
-          <!-- Main Search Card -->
-          <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-4 sm:p-5 shadow-xl space-y-4">
+          <!-- Main Search Card (Option D: Beveled Floating Halo) -->
+          <div class="floating-halo p-4 sm:p-6 space-y-4">
             
             <!-- Textarea Prompt -->
             <div class="relative">
               <textarea 
                 id="search-input" 
                 rows="3"
-                class="w-full bg-transparent border-none text-white text-[15px] placeholder-gray-500 focus:outline-none resize-none font-medium leading-relaxed"
+                class="w-full bg-transparent border-none text-[#0D1F18] text-[15px] placeholder-[#8C9690] focus:outline-none resize-none font-medium leading-relaxed"
                 placeholder="e.g. Find noise-cancelling earbuds under $40 that ship to your location..."
                 onkeydown="if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); handleSearchSubmit(event); }"
               ></textarea>
             </div>
 
             <!-- Gemini Model Selector -->
-            <div class="pt-2 border-t border-gray-800/80">
-              <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <div class="pt-2 border-t border-[#E2DFD7]">
+              <div class="text-xs font-bold text-[#4A5550] uppercase tracking-wider mb-2 flex items-center justify-between">
                 <span class="flex items-center gap-1.5">
-                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#0F5132]"></i>
                   AI SEARCH MODEL
                 </span>
-                <span id="active-model-badge" class="text-cyan-400 font-bold text-[11px]">Gemini 3.8 Flash (Active)</span>
+                <span id="active-model-badge" class="text-[#0F5132] font-bold text-xs">Gemini 3.8 Flash (Active)</span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <button 
                   type="button" 
                   onclick="selectGeminiModel('gemini-3.8-flash')" 
                   id="model-btn-38-flash"
-                  class="px-2.5 py-2 rounded-xl text-xs font-bold border transition bg-indigo-600/30 border-cyan-400 text-cyan-300 shadow-sm whitespace-nowrap text-center cursor-pointer"
+                  class="px-2.5 py-2 rounded-xl text-xs font-bold border transition bg-[#0D261C] border-[#0D261C] text-[#F4F2EC] shadow-sm whitespace-nowrap text-center cursor-pointer"
                 >
                   ✨ 3.8 Flash
                 </button>
@@ -532,7 +541,7 @@
                   type="button" 
                   onclick="selectGeminiModel('gemini-3.7-flash')" 
                   id="model-btn-37-flash"
-                  class="px-2.5 py-2 rounded-xl text-xs font-medium border transition bg-[#070b14] border-gray-800 text-gray-400 hover:text-gray-200 whitespace-nowrap text-center cursor-pointer"
+                  class="px-2.5 py-2 rounded-xl text-xs font-medium border transition bg-[#F9F8F5] border-[#E2DFD7] text-[#4A5550] hover:text-[#0D1F18] hover:bg-white whitespace-nowrap text-center cursor-pointer"
                 >
                   3.7 Flash
                 </button>
@@ -540,7 +549,7 @@
                   type="button" 
                   onclick="selectGeminiModel('gemini-2.5-flash')" 
                   id="model-btn-25-flash"
-                  class="px-2.5 py-2 rounded-xl text-xs font-medium border transition bg-[#070b14] border-gray-800 text-gray-400 hover:text-gray-200 whitespace-nowrap text-center cursor-pointer"
+                  class="px-2.5 py-2 rounded-xl text-xs font-medium border transition bg-[#F9F8F5] border-[#E2DFD7] text-[#4A5550] hover:text-[#0D1F18] hover:bg-white whitespace-nowrap text-center cursor-pointer"
                 >
                   2.5 Flash
                 </button>
@@ -551,15 +560,15 @@
             <div 
               id="risk-score-card"
               onclick="toggleRiskScoreClick()"
-              class="flex items-center justify-between p-3 rounded-xl bg-[#070b14] border border-[#1e293b] cursor-pointer transition select-none"
+              class="flex items-center justify-between p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] cursor-pointer transition select-none"
             >
               <div class="flex items-center gap-3">
-                <div id="risk-score-icon-wrap" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center transition">
-                  <i data-lucide="shield" id="risk-score-icon" class="w-4 h-4 text-gray-400"></i>
+                <div id="risk-score-icon-wrap" class="w-8 h-8 rounded-full bg-[#E2DFD7] flex items-center justify-center transition">
+                  <i data-lucide="shield" id="risk-score-icon" class="w-4 h-4 text-[#4A5550]"></i>
                 </div>
                 <div>
-                  <div class="text-[13px] font-semibold text-white leading-tight">AI Merchant Risk Score</div>
-                  <div id="risk-score-status-text" class="text-[11px] text-gray-400 font-normal mt-0.5">
+                  <div class="text-[13px] font-semibold text-[#0D1F18] leading-tight">AI Merchant Risk Score</div>
+                  <div id="risk-score-status-text" class="text-xs text-[#4A5550] font-normal mt-0.5">
                     Risk score inactive
                   </div>
                 </div>
@@ -568,7 +577,7 @@
               <!-- Switch -->
               <label class="relative inline-flex items-center cursor-pointer pointer-events-none">
                 <input type="checkbox" id="risk-score-toggle" class="sr-only peer">
-                <div class="w-10 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
+                <div class="w-10 h-5 bg-[#D5D1C8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0D261C]"></div>
               </label>
             </div>
 
@@ -577,9 +586,9 @@
               id="btn-search-main"
               onclick="handleSearchSubmit(event)"
               disabled
-              class="w-full h-[50px] rounded-xl bg-indigo-600/40 text-white/50 font-bold text-[14px] transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-40 select-none"
+              class="w-full h-[50px] rounded-xl bg-[#E2DFD7] text-[#4A5550] font-bold text-[14px] transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-80 select-none"
             >
-              <i data-lucide="sparkles" class="w-4 h-4 text-cyan-300"></i>
+              <i data-lucide="sparkles" class="w-4 h-4 text-[#4A5550]"></i>
               <span id="btn-search-label">Find Best Landed Deal</span>
             </button>
 
@@ -592,55 +601,55 @@
           
           <!-- Suggested Searches Header -->
           <div class="flex items-center justify-between text-xs px-0.5">
-            <span class="font-semibold text-gray-300 text-xs">Suggested Prompts</span>
-            <span class="text-gray-500 text-[11px]">Click to search</span>
+            <span class="font-semibold text-[#0D1F18] text-xs">Suggested Prompts</span>
+            <span class="text-[#4A5550] text-xs">Click to search</span>
           </div>
 
           <!-- Suggested Searches Grid -->
           <div class="space-y-2.5">
-            <div onclick="selectSuggestedPrompt('Find me wireless noise-cancelling earbuds under $40 that ship to Lagos')" class="p-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
-              <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
-              <span class="text-xs text-gray-200 font-medium flex-1 line-clamp-2">Wireless noise-cancelling earbuds under $40 that ship to Lagos</span>
-              <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 shrink-0"></i>
+            <div onclick="selectSuggestedPrompt('Find me wireless noise-cancelling earbuds under $40 that ship to Lagos')" class="p-3 rounded-xl bg-white border border-[#E2DFD7] hover:border-[#0D261C] shadow-[0_2px_6px_rgba(13,38,28,0.02)] flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
+              <i data-lucide="search" class="w-4 h-4 text-[#0F5132] shrink-0"></i>
+              <span class="text-xs text-[#0D1F18] font-medium flex-1 line-clamp-2">Wireless noise-cancelling earbuds under $40 that ship to Lagos</span>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#4A5550] shrink-0"></i>
             </div>
 
-            <div onclick="selectSuggestedPrompt('NovaFit Pro Smart Fitness Tracker Band under $35')" class="p-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
-              <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
-              <span class="text-xs text-gray-200 font-medium flex-1 line-clamp-2">NovaFit Pro Smart Fitness Tracker Band under $35</span>
-              <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 shrink-0"></i>
+            <div onclick="selectSuggestedPrompt('NovaFit Pro Smart Fitness Tracker Band under $35')" class="p-3 rounded-xl bg-white border border-[#E2DFD7] hover:border-[#0D261C] shadow-[0_2px_6px_rgba(13,38,28,0.02)] flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
+              <i data-lucide="search" class="w-4 h-4 text-[#0F5132] shrink-0"></i>
+              <span class="text-xs text-[#0D1F18] font-medium flex-1 line-clamp-2">NovaFit Pro Smart Fitness Tracker Band under $35</span>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#4A5550] shrink-0"></i>
             </div>
 
-            <div onclick="selectSuggestedPrompt('HyperCharge 20000mAh Ultra-Fast Power Bank 65W')" class="p-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
-              <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
-              <span class="text-xs text-gray-200 font-medium flex-1 line-clamp-2">HyperCharge 20000mAh Ultra-Fast Power Bank 65W</span>
-              <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 shrink-0"></i>
+            <div onclick="selectSuggestedPrompt('HyperCharge 20000mAh Ultra-Fast Power Bank 65W')" class="p-3 rounded-xl bg-white border border-[#E2DFD7] hover:border-[#0D261C] shadow-[0_2px_6px_rgba(13,38,28,0.02)] flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
+              <i data-lucide="search" class="w-4 h-4 text-[#0F5132] shrink-0"></i>
+              <span class="text-xs text-[#0D1F18] font-medium flex-1 line-clamp-2">HyperCharge 20000mAh Ultra-Fast Power Bank 65W</span>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#4A5550] shrink-0"></i>
             </div>
 
-            <div onclick="selectSuggestedPrompt('SwiftType Compact Mechanical Gaming Keyboard')" class="p-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
-              <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
-              <span class="text-xs text-gray-200 font-medium flex-1 line-clamp-2">SwiftType Compact Mechanical Gaming Keyboard</span>
-              <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 shrink-0"></i>
+            <div onclick="selectSuggestedPrompt('SwiftType Compact Mechanical Gaming Keyboard')" class="p-3 rounded-xl bg-white border border-[#E2DFD7] hover:border-[#0D261C] shadow-[0_2px_6px_rgba(13,38,28,0.02)] flex items-center gap-3 cursor-pointer transition active:scale-[0.99]">
+              <i data-lucide="search" class="w-4 h-4 text-[#0F5132] shrink-0"></i>
+              <span class="text-xs text-[#0D1F18] font-medium flex-1 line-clamp-2">SwiftType Compact Mechanical Gaming Keyboard</span>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#4A5550] shrink-0"></i>
             </div>
           </div>
 
           <!-- Verified Demo Market items banner -->
-          <div class="p-3.5 rounded-xl bg-[#0f172a] border border-cyan-900/40 flex items-center justify-between">
+          <div class="p-3.5 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-              <i data-lucide="store" class="w-4 h-4 text-cyan-400"></i>
-              <span class="text-xs text-gray-300">Looking for Demo Market items?</span>
+              <i data-lucide="store" class="w-4 h-4 text-[#0F5132]"></i>
+              <span class="text-xs text-[#0D1F18] font-medium">Looking for Demo Market items?</span>
             </div>
-            <a href="https://cartwise-demo-market.onrender.com" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+            <a href="https://cartwise-demo-market.onrender.com" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#0F5132] hover:text-[#0D261C] flex items-center gap-1 py-2 px-1 min-h-[38px]">
               Open Store ↗
             </a>
           </div>
 
           <!-- Smart Shopping Tip Box -->
-          <div class="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-900/40 text-xs text-gray-300 space-y-1">
-            <div class="text-[11px] font-bold text-indigo-400 flex items-center gap-1.5">
+          <div class="p-3.5 rounded-xl bg-[#E6F4EA] border border-[#B7E1CD] text-xs text-[#0D261C] space-y-1">
+            <div class="text-xs font-bold text-[#0F5132] flex items-center gap-1.5">
               <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
               <span>Smart Search Tip</span>
             </div>
-            <p class="text-[11.5px] text-gray-400 leading-snug">
+            <p class="text-xs text-[#244636] leading-snug">
               Include your budget and delivery destination like <em>"under $40 that ships to Lagos"</em>. Gemini 3.8 calculates the true landed shipping rate before ordering.
             </p>
           </div>
@@ -652,22 +661,22 @@
       <!-- ======================================================== -->
       <!-- SEARCH SCREEN: GET ANDROID APP BANNER (Present on Search)-->
       <!-- ======================================================== -->
-      <div class="rounded-2xl bg-gradient-to-r from-indigo-950/60 via-[#0f172a] to-cyan-950/40 border border-indigo-800/60 p-5 sm:p-6 shadow-xl">
+      <div class="rounded-2xl bg-white border border-[#E2DFD7] p-5 sm:p-6 shadow-[0_2px_8px_rgba(13,38,28,0.04)]">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-5">
           <div class="flex items-center gap-4 text-center sm:text-left">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0 p-2.5">
-              <svg class="w-6 h-6 fill-current text-[#070b14]" viewBox="0 0 24 24">
+            <div class="w-12 h-12 rounded-2xl bg-[#0D261C] flex items-center justify-center shadow-sm shrink-0 p-2.5">
+              <svg class="w-6 h-6 fill-current text-[#A3E635]" viewBox="0 0 24 24">
                 <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
               </svg>
             </div>
             <div>
               <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h3 class="text-base font-bold text-white">Get the Cartwise Android App</h3>
-                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
+                <h3 class="text-base font-bold text-[#0D1F18]">Get the Cartwise Android App</h3>
+                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#E6F4EA] text-[#0D261C] border border-[#B7E1CD]">
                   v1.0 Native
                 </span>
               </div>
-              <p class="text-xs text-gray-300 mt-1 max-w-xl leading-relaxed">
+              <p class="text-xs text-[#4A5550] mt-1 max-w-xl leading-relaxed">
                 Background execution, Playwright live-view streaming, persistent local order storage, and one-tap biometric checkout.
               </p>
             </div>
@@ -675,9 +684,9 @@
 
           <button 
             onclick="showApkModal()"
-            class="shrink-0 w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:from-emerald-600 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
+            class="shrink-0 w-full sm:w-auto px-5 py-3 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-[#F4F2EC] font-semibold text-xs shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            <svg class="w-4 h-4 fill-current text-slate-950 shrink-0" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 fill-current text-[#A3E635] shrink-0" viewBox="0 0 24 24">
               <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
             </svg>
             <span>Download Android APK</span>
@@ -693,27 +702,27 @@
     <div id="view-results" class="hidden space-y-5 pb-10">
       
       <!-- Top Nav Back Header -->
-      <div class="flex items-center justify-between pb-2 border-b border-gray-800">
-        <button onclick="navigateTo('ask')" class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold py-1">
+      <div class="flex items-center justify-between pb-2 border-b border-[#E2DFD7]">
+        <button onclick="navigateTo('ask')" class="inline-flex items-center gap-1.5 text-xs text-[#0F5132] hover:text-[#0D261C] font-semibold py-1 cursor-pointer">
           <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Search
         </button>
 
         <!-- Inline Safety Toggle on Results -->
-        <div class="flex items-center gap-2 bg-[#0f172a] px-3.5 py-1.5 rounded-full border border-gray-800">
-          <i data-lucide="shield" class="w-3.5 h-3.5 text-gray-400"></i>
-          <span class="text-[11px] font-semibold text-gray-300">Risk Score</span>
+        <div class="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-full border border-[#E2DFD7] shadow-sm">
+          <i data-lucide="shield" class="w-3.5 h-3.5 text-[#4A5550]"></i>
+          <span class="text-[11px] font-semibold text-[#0D1F18]">Risk Score</span>
           <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id="results-risk-toggle" class="sr-only peer" onchange="syncRiskScoreToggle(this.checked)">
-            <div class="w-8 h-4 bg-gray-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
+            <div class="w-8 h-4 bg-[#D5D1C8] rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#0D261C]"></div>
           </label>
         </div>
       </div>
 
       <div>
-        <h2 class="text-xl font-bold text-white">
-          Showing top deals for <span id="results-query-label" class="text-indigo-400">"..."</span>
+        <h2 class="text-xl font-bold text-[#0D1F18]">
+          Showing top deals for <span id="results-query-label" class="text-[#0F5132]">"..."</span>
         </h2>
-        <p class="text-xs text-gray-400">Landed cost with delivery to your location &bull; Escrow hold ready</p>
+        <p class="text-xs text-[#4A5550]">Landed cost with delivery to your location &bull; Escrow hold ready</p>
       </div>
 
       <!-- Deals List Container (Multi-column responsive grid) -->
@@ -728,123 +737,123 @@
     <!-- ======================================================== -->
     <div id="view-confirm" class="hidden max-w-2xl mx-auto w-full space-y-5 pb-10">
       
-      <button onclick="navigateTo('results')" class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold py-1">
+      <button onclick="navigateTo('results')" class="inline-flex items-center gap-1.5 text-xs text-[#0F5132] hover:text-[#0D261C] font-semibold py-2.5 px-1 min-h-[44px] cursor-pointer">
         <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Deals
       </button>
 
       <!-- Deal Summary Card -->
-      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-3.5">
+      <div class="rounded-2xl bg-white border border-[#E2DFD7] p-5 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-3.5">
         <div class="flex items-start justify-between gap-2">
           <div class="flex-1">
-            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider" id="confirm-brand">Brand</div>
-            <h3 id="confirm-title" class="text-base font-bold text-white line-clamp-2">Product Title</h3>
+            <div class="text-xs font-bold text-[#4A5550] uppercase tracking-wider" id="confirm-brand">Brand</div>
+            <h3 id="confirm-title" class="text-base font-bold text-[#0D1F18] line-clamp-2">Product Title</h3>
           </div>
-          <span id="confirm-variety-pill" class="text-xs px-3 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 font-bold shrink-0">
+          <span id="confirm-variety-pill" class="text-xs px-3 py-1 rounded-full bg-[#E6F4EA] text-[#0D261C] border border-[#B7E1CD] font-bold shrink-0">
             Matte Black
           </span>
         </div>
 
-        <div class="p-3 rounded-xl bg-[#070b14] border border-[#1e293b] text-xs space-y-2 font-mono">
-          <div class="flex justify-between text-gray-400">
+        <div class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] text-xs space-y-2 font-mono">
+          <div class="flex justify-between text-[#4A5550]">
             <span>Item Price</span>
-            <span id="confirm-item-price" class="text-gray-200 font-semibold">$34.99</span>
+            <span id="confirm-item-price" class="text-[#0D1F18] font-semibold">$34.99</span>
           </div>
-          <div class="flex justify-between text-gray-400">
+          <div class="flex justify-between text-[#4A5550]">
             <span>Shipping to your location</span>
-            <span id="confirm-shipping-price" class="text-gray-200 font-semibold">$5.00</span>
+            <span id="confirm-shipping-price" class="text-[#0D1F18] font-semibold">$5.00</span>
           </div>
-          <div class="flex justify-between text-emerald-400 font-bold pt-2 border-t border-gray-800 font-sans">
+          <div class="flex justify-between text-[#047857] font-bold pt-2 border-t border-[#E2DFD7] font-sans">
             <span>Total Landed Cost</span>
-            <span id="confirm-total-cost" class="font-mono text-lg text-emerald-400">$39.99</span>
+            <span id="confirm-total-cost" class="font-mono text-lg text-[#047857]">$39.99</span>
           </div>
         </div>
       </div>
 
       <!-- Shipping Address (Prefilled) -->
-      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-3.5">
-        <div class="flex items-center justify-between pb-2 border-b border-gray-800">
-          <div class="text-xs font-bold text-white flex items-center gap-1.5">
-            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-400"></i> Shipping Address
+      <div class="rounded-2xl bg-white border border-[#E2DFD7] p-5 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-3.5">
+        <div class="flex items-center justify-between pb-2 border-b border-[#E2DFD7]">
+          <div class="text-xs font-bold text-[#0D1F18] flex items-center gap-1.5">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-[#0F5132]"></i> Shipping Address
           </div>
-          <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-950 text-emerald-400 border border-emerald-800">
+          <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase bg-[#E6F4EA] text-[#0D261C] border border-[#B7E1CD]">
             PREFILLED
           </span>
         </div>
 
         <div class="space-y-2.5 text-xs">
           <div>
-            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Full Name</label>
-            <input id="ship-name" type="text" value="Ada Lovelace" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+            <label class="block text-xs font-semibold text-[#4A5550] mb-1">Full Name</label>
+            <input id="ship-name" type="text" value="Ada Lovelace" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-lg text-[#0D1F18] font-medium focus:bg-white focus:border-[#0D261C] focus:outline-none">
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label class="block text-[11px] font-semibold text-gray-400 mb-1 flex items-center justify-between">
+              <label class="block text-xs font-semibold text-[#4A5550] mb-1 flex items-center justify-between">
                 <span>Phone Number (with Country Code)</span>
-                <span class="text-[10px] text-emerald-400 font-bold">REQUIRED</span>
+                <span class="text-xs text-[#047857] font-bold">REQUIRED</span>
               </label>
-              <input id="ship-phone" type="tel" value="+234 801 234 5678" placeholder="+234 800 000 0000" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium font-mono text-[11.5px]">
-              <p class="text-[10px] text-gray-500 mt-0.5">Prefilled with country code for courier dispatch & merchant guest checkout</p>
+              <input id="ship-phone" type="tel" value="+234 801 234 5678" placeholder="+234 800 000 0000" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-lg text-[#0D1F18] font-medium font-mono text-[11.5px] focus:bg-white focus:border-[#0D261C] focus:outline-none">
+              <p class="text-xs text-[#4A5550] mt-0.5">Prefilled with country code for courier dispatch & merchant guest checkout</p>
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-gray-400 mb-1 flex items-center justify-between">
+              <label class="block text-xs font-semibold text-[#4A5550] mb-1 flex items-center justify-between">
                 <span>Email Address</span>
-                <span class="text-[10px] text-cyan-400 font-bold">GUEST RECOVERY</span>
+                <span class="text-xs text-[#0F5132] font-bold">GUEST RECOVERY</span>
               </label>
-              <input id="ship-email" type="email" value="ada.lovelace@gmail.com" placeholder="name@domain.com" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium text-[11.5px]">
-              <p class="text-[10px] text-gray-500 mt-0.5">Used by AI agent to bind guest order tracking on merchant store</p>
+              <input id="ship-email" type="email" value="ada.lovelace@gmail.com" placeholder="name@domain.com" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-lg text-[#0D1F18] font-medium text-[11.5px] focus:bg-white focus:border-[#0D261C] focus:outline-none">
+              <p class="text-xs text-[#4A5550] mt-0.5">Used by AI agent to bind guest order tracking on merchant store</p>
             </div>
           </div>
           <div>
-            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Street Address</label>
-            <input id="ship-address" type="text" value="14 Marina Street, Lagos Island" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+            <label class="block text-xs font-semibold text-[#4A5550] mb-1">Street Address</label>
+            <input id="ship-address" type="text" value="14 Marina Street, Lagos Island" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-lg text-[#0D1F18] font-medium focus:bg-white focus:border-[#0D261C] focus:outline-none">
           </div>
           <div class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="block text-[11px] font-semibold text-gray-400 mb-1">City</label>
-              <input id="ship-city" type="text" value="Lagos" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+              <label class="block text-xs font-semibold text-[#4A5550] mb-1">City</label>
+              <input id="ship-city" type="text" value="Lagos" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-lg text-[#0D1F18] font-medium focus:bg-white focus:border-[#0D261C] focus:outline-none">
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-gray-400 mb-1">Country</label>
-              <input id="ship-country" type="text" value="Nigeria" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+              <label class="block text-xs font-semibold text-[#4A5550] mb-1">Country</label>
+              <input id="ship-country" type="text" value="Nigeria" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-lg text-[#0D1F18] font-medium focus:bg-white focus:border-[#0D261C] focus:outline-none">
             </div>
           </div>
         </div>
       </div>
 
       <!-- Cardholder & Billing -->
-      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-3">
-        <div class="text-xs font-bold text-white flex items-center gap-1.5 pb-2 border-b border-gray-800">
-          <i data-lucide="credit-card" class="w-3.5 h-3.5 text-indigo-400"></i> Cardholder & Billing
+      <div class="rounded-2xl bg-white border border-[#E2DFD7] p-5 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-3">
+        <div class="text-xs font-bold text-[#0D1F18] flex items-center gap-1.5 pb-2 border-b border-[#E2DFD7]">
+          <i data-lucide="credit-card" class="w-3.5 h-3.5 text-[#0F5132]"></i> Cardholder & Billing
         </div>
-        <label class="flex items-center gap-2.5 cursor-pointer py-1">
-          <input id="billing-same-check" type="checkbox" checked onchange="toggleBillingFields(this.checked)" class="w-4 h-4 rounded text-indigo-600 bg-gray-900 border-gray-700">
-          <span class="text-xs font-medium text-gray-300">Use shipping address for card billing</span>
+        <label class="flex items-center gap-2.5 cursor-pointer py-2.5 min-h-[44px]">
+          <input id="billing-same-check" type="checkbox" checked onchange="toggleBillingFields(this.checked)" class="w-5 h-5 rounded text-[#0D261C] bg-[#F9F8F5] border-[#D5D1C8] cursor-pointer">
+          <span class="text-xs font-medium text-[#0D1F18]">Use shipping address for card billing</span>
         </label>
-        <div id="billing-fields" class="hidden space-y-2.5 pt-2 border-t border-gray-800 text-xs">
+        <div id="billing-fields" class="hidden space-y-2.5 pt-2 border-t border-[#E2DFD7] text-xs">
           <div>
-            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Cardholder Name</label>
-            <input id="bill-name" type="text" value="Ada Lovelace" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+            <label class="block text-[11px] font-semibold text-[#4A5550] mb-1">Cardholder Name</label>
+            <input id="bill-name" type="text" value="Ada Lovelace" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-lg text-[#0D1F18] font-medium focus:bg-white focus:border-[#0D261C] focus:outline-none">
           </div>
           <div>
-            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Billing Address</label>
-            <input id="bill-address" type="text" value="14 Marina Street, Lagos Island" class="w-full px-3 py-2 bg-[#070b14] border border-gray-800 rounded-lg text-white font-medium">
+            <label class="block text-[11px] font-semibold text-[#4A5550] mb-1">Billing Address</label>
+            <input id="bill-address" type="text" value="14 Marina Street, Lagos Island" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-lg text-[#0D1F18] font-medium focus:bg-white focus:border-[#0D261C] focus:outline-none">
           </div>
         </div>
       </div>
 
       <!-- Escrow Guarantee & Action -->
       <div class="space-y-3 pt-1">
-        <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-900/50 text-xs text-indigo-300 leading-relaxed flex items-start gap-2.5">
-          <i data-lucide="shield-check" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
-          <div><strong>Zero-Risk Escrow:</strong> Authorized hold only (<code class="font-mono text-[10px]">intent=AUTHORIZE</code>). Card is NOT charged until order is secured.</div>
+        <div class="p-3.5 rounded-xl bg-[#E6F4EA] border border-[#B7E1CD] text-xs text-[#0D261C] leading-relaxed flex items-start gap-2.5">
+          <i data-lucide="shield-check" class="w-4 h-4 text-[#0F5132] shrink-0 mt-0.5"></i>
+          <div><strong>Zero-Risk Escrow:</strong> Authorized hold only (<code class="font-mono text-xs text-[#0D261C]">intent=AUTHORIZE</code>). Card is NOT charged until order is secured.</div>
         </div>
 
         <button 
           onclick="triggerEscrowAuthorization()" 
           id="btn-authorize-fast"
-          class="w-full h-[52px] rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-[15px] shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+          class="w-full h-[52px] rounded-xl bg-[#0D261C] hover:bg-[#16382b] active:bg-[#081711] text-[#F4F2EC] font-bold text-[15px] shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
         >
-          <i data-lucide="lock" class="w-4 h-4"></i>
+          <i data-lucide="lock" class="w-4 h-4 text-[#A3E635]"></i>
           <span id="btn-authorize-label">Authorize Escrow Hold with PayPal ($39.99)</span>
         </button>
       </div>
@@ -856,39 +865,39 @@
     <!-- ======================================================== -->
     <div id="view-agent" class="hidden max-w-3xl mx-auto w-full space-y-6 pb-10">
       
-      <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+      <div class="flex items-center justify-between pb-2 border-b border-[#E2DFD7]">
         <div>
-          <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <h2 class="text-lg sm:text-xl font-bold text-[#0D1F18] flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             Cartwise Autonomous Agent
           </h2>
-          <p class="text-xs text-gray-400">Playwright browser via Kernel &bull; PayPal Escrow Hold Active</p>
+          <p class="text-xs text-[#4A5550]">Playwright browser via Kernel &bull; PayPal Escrow Hold Active</p>
         </div>
       </div>
 
       <!-- Live Browser Session Stream -->
-      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] overflow-hidden shadow-2xl">
-        <div class="px-4 py-2.5 bg-[#070b14] border-b border-gray-800 flex items-center justify-between text-xs text-gray-400 font-mono">
+      <div class="rounded-2xl bg-white border border-[#E2DFD7] overflow-hidden shadow-[0_2px_8px_rgba(13,38,28,0.04)]">
+        <div class="px-4 py-2.5 bg-[#F9F8F5] border-b border-[#E2DFD7] flex items-center justify-between text-xs text-[#4A5550] font-mono">
           <div class="flex items-center gap-2">
             <div class="flex gap-1.5">
               <div class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></div>
               <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
               <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
             </div>
-            <span class="text-gray-500 text-[11px]">|</span>
-            <span id="agent-browser-url" class="truncate text-gray-300">https://cartwise-demo-market.onrender.com/checkout</span>
+            <span class="text-[#8C9690] text-[11px]">|</span>
+            <span id="agent-browser-url" class="truncate text-[#0D1F18]">https://cartwise-demo-market.onrender.com/checkout</span>
           </div>
-          <span class="text-[10px] text-cyan-400 uppercase font-bold tracking-wider">KERNEL CLOUD BROWSER</span>
+          <span class="text-[10px] text-[#0F5132] uppercase font-bold tracking-wider">KERNEL CLOUD BROWSER</span>
         </div>
 
-        <div class="relative w-full h-56 sm:h-72 bg-[#070b14] flex items-center justify-center overflow-hidden">
+        <div class="relative w-full h-56 sm:h-72 bg-[#F4F2EC] flex items-center justify-center overflow-hidden">
           <iframe id="agent-live-frame" src="" class="w-full h-full border-none hidden"></iframe>
           <div id="agent-sim-screen" class="text-center p-6 space-y-3">
-            <div class="w-12 h-12 rounded-full bg-indigo-600/20 border border-indigo-500 flex items-center justify-center mx-auto text-cyan-400 animate-spin">
+            <div class="w-12 h-12 rounded-full bg-[#E6F4EA] border border-[#B7E1CD] flex items-center justify-center mx-auto text-[#0F5132] animate-spin">
               <i data-lucide="loader-2" class="w-6 h-6"></i>
             </div>
-            <div class="text-sm font-bold text-white" id="agent-sim-title">Booting Isolated Cloud Browser...</div>
-            <div class="text-xs text-gray-400 font-mono max-w-sm mx-auto" id="agent-sim-desc">
+            <div class="text-sm font-bold text-[#0D1F18]" id="agent-sim-title">Booting Isolated Cloud Browser...</div>
+            <div class="text-xs text-[#4A5550] font-mono max-w-sm mx-auto" id="agent-sim-desc">
               Injecting Cartwise single-use purchasing card into merchant checkout form...
             </div>
           </div>
@@ -896,62 +905,62 @@
       </div>
 
       <!-- Execution Timeline Steps -->
-      <div class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-4">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
-          <i data-lucide="list-checks" class="w-4 h-4 text-cyan-400"></i>
+      <div class="rounded-2xl bg-white border border-[#E2DFD7] p-5 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-[#4A5550] flex items-center gap-2">
+          <i data-lucide="list-checks" class="w-4 h-4 text-[#0F5132]"></i>
           Autonomous Execution Timeline
         </h3>
         <div id="agent-steps-container" class="space-y-3">
           <!-- Step 1: Escrow Lock -->
-          <div id="step-1" class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 transition flex items-center gap-3">
-            <div id="step-1-icon" class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">✓</div>
+          <div id="step-1" class="p-3 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] transition flex items-center gap-3">
+            <div id="step-1-icon" class="w-7 h-7 rounded-full bg-[#0D261C] text-[#A3E635] flex items-center justify-center text-xs font-bold shrink-0">✓</div>
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-white">PayPal Escrow Hold Locked</div>
-              <div class="text-[11px] text-gray-400 truncate">Orders v2 authorization accepted (intent=AUTHORIZE)</div>
+              <div class="text-xs font-bold text-[#0D1F18]">PayPal Escrow Hold Locked</div>
+              <div class="text-[11px] text-[#4A5550] truncate">Orders v2 authorization accepted (intent=AUTHORIZE)</div>
             </div>
           </div>
 
           <!-- Step 2: Boot Browser -->
-          <div id="step-2" class="p-3 rounded-xl bg-[#070b14] border border-[#1e293b] transition flex items-center gap-3">
-            <div id="step-2-icon" class="w-7 h-7 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center text-xs font-bold shrink-0">2</div>
+          <div id="step-2" class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] transition flex items-center gap-3">
+            <div id="step-2-icon" class="w-7 h-7 rounded-full bg-[#E2DFD7] text-[#4A5550] flex items-center justify-center text-xs font-bold shrink-0">2</div>
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-white">Boot Kernel Cloud Browser</div>
-              <div class="text-[11px] text-gray-400 truncate">Isolated Playwright session starting...</div>
+              <div class="text-xs font-bold text-[#0D1F18]">Boot Kernel Cloud Browser</div>
+              <div class="text-[11px] text-[#4A5550] truncate">Isolated Playwright session starting...</div>
             </div>
           </div>
 
           <!-- Step 3: Navigate & Fill -->
-          <div id="step-3" class="p-3 rounded-xl bg-[#070b14] border border-[#1e293b] transition flex items-center gap-3">
-            <div id="step-3-icon" class="w-7 h-7 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center text-xs font-bold shrink-0">3</div>
+          <div id="step-3" class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] transition flex items-center gap-3">
+            <div id="step-3-icon" class="w-7 h-7 rounded-full bg-[#E2DFD7] text-[#4A5550] flex items-center justify-center text-xs font-bold shrink-0">3</div>
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-white">Navigate Store & Fill Checkout</div>
-              <div class="text-[11px] text-gray-400 truncate">Pre-populating shipping to your location</div>
+              <div class="text-xs font-bold text-[#0D1F18]">Navigate Store & Fill Checkout</div>
+              <div class="text-[11px] text-[#4A5550] truncate">Pre-populating shipping to your location</div>
             </div>
           </div>
 
           <!-- Step 4: Inject Card & Pay -->
-          <div id="step-4" class="p-3 rounded-xl bg-[#070b14] border border-[#1e293b] transition flex items-center gap-3">
-            <div id="step-4-icon" class="w-7 h-7 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center text-xs font-bold shrink-0">4</div>
+          <div id="step-4" class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] transition flex items-center gap-3">
+            <div id="step-4-icon" class="w-7 h-7 rounded-full bg-[#E2DFD7] text-[#4A5550] flex items-center justify-center text-xs font-bold shrink-0">4</div>
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-white">Inject Purchasing Card & Submit</div>
-              <div class="text-[11px] text-gray-400 truncate">Cartwise card: 123456*****2234</div>
+              <div class="text-xs font-bold text-[#0D1F18]">Inject Purchasing Card & Submit</div>
+              <div class="text-[11px] text-[#4A5550] truncate">Cartwise card: 123456*****2234</div>
             </div>
           </div>
 
           <!-- Step 5: Capture or Void -->
-          <div id="step-5" class="p-3 rounded-xl bg-[#070b14] border border-[#1e293b] transition flex items-center gap-3">
-            <div id="step-5-icon" class="w-7 h-7 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center text-xs font-bold shrink-0">5</div>
+          <div id="step-5" class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] transition flex items-center gap-3">
+            <div id="step-5-icon" class="w-7 h-7 rounded-full bg-[#E2DFD7] text-[#4A5550] flex items-center justify-center text-xs font-bold shrink-0">5</div>
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-white">Confirm & Capture Escrow</div>
-              <div class="text-[11px] text-gray-400 truncate">Awaiting merchant confirmation...</div>
+              <div class="text-xs font-bold text-[#0D1F18]">Confirm & Capture Escrow</div>
+              <div class="text-[11px] text-[#4A5550] truncate">Awaiting merchant confirmation...</div>
             </div>
           </div>
         </div>
 
         <!-- Live Logs -->
-        <div class="pt-3 border-t border-gray-800">
-          <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Agent Execution Log</div>
-          <div id="agent-logs" class="max-h-36 overflow-y-auto text-[11px] text-gray-400 font-mono space-y-0.5 custom-scrollbar">
+        <div class="pt-3 border-t border-[#E2DFD7]">
+          <div class="text-[10px] font-bold text-[#4A5550] uppercase tracking-wider mb-2">Agent Execution Log</div>
+          <div id="agent-logs" class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] max-h-36 overflow-y-auto text-[11px] text-[#4A5550] font-mono space-y-0.5 custom-scrollbar">
             <div>[00:01] Waiting for PayPal escrow authorization...</div>
           </div>
         </div>
@@ -963,7 +972,7 @@
     <!-- SCREEN 5: RECEIPT SCREEN                                 -->
     <!-- ======================================================== -->
     <div id="view-receipt" class="hidden max-w-2xl mx-auto w-full space-y-5 pb-10">
-      <div id="receipt-card" class="rounded-2xl bg-[#0f172a] border border-[#1e293b] p-5 shadow-xl space-y-4">
+      <div id="receipt-card" class="rounded-2xl bg-white border border-[#E2DFD7] p-5 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-4">
         <!-- Rendered dynamically -->
       </div>
     </div>
@@ -973,18 +982,18 @@
     <!-- ======================================================== -->
     <div id="view-orders" class="hidden max-w-3xl mx-auto w-full space-y-6 pb-10">
       
-      <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+      <div class="flex items-center justify-between pb-2 border-b border-[#E2DFD7]">
         <div class="flex items-center gap-2.5">
-          <button onclick="navigateTo('onboarding')" class="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition">
+          <button onclick="navigateTo('onboarding')" class="p-1 rounded-lg hover:bg-[#E2DFD7] text-[#4A5550] hover:text-[#0D1F18] transition cursor-pointer">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
           </button>
           <div>
-            <h2 class="text-xl font-bold text-white">Order History</h2>
-            <p class="text-xs text-gray-400">Persistent local records of your autonomous in-app purchases</p>
+            <h2 class="text-xl font-bold text-[#0D1F18]">Order History</h2>
+            <p class="text-xs text-[#4A5550]">Persistent local records of your autonomous in-app purchases</p>
           </div>
         </div>
 
-        <button onclick="clearOrderHistory()" class="text-xs text-rose-400 hover:text-rose-300 font-medium">
+        <button onclick="clearOrderHistory()" class="text-xs text-rose-600 hover:text-rose-700 font-medium cursor-pointer">
           Clear History
         </button>
       </div>
@@ -1000,20 +1009,20 @@
   <!-- ======================================================== -->
   <!-- GLOBAL PROFESSIONAL FOOTER (Full-Width, Distinct Tone)   -->
   <!-- ======================================================== -->
-  <footer class="w-full bg-[#0a101d] border-t border-slate-800/80 mt-16 py-10 px-3.5 sm:px-6 lg:px-8 shrink-0">
-    <div class="w-full max-w-6xl mx-auto space-y-8 text-xs text-gray-400 min-w-0">
+  <footer class="w-full bg-white border-t border-[#E2DFD7] mt-16 py-10 px-3.5 sm:px-6 lg:px-8 shrink-0">
+    <div class="w-full max-w-6xl mx-auto space-y-8 text-xs text-[#4A5550] min-w-0">
       
       <!-- Main Footer Columns (4 Columns on Desktop, 2 on Tablet, 1 on Mobile) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         
         <!-- Col 1: About & Submission -->
         <div class="space-y-3">
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider">About Cartwise</h4>
-          <p class="text-[11.5px] text-gray-400 leading-relaxed">
+          <h4 class="text-xs font-bold text-[#0D1F18] uppercase tracking-wider">About Cartwise</h4>
+          <p class="text-[11.5px] text-[#4A5550] leading-relaxed">
             Built for the <strong>PayPal AI Hackathon 2026 on Devpost</strong>. Cartwise solves cross-border e-commerce by executing headless browser checkouts with escrow buyer protection.
           </p>
           <div class="pt-1">
-            <div class="inline-flex items-center gap-1.5 text-[11px] text-cyan-400 font-semibold">
+            <div class="inline-flex items-center gap-1.5 text-[11px] text-[#0F5132] font-semibold">
               <i data-lucide="award" class="w-3.5 h-3.5"></i>
               <span>Official Hackathon Submission</span>
             </div>
@@ -1022,26 +1031,26 @@
 
         <!-- Col 2: Architecture & APIs -->
         <div class="space-y-3">
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider">Cloud Architecture</h4>
-          <ul class="space-y-2 text-[11.5px] text-gray-400">
+          <h4 class="text-xs font-bold text-[#0D1F18] uppercase tracking-wider">Cloud Architecture</h4>
+          <ul class="space-y-2 text-[11.5px] text-[#4A5550]">
             <li class="flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
-              <span><strong>PayPal Sandbox:</strong> Orders v2 (<code class="font-mono text-[10px] text-indigo-300">AUTHORIZE</code>)</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#0D261C]"></span>
+              <span><strong>PayPal Sandbox:</strong> Orders v2 (<code class="font-mono text-[10px] text-[#0D1F18]">AUTHORIZE</code>)</span>
             </li>
             <li class="flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#0F5132]"></span>
               <span><strong>Google Gemini 3.8:</strong> Landed Cost Reasoning</span>
             </li>
             <li class="flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#047857]"></span>
               <span><strong>Kernel:</strong> Isolated Playwright Sessions</span>
             </li>
             <li class="flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#B45309]"></span>
               <span><strong>Channel3:</strong> Multi-Store Product Index</span>
             </li>
             <li class="flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#4338CA]"></span>
               <span><strong>Render:</strong> Hosted Blueprint Microservices</span>
             </li>
           </ul>
@@ -1049,22 +1058,22 @@
 
         <!-- Col 3: Autonomous Workflow -->
         <div class="space-y-3">
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider">Security & Safeguards</h4>
-          <ul class="space-y-2 text-[11.5px] text-gray-400">
+          <h4 class="text-xs font-bold text-[#0D1F18] uppercase tracking-wider">Security & Safeguards</h4>
+          <ul class="space-y-2 text-[11.5px] text-[#4A5550]">
             <li class="flex items-center gap-2">
-              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-[#0F5132] shrink-0"></i>
               <span><strong>$0 Upfront Risk:</strong> Hold only, not charged</span>
             </li>
             <li class="flex items-center gap-2">
-              <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+              <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-[#B45309] shrink-0"></i>
               <span><strong>Auto-Void Safeguard:</strong> Reverts hold if decline</span>
             </li>
             <li class="flex items-center gap-2">
-              <i data-lucide="lock" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-[#0D261C] shrink-0"></i>
               <span><strong>Zero Card Exposure:</strong> Merchant never gets card</span>
             </li>
             <li class="flex items-center gap-2">
-              <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i>
+              <i data-lucide="check" class="w-3.5 h-3.5 text-[#0F5132] shrink-0"></i>
               <span><strong>AI Risk Scoring:</strong> Domain security analysis</span>
             </li>
           </ul>
@@ -1072,31 +1081,31 @@
 
         <!-- Col 4: Quick Navigation -->
         <div class="space-y-3">
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider">Quick Navigation</h4>
+          <h4 class="text-xs font-bold text-[#0D1F18] uppercase tracking-wider">Quick Navigation</h4>
           <ul class="space-y-1 text-[12px]">
             <li>
-              <button onclick="navigateTo('ask')" class="text-gray-400 hover:text-white transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
-                <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+              <button onclick="navigateTo('ask')" class="text-[#4A5550] hover:text-[#0D1F18] transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-[#0F5132] shrink-0"></i>
                 <span>Find Deals & Search</span>
               </button>
             </li>
             <li>
-              <a href="https://cartwise-demo-market.onrender.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-cyan-300 transition flex items-center gap-2 py-2 min-h-[38px]">
-                <i data-lucide="store" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+              <a href="https://cartwise-demo-market.onrender.com" target="_blank" rel="noopener noreferrer" class="text-[#4A5550] hover:text-[#0D1F18] transition flex items-center gap-2 py-2 min-h-[38px]">
+                <i data-lucide="store" class="w-3.5 h-3.5 text-[#0F5132] shrink-0"></i>
                 <span>Visit Demo Market Store ↗</span>
               </a>
             </li>
             <li>
-              <button onclick="showApkModal()" class="text-gray-400 hover:text-emerald-400 transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
-                <svg class="w-3.5 h-3.5 fill-current text-emerald-400 shrink-0" viewBox="0 0 24 24">
+              <button onclick="showApkModal()" class="text-[#4A5550] hover:text-[#0D1F18] transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
+                <svg class="w-3.5 h-3.5 fill-current text-[#0D261C] shrink-0" viewBox="0 0 24 24">
                   <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
                 </svg>
                 <span>Download Android APK</span>
               </button>
             </li>
             <li>
-              <button onclick="navigateTo('orders')" class="text-gray-400 hover:text-white transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
-                <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i>
+              <button onclick="navigateTo('orders')" class="text-[#4A5550] hover:text-[#0D1F18] transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
+                <i data-lucide="history" class="w-3.5 h-3.5 text-[#0F5132] shrink-0"></i>
                 <span>Order History & Receipts</span>
               </button>
             </li>
@@ -1105,62 +1114,51 @@
 
       </div>
 
-      <!-- Partner Logos in Footer (Balanced visual weight & high-contrast branding) -->
-      <div class="pt-6 border-t border-gray-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="text-xs text-gray-400 text-center sm:text-left">
+      <!-- Partner Logos in Footer (Crisp dark ink #1E2923) -->
+      <div class="pt-6 border-t border-[#E2DFD7] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="text-xs text-[#4A5550] text-center sm:text-left">
           Powered by the official PayPal AI Hackathon 2026 infrastructure partners:
         </div>
         <div class="flex flex-wrap items-center justify-center gap-5 sm:gap-7">
-          <!-- PayPal (brightened to #60A5FA / #38BDF8) -->
+          <!-- PayPal in crisp dark ink (#1E2923) -->
           <div class="logo-item flex items-center gap-1.5 cursor-default select-none py-1" title="PayPal Escrow Platform">
             <svg class="h-4 w-auto shrink-0" viewBox="0 0 24 24" fill="none" style="height: 18px;">
-              <!-- Back P in #60A5FA -->
-              <path fill="#60A5FA" d="M7.5 3h5.5c2.5 0 4.5 1.2 4.1 3.8-.5 3-2.6 4.7-5.6 4.7H9.1l-1.3 8.5H4.5L7.5 3z" />
-              <!-- Front P in #38BDF8 -->
-              <path fill="#38BDF8" d="M9.8 7h5.4c2.4 0 4.1 1.2 3.7 3.6-.5 2.9-2.5 4.6-5.3 4.6h-2.3l-1.4 8.8H6.7L9.8 7z" />
-              <!-- Overlap blend -->
-              <path fill="#0284C7" d="M11.5 11h2.5c1.8 0 3.1.8 2.8 2.4-.3 1.9-1.7 3-3.5 3h-1.6l-.4 2.5h-2L11.5 11z" />
+              <path fill="#1E2923" fill-opacity="0.75" d="M7.5 3h5.5c2.5 0 4.5 1.2 4.1 3.8-.5 3-2.6 4.7-5.6 4.7H9.1l-1.3 8.5H4.5L7.5 3z" />
+              <path fill="#1E2923" d="M9.8 7h5.4c2.4 0 4.1 1.2 3.7 3.6-.5 2.9-2.5 4.6-5.3 4.6h-2.3l-1.4 8.8H6.7L9.8 7z" />
+              <path fill="#0D1F18" d="M11.5 11h2.5c1.8 0 3.1.8 2.8 2.4-.3 1.9-1.7 3-3.5 3h-1.6l-.4 2.5h-2L11.5 11z" />
             </svg>
-            <span class="tracking-tight flex items-center" style="font-size: 15px; font-weight: 800; letter-spacing: -0.4px;">
-              <span style="color: #60A5FA;">Pay</span><span style="color: #38BDF8;">Pal</span>
+            <span class="tracking-tight flex items-center" style="font-size: 15px; font-weight: 800; letter-spacing: -0.4px; color: #1E2923;">
+              PayPal
             </span>
           </div>
 
-          <!-- Google Gemini 3.8 (14px font-weight: 600, color: #E2E8F0) -->
+          <!-- Google Gemini 3.8 in crisp dark ink (#1E2923) -->
           <div class="logo-item flex items-center gap-1.5 cursor-default select-none py-1" title="Google Gemini 3.8 Flash">
             <svg class="w-4 h-4 shrink-0" viewBox="0 0 32 32" fill="none">
-              <defs>
-                <linearGradient id="gemini-footer-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#4E88F9" />
-                  <stop offset="40%" stop-color="#7B78EE" />
-                  <stop offset="70%" stop-color="#A56FEA" />
-                  <stop offset="100%" stop-color="#EB70A4" />
-                </linearGradient>
-              </defs>
-              <path fill="url(#gemini-footer-grad)" d="M16 2C16 9.73 9.73 16 2 16c7.73 0 14 6.27 14 14 0-7.73 6.27-14 14-14-7.73 0-14-6.27-14-14z"/>
+              <path fill="#1E2923" d="M16 2C16 9.73 9.73 16 2 16c7.73 0 14 6.27 14 14 0-7.73 6.27-14 14-14-7.73 0-14-6.27-14-14z"/>
             </svg>
-            <span style="font-size: 14px; font-weight: 600; color: #E2E8F0;" class="tracking-tight">Gemini 3.8</span>
+            <span style="font-size: 14px; font-weight: 700; color: #1E2923;" class="tracking-tight">Gemini 3.8</span>
           </div>
 
-          <img src="/images/logo_render.png"   alt="Render"   class="logo-item h-3.5 w-auto object-contain" />
-          <img src="/images/logo_channel3.png"  alt="Channel3" class="logo-item h-3.5 w-auto object-contain" />
-          <img src="/images/logo_kernel.png"    alt="Kernel"   class="logo-item h-3.5 w-auto object-contain" />
+          <img src="/images/logo_render.png"   alt="Render"   class="logo-item h-3.5 w-auto object-contain logo-ink" style="filter: brightness(0); opacity: 0.85;" />
+          <img src="/images/logo_channel3.png"  alt="Channel3" class="logo-item h-3.5 w-auto object-contain logo-ink" style="filter: brightness(0); opacity: 0.85;" />
+          <img src="/images/logo_kernel.png"    alt="Kernel"   class="logo-item h-3.5 w-auto object-contain logo-ink" style="filter: brightness(0); opacity: 0.85;" />
         </div>
       </div>
 
       <!-- Bottom Bar: Open Source License & Compliance -->
-      <div class="pt-4 border-t border-gray-800/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400 text-center sm:text-left">
+      <div class="pt-4 border-t border-[#E2DFD7] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#4A5550] text-center sm:text-left">
         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-          <span class="inline-flex items-center gap-1 text-emerald-400 font-semibold">
+          <span class="inline-flex items-center gap-1 text-[#0F5132] font-semibold">
             <i data-lucide="code" class="w-3.5 h-3.5"></i>
             Open Source
           </span>
           <span>&bull;</span>
-          <span class="text-gray-200 font-semibold">MIT License</span>
+          <span class="text-[#0D1F18] font-semibold">MIT License</span>
           <span>&bull;</span>
           <span>Built for PayPal AI Hackathon 2026</span>
         </div>
-        <div class="flex items-center gap-3 text-gray-400">
+        <div class="flex items-center gap-3 text-[#4A5550]">
           <span>Demo Sandbox Environment</span>
           <span>&bull;</span>
           <span>Lagos, Nigeria 🇳🇬</span>
@@ -1171,44 +1169,172 @@
   </footer>
 
   <!-- ======================================================== -->
-  <!-- MODAL: ANDROID APK DOWNLOAD / INFO                       -->
+  <!-- MODAL: CONFIRM SUGGESTED PROMPT SEARCH                   -->
   <!-- ======================================================== -->
-  <div id="apk-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-    <div class="w-full max-w-md rounded-2xl bg-[#0f172a] border border-[#1e293b] p-6 shadow-2xl space-y-5">
+  <div id="modal-prompt-confirm" onclick="if(event.target === this) closePromptModal()" class="fixed inset-0 z-50 bg-[#0D1F18]/50 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl bg-white border border-[#E2DFD7] p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-[#E6F4EA] border border-[#B7E1CD] flex items-center justify-center text-[#0F5132] shrink-0">
+          <i data-lucide="sparkles" class="w-4 h-4 text-[#0F5132]"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-[#0D1F18]">Confirm Suggested Search</h3>
+          <p class="text-[11px] text-[#4A5550]">Search via Gemini 3.8 &amp; Channel3</p>
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] text-xs text-[#0D1F18] font-medium leading-relaxed" id="modal-prompt-text">
+        Prompt text
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closePromptModal()" type="button" class="flex-1 py-2.5 rounded-xl bg-white border border-[#D5D1C8] text-[#4A5550] hover:text-[#0D1F18] hover:bg-[#F9F8F5] font-semibold text-xs transition cursor-pointer">
+          Cancel
+        </button>
+        <button onclick="executeModalPrompt()" type="button" class="flex-1 py-2.5 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-[#F4F2EC] font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-[#A3E635]"></i>
+          <span>Search Deals</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: PAYPAL SANDBOX APPROVAL                           -->
+  <!-- ======================================================== -->
+  <div id="modal-paypal-sandbox" onclick="if(event.target === this) closePayPalModal()" class="fixed inset-0 z-50 bg-[#0D1F18]/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-white border border-[#E2DFD7] p-5 sm:p-6 space-y-4 shadow-2xl">
+      
+      <!-- Header -->
       <div class="flex items-start justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center text-[#070b14] font-black p-2.5">
-            <svg class="w-7 h-7 fill-current text-[#070b14]" viewBox="0 0 24 24">
-              <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
-            </svg>
+          <div class="w-11 h-11 rounded-xl bg-[#003087] flex items-center justify-center text-white shrink-0 shadow-sm font-bold text-lg select-none">
+            🅿️
           </div>
           <div>
-            <h3 class="text-lg font-bold text-white">Cartwise Android App</h3>
-            <span class="text-xs text-emerald-400 font-semibold">Hackathon Debug Build v1.0</span>
+            <h3 class="text-base font-bold text-[#0D1F18] flex items-center gap-1.5">
+              PayPal Sandbox Authorization
+            </h3>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="text-xs text-[#0F5132] font-semibold">Orders v2 &bull; Escrow Hold</span>
+            </div>
           </div>
         </div>
-        <button onclick="hideApkModal()" class="text-gray-400 hover:text-white p-1">
+        <button onclick="closePayPalModal()" type="button" class="w-9 h-9 flex items-center justify-center rounded-xl text-[#4A5550] hover:text-[#0D1F18] hover:bg-[#F9F8F5] p-1.5 cursor-pointer" aria-label="Close PayPal Modal">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="space-y-3 text-xs text-gray-300 leading-relaxed">
+      <!-- Description -->
+      <p class="text-xs text-[#4A5550] leading-relaxed">
+        A PayPal Sandbox authorization window has opened to approve the escrow hold. Funds remain in your account and are <strong class="text-[#0D1F18]">NOT charged</strong> until the merchant confirms your order.
+      </p>
+
+      <!-- Order Summary Box -->
+      <div class="p-3.5 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] space-y-2 text-xs font-mono">
+        <div class="flex justify-between text-[#4A5550]">
+          <span>Cartwise Order:</span>
+          <span id="pp-modal-order-id" class="text-[#0D1F18] font-bold">cw_ord_...</span>
+        </div>
+        <div class="flex justify-between text-[#4A5550]">
+          <span>PayPal Order ID:</span>
+          <span id="pp-modal-pp-id" class="text-[#0D1F18] font-bold">...</span>
+        </div>
+        <div class="flex justify-between text-[#4A5550]">
+          <span>Payment Intent:</span>
+          <span class="text-[#0F5132] font-bold">AUTHORIZE (Escrow)</span>
+        </div>
+        <div class="flex justify-between text-[#047857] font-bold pt-2 border-t border-[#E2DFD7] font-sans">
+          <span>Escrow Authorized Amount:</span>
+          <span id="pp-modal-amount" class="font-mono text-sm text-[#047857]">$39.99</span>
+        </div>
+      </div>
+
+      <!-- Notice / Status -->
+      <div id="pp-modal-status-notice" class="p-3 rounded-xl bg-[#E6F4EA] border border-[#B7E1CD] text-xs text-[#0D261C] flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-[#0F5132] shrink-0"></i>
+        <span id="pp-modal-status-text">Complete authorization in the PayPal window, or use Fast-Pass below.</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-1">
+        <!-- Primary: Open / Re-open Sandbox Window -->
+        <a 
+          id="pp-modal-open-link" 
+          href="#" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="w-full h-11 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 cursor-pointer select-none"
+        >
+          <i data-lucide="external-link" class="w-4 h-4 text-white"></i>
+          <span>Open PayPal Sandbox Window ↗</span>
+        </a>
+
+        <!-- Secondary: I've Approved -> Start Agent -->
+        <button 
+          id="pp-modal-confirm-btn"
+          onclick="confirmPayPalApprovalAndStartAgent()" 
+          type="button" 
+          class="w-full h-11 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-[#F4F2EC] font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 cursor-pointer select-none"
+        >
+          <i data-lucide="check-circle" class="w-4 h-4 text-[#A3E635]"></i>
+          <span>I've Approved on PayPal &rarr; Start Autonomous Agent</span>
+        </button>
+
+        <!-- Fast-Pass Button for Immediate Evaluation / Hackathon Judges -->
+        <button 
+          onclick="fastPassPayPalAndStartAgent()" 
+          type="button" 
+          class="w-full min-h-[40px] py-2 rounded-xl bg-white border border-[#D5D1C8] hover:bg-[#F9F8F5] text-[#4A5550] hover:text-[#0D1F18] font-medium text-xs transition flex items-center justify-center gap-1.5 cursor-pointer select-none"
+        >
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-[#0F5132]"></i>
+          <span>Demo Sandbox Fast-Pass (Instant Escrow)</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ANDROID APK DOWNLOAD / INFO                       -->
+  <!-- ======================================================== -->
+  <div id="apk-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-md rounded-2xl bg-white border border-[#E2DFD7] p-6 shadow-2xl space-y-5">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-[#0D261C] flex items-center justify-center text-[#A3E635] p-2.5 shadow-sm">
+            <svg class="w-7 h-7 fill-current text-[#A3E635]" viewBox="0 0 24 24">
+              <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-[#0D1F18]">Cartwise Android App</h3>
+            <span class="text-xs text-[#0F5132] font-semibold">Hackathon Debug Build v1.0</span>
+          </div>
+        </div>
+        <button onclick="hideApkModal()" class="text-[#4A5550] hover:text-[#0D1F18] p-1 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-[#4A5550] leading-relaxed">
         <p>
           The native Android application is built with <strong>Jetpack Compose</strong> and compiled natively for ARM64 Linux / Android.
         </p>
-        <div class="p-3 rounded-xl bg-[#070b14] border border-gray-800 space-y-1.5 font-mono text-[11px]">
-          <div class="text-gray-400">Package: <span class="text-gray-200">com.cartwise.app</span></div>
-          <div class="text-gray-400">Build: <span class="text-emerald-400">app-debug.apk (20.1 MB)</span></div>
-          <div class="text-gray-400">Target: <span class="text-cyan-300">Android 8.0 - Android 16</span></div>
-          <div class="text-gray-400">Location: <span class="text-gray-300 break-all">android/app/build/outputs/apk/debug/app-debug.apk</span></div>
+        <div class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] space-y-1.5 font-mono text-[11px]">
+          <div class="text-[#4A5550]">Package: <span class="text-[#0D1F18]">com.cartwise.app</span></div>
+          <div class="text-[#4A5550]">Build: <span class="text-[#047857] font-bold">app-debug.apk (20.1 MB)</span></div>
+          <div class="text-[#4A5550]">Target: <span class="text-[#0D1F18]">Android 8.0 - Android 16</span></div>
+          <div class="text-[#4A5550]">Location: <span class="text-[#4A5550] break-all">android/app/build/outputs/apk/debug/app-debug.apk</span></div>
         </div>
-        <p class="text-[11.5px] text-gray-400">
+        <p class="text-[11.5px] text-[#4A5550]">
           The direct APK download link will be attached to the Devpost submission for judges to test on physical Android devices.
         </p>
       </div>
 
       <div class="flex gap-2">
-        <button onclick="hideApkModal()" class="flex-1 py-2.5 rounded-xl bg-[#1e293b] hover:bg-gray-700 text-xs font-semibold text-white transition">
+        <button onclick="hideApkModal()" class="flex-1 py-2.5 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-xs font-semibold text-[#F4F2EC] transition cursor-pointer">
           Close
         </button>
       </div>

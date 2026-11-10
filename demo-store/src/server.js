@@ -760,12 +760,53 @@ function renderPage(title, content) {
   </div>
 
   <script>
+    // Helper to get currently selected variant and quantity from detail page
+    function getSelectedVariantAndQty() {
+      const variantEl = document.getElementById('variantSelect');
+      const selectedVariantSku = variantEl ? variantEl.value : '';
+      const selectedVariantText = variantEl && variantEl.selectedIndex >= 0 ? variantEl.options[variantEl.selectedIndex].text : '';
+      const selectedVariantName = selectedVariantText ? selectedVariantText.replace(/\s*\([^)]*\)\s*$/, '').trim() : '';
+
+      const qtyEl = document.getElementById('qtySelect');
+      const selectedQty = qtyEl ? parseInt(qtyEl.value, 10) || 1 : 1;
+
+      return {
+        sku: selectedVariantSku,
+        name: selectedVariantName,
+        quantity: selectedQty
+      };
+    }
+
+    // Helper to serialize all variants on the page for deep linking
+    function getAllVariantsString() {
+      const variantEl = document.getElementById('variantSelect');
+      if (!variantEl || !variantEl.options) return '';
+      const list = [];
+      for (let i = 0; i < variantEl.options.length; i++) {
+        const opt = variantEl.options[i];
+        const sku = opt.value || '';
+        const text = (opt.text || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+        const inStock = opt.getAttribute('data-in-stock') || '1';
+        const stockCount = opt.getAttribute('data-stock-count') || (inStock === '0' ? '0' : '10');
+        if (text) {
+          list.push(encodeURIComponent(text) + ':' + encodeURIComponent(sku) + ':' + inStock + ':' + stockCount);
+        }
+      }
+      return list.join('|');
+    }
+
     // Universal Share Function for Demo Market items
     function shareProduct(id, title, price, shipping, img) {
       const origin = window.location.origin;
-      const productUrl = origin + '/product/' + id;
-      const shareText = 'Buy ' + title + ' on Demo Market for $' + price.toFixed(2) + ' with PayPal Escrow on Cartwise AI: ' + productUrl;
-      const deepLink = 'cartwise://product?id=' + encodeURIComponent(id) + '&title=' + encodeURIComponent(title) + '&price=' + price + '&shipping=' + shipping;
+      const vInfo = getSelectedVariantAndQty();
+      const allVars = getAllVariantsString();
+      const variantParams = (vInfo.sku ? '&variant=' + encodeURIComponent(vInfo.sku) : '') +
+                            (vInfo.name ? '&variety=' + encodeURIComponent(vInfo.name) : '') +
+                            (vInfo.quantity > 1 ? '&quantity=' + vInfo.quantity : '') +
+                            (allVars ? '&allVariants=' + encodeURIComponent(allVars) : '');
+      const productUrl = origin + '/product/' + id + (variantParams ? '?' + variantParams.substring(1) : '');
+      const deepLink = 'cartwise://product?id=' + encodeURIComponent(id) + '&title=' + encodeURIComponent(title) + '&price=' + price + '&shipping=' + shipping + variantParams;
+      const shareText = 'Buy ' + title + (vInfo.name ? ' (' + vInfo.name + ')' : '') + (vInfo.quantity > 1 ? ' x' + vInfo.quantity : '') + ' on Demo Market for $' + (price * vInfo.quantity).toFixed(2) + ' with PayPal Escrow on Cartwise AI: ' + productUrl;
 
       if (navigator.share) {
         navigator.share({
@@ -784,14 +825,21 @@ function renderPage(title, content) {
 
     function shareWithCartwise(id, title, price, shipping, img) {
       const origin = window.location.origin;
-      const productUrl = origin + '/product/' + id;
-      const deepLink = 'cartwise://product?id=' + encodeURIComponent(id) + '&title=' + encodeURIComponent(title) + '&price=' + price + '&shipping=' + shipping;
+      const vInfo = getSelectedVariantAndQty();
+      const allVars = getAllVariantsString();
+      const variantParams = (vInfo.sku ? '&variant=' + encodeURIComponent(vInfo.sku) : '') +
+                            (vInfo.name ? '&variety=' + encodeURIComponent(vInfo.name) : '') +
+                            (vInfo.quantity > 1 ? '&quantity=' + vInfo.quantity : '') +
+                            (allVars ? '&allVariants=' + encodeURIComponent(allVars) : '');
+      const productUrl = origin + '/product/' + id + (variantParams ? '?' + variantParams.substring(1) : '');
+      const deepLink = 'cartwise://product?id=' + encodeURIComponent(id) + '&title=' + encodeURIComponent(title) + '&price=' + price + '&shipping=' + shipping + variantParams;
+      const shareText = 'Buy ' + title + (vInfo.name ? ' (' + vInfo.name + ')' : '') + (vInfo.quantity > 1 ? ' x' + vInfo.quantity : '') + ' on Demo Market with PayPal Escrow on Cartwise AI: ' + productUrl;
 
       // First attempt native share if on mobile (Cartwise APK handles text/plain)
       if (navigator.share) {
         navigator.share({
           title: 'Buy on Cartwise: ' + title,
-          text: productUrl,
+          text: shareText,
           url: productUrl
         }).catch(err => {
           if (err.name !== 'AbortError') {
@@ -800,7 +848,7 @@ function renderPage(title, content) {
         });
       } else {
         window.location.href = deepLink;
-        showToast('Opening in Cartwise App... (' + id + ')');
+        showToast('Opening in Cartwise App... (' + id + (vInfo.name ? ' - ' + vInfo.name : '') + ')');
       }
     }
 
@@ -1240,7 +1288,7 @@ app.get('/product/:id', (req, res) => {
   }
 
   const variantOptions = product.variants.map((v, i) => `
-    <option value="${v.sku}" ${i === 0 ? 'selected' : ''}>${v.name} (${v.sku})</option>
+    <option value="${v.sku}" data-in-stock="${v.inStock ? '1' : '0'}" data-stock-count="${v.stockCount ?? (v.inStock ? 10 : 0)}" ${i === 0 ? 'selected' : ''}>${v.name} (${v.sku})</option>
   `).join('');
 
   const featuresList = product.features.map(f => `
