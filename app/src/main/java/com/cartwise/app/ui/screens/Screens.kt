@@ -1509,15 +1509,41 @@ fun ConfirmScreen(
     cancelNotice: String? = null,
     isSafetyCheckEnabled: Boolean = false,
     onDismissCancelNotice: () -> Unit = {},
-    onPayWithPayPal: (ShippingAddress, BillingAddress) -> Unit,
-    onDemoSandboxFastPass: (ShippingAddress, BillingAddress) -> Unit = { _, _ -> },
+    onPayWithPayPal: (ShippingAddress, BillingAddress, String, Int) -> Unit,
+    onDemoSandboxFastPass: (ShippingAddress, BillingAddress, String, Int) -> Unit = { _, _, _, _ -> },
     onSwitchToDemoMarket: () -> Unit = {},
     onBack: () -> Unit
 ) {
-    val serviceFee = 3.00
-    val totalHold = deal.price + deal.shippingCost + serviceFee
     val scrollState = rememberScrollState()
     val isDemoMarket = deal.storeName.contains("Demo Market", ignoreCase = true) || deal.storeUrl.contains("cartwise-demo-market")
+
+    // Interactive Variety & Quantity Selection
+    var chosenVariety by remember(deal.id) {
+        mutableStateOf(
+            deal.selectedVarietyName.ifBlank {
+                deal.varieties.firstOrNull { it.inStock }?.name
+                    ?: deal.varieties.firstOrNull()?.name
+                    ?: "Standard"
+            }
+        )
+    }
+
+    LaunchedEffect(deal.selectedVarietyName) {
+        if (deal.selectedVarietyName.isNotBlank() && deal.selectedVarietyName != chosenVariety) {
+            chosenVariety = deal.selectedVarietyName
+        }
+    }
+
+    var quantity by remember(deal.id) {
+        mutableStateOf(maxOf(1, deal.quantity))
+    }
+
+    val selectedVarietyObj = deal.varieties.find { it.name.equals(chosenVariety, ignoreCase = true) }
+    val isSelectedSoldOut = selectedVarietyObj?.inStock == false
+
+    val itemSubtotal = deal.price * quantity
+    val serviceFee = 3.00
+    val totalHold = itemSubtotal + deal.shippingCost + serviceFee
 
     // Shipping & Billing Address States (Prefilled so judges don't have to fill anything)
     var shippingFullName by remember { mutableStateOf(initialShippingAddress.fullName) }
@@ -1655,8 +1681,73 @@ fun ConfirmScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(deal.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
 
-                    // Variety badge on Confirm Screen
-                    if (deal.selectedVarietyName.isNotBlank()) {
+                    // Interactive Variety Selection (Chips with In Stock / Sold Out indication)
+                    if (deal.varieties.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Choose Variety",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary
+                            )
+                            if (chosenVariety.isNotBlank()) {
+                                Text(
+                                    text = if (isSelectedSoldOut) "● Sold Out" else "● In Stock",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelectedSoldOut) DangerRed else SuccessGreen
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(deal.varieties) { v ->
+                                val isSelected = v.name.equals(chosenVariety, ignoreCase = true)
+                                val isSoldOut = !v.inStock
+                                val chipBg = if (isSelected) AccentCyan.copy(alpha = 0.2f) else Color(0xFF0F172A)
+                                val chipBorder = if (isSelected) AccentCyan else if (isSoldOut) Color(0xFF334155).copy(alpha = 0.5f) else Color(0xFF1E293B)
+                                val chipTextColor = if (isSelected) AccentCyan else if (isSoldOut) Color(0xFF64748B) else TextPrimary
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(chipBg)
+                                        .border(1.dp, chipBorder, RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            chosenVariety = v.name
+                                        }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (isSelected) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null,
+                                                tint = AccentCyan,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
+                                        Text(
+                                            text = v.name + if (isSoldOut) " (Sold Out)" else "",
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = chipTextColor
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else if (chosenVariety.isNotBlank()) {
                         Spacer(modifier = Modifier.height(6.dp))
                         Box(
                             modifier = Modifier
@@ -1666,11 +1757,76 @@ fun ConfirmScreen(
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                "Variety: ${deal.selectedVarietyName}",
+                                "Variety: $chosenVariety",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = AccentCyan
                             )
+                        }
+                    }
+
+                    // Interactive Quantity Stepper Row
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF0F172A))
+                            .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(10.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Quantity", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text(
+                                text = "$${deal.price} / unit",
+                                fontSize = 11.sp,
+                                color = TextSecondary
+                            )
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { if (quantity > 1) quantity-- },
+                                enabled = quantity > 1,
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(CircleShape)
+                                    .background(if (quantity > 1) Color(0xFF1E293B) else Color(0xFF1E293B).copy(alpha = 0.4f))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Remove,
+                                    contentDescription = "Decrease Quantity",
+                                    tint = if (quantity > 1) TextPrimary else Color(0xFF64748B),
+                                    modifier = Modifier.size(15.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "$quantity",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            IconButton(
+                                onClick = { if (quantity < 10) quantity++ },
+                                enabled = quantity < 10 && !isSelectedSoldOut,
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(CircleShape)
+                                    .background(if (quantity < 10 && !isSelectedSoldOut) Color(0xFF1E293B) else Color(0xFF1E293B).copy(alpha = 0.4f))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Increase Quantity",
+                                    tint = if (quantity < 10 && !isSelectedSoldOut) TextPrimary else Color(0xFF64748B),
+                                    modifier = Modifier.size(15.dp)
+                                )
+                            }
                         }
                     }
 
@@ -1812,8 +1968,8 @@ fun ConfirmScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Item Price", color = TextSecondary, fontSize = 14.sp)
-                        Text("$${deal.price}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text(if (quantity > 1) "Item Price ($${deal.price} × $quantity)" else "Item Price", color = TextSecondary, fontSize = 14.sp)
+                        Text("$${"%.2f".format(itemSubtotal)}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -2297,13 +2453,37 @@ fun ConfirmScreen(
                 .padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (isSelectedSoldOut) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF450A0A)),
+                    border = BorderStroke(1.dp, DangerRed)
+                ) {
+                    Text(
+                        text = "⚠️ \"$chosenVariety\" is currently out of stock. Please select another variety to proceed.",
+                        color = Color(0xFFFCA5A5),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(10.dp)
+                    )
+                }
+            }
+
             Button(
-                onClick = { onPayWithPayPal(currentShipping(), currentBilling()) },
+                onClick = { onPayWithPayPal(currentShipping(), currentBilling(), chosenVariety, quantity) },
+                enabled = !isSelectedSoldOut,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
                 shape = RoundedCornerShape(27.dp), // Official PayPal pill shape
-                colors = ButtonDefaults.buttonColors(containerColor = PayPalGold),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PayPalGold,
+                    disabledContainerColor = Color(0xFF334155),
+                    disabledContentColor = Color(0xFF64748B)
+                ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
                 Row(
@@ -2344,13 +2524,18 @@ fun ConfirmScreen(
 
             // Demo Market Fast-Pass Option (Guaranteed Capture on cartwise-demo-market.onrender.com)
             OutlinedButton(
-                onClick = { onDemoSandboxFastPass(currentShipping(), currentBilling()) },
+                onClick = { onDemoSandboxFastPass(currentShipping(), currentBilling(), chosenVariety, quantity) },
+                enabled = !isSelectedSoldOut,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, AccentCyan.copy(alpha = 0.8f)),
-                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF0F172A))
+                border = BorderStroke(1.dp, if (isSelectedSoldOut) Color(0xFF334155) else AccentCyan.copy(alpha = 0.8f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color(0xFF0F172A),
+                    disabledContainerColor = Color(0xFF0F172A),
+                    disabledContentColor = Color(0xFF64748B)
+                )
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -2877,6 +3062,14 @@ fun ReceiptScreen(
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Variety", color = TextSecondary, fontSize = 13.sp)
                             Text(order.selectedVariety, color = AccentCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    if (order.quantity > 1) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Quantity", color = TextSecondary, fontSize = 13.sp)
+                            Text("${order.quantity}", color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 

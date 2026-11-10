@@ -23,10 +23,10 @@ object DemoCatalog {
             stockCount = 25,
             reasonWhy = "Extracted from Demo Market share sheet. 100% Landed cost calculated. Ready for PayPal Escrow authorization.",
             varieties = listOf(
-                ProductVariety(id = "var-blk", name = "Matte Black", sku = "SP-AIR-BLK", inStock = true),
-                ProductVariety(id = "var-wht", name = "Pearl White", sku = "SP-AIR-WHT", inStock = true),
-                ProductVariety(id = "var-nvy", name = "Deep Navy", sku = "SP-AIR-NVY", inStock = true),
-                ProductVariety(id = "var-gld", name = "Rose Gold", sku = "SP-AIR-GLD", inStock = false)
+                ProductVariety(id = "var-blk", name = "Matte Black", sku = "SP-AIR-BLK", inStock = true, stockCount = 25),
+                ProductVariety(id = "var-wht", name = "Pearl White", sku = "SP-AIR-WHT", inStock = true, stockCount = 12),
+                ProductVariety(id = "var-nvy", name = "Deep Navy", sku = "SP-AIR-NVY", inStock = true, stockCount = 2),
+                ProductVariety(id = "var-gld", name = "Rose Gold", sku = "SP-AIR-GLD", inStock = false, stockCount = 0)
             ),
             selectedVarietyName = "Matte Black",
             safety = WebsiteSafety(
@@ -54,8 +54,9 @@ object DemoCatalog {
             stockCount = 18,
             reasonWhy = "Extracted from Demo Market share sheet. Ready for PayPal Escrow authorization.",
             varieties = listOf(
-                ProductVariety(id = "var-blk", name = "Midnight Black", sku = "NF-PRO-BLK", inStock = true),
-                ProductVariety(id = "var-grn", name = "Olive Green", sku = "NF-PRO-GRN", inStock = true)
+                ProductVariety(id = "var-blk", name = "Midnight Black", sku = "NF-PRO-BLK", inStock = true, stockCount = 18),
+                ProductVariety(id = "var-grn", name = "Olive Green", sku = "NF-PRO-GRN", inStock = true, stockCount = 5),
+                ProductVariety(id = "var-crl", name = "Sunset Coral", sku = "NF-PRO-CRL", inStock = false, stockCount = 0)
             ),
             selectedVarietyName = "Midnight Black",
             safety = WebsiteSafety(
@@ -83,8 +84,9 @@ object DemoCatalog {
             stockCount = 40,
             reasonWhy = "Extracted from Demo Market share sheet. Ready for PayPal Escrow authorization.",
             varieties = listOf(
-                ProductVariety(id = "var-gry", name = "Gunmetal Gray", sku = "HC-20K-GRY", inStock = true),
-                ProductVariety(id = "var-blk", name = "Stealth Black", sku = "HC-20K-BLK", inStock = true)
+                ProductVariety(id = "var-gry", name = "Gunmetal Gray", sku = "HC-20K-GRY", inStock = true, stockCount = 40),
+                ProductVariety(id = "var-blk", name = "Stealth Black", sku = "HC-20K-BLK", inStock = true, stockCount = 15),
+                ProductVariety(id = "var-wht", name = "Titanium White", sku = "HC-20K-WHT", inStock = false, stockCount = 0)
             ),
             selectedVarietyName = "Gunmetal Gray",
             safety = WebsiteSafety(domain = "cartwise-demo-market.onrender.com", score = 98, level = "SAFE")
@@ -106,7 +108,8 @@ object DemoCatalog {
             stockCount = 0,
             reasonWhy = "Extracted from Demo Market share sheet. Currently Out of Stock.",
             varieties = listOf(
-                ProductVariety(id = "var-red", name = "Linear Red Switch", sku = "ST-65-RED", inStock = false)
+                ProductVariety(id = "var-red", name = "Linear Red Switch", sku = "ST-65-RED", inStock = false, stockCount = 0),
+                ProductVariety(id = "var-blu", name = "Clicky Blue Switch", sku = "ST-65-BLU", inStock = false, stockCount = 0)
             ),
             selectedVarietyName = "Linear Red Switch",
             safety = WebsiteSafety(domain = "cartwise-demo-market.onrender.com", score = 98, level = "SAFE")

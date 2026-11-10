@@ -53,6 +53,7 @@ data class Deal(
     val score: Int = 95,
     val varieties: List<ProductVariety> = emptyList(),
     val selectedVarietyName: String = "",
+    val quantity: Int = 1,
     val safety: WebsiteSafety? = null
 )
 
@@ -72,7 +73,8 @@ data class CreateOrderRequest(
     val merchantName: String = "Demo Market",
     val shippingAddress: ShippingAddress? = null,
     val billingAddress: BillingAddress? = null,
-    val selectedVariety: String? = null
+    val selectedVariety: String? = null,
+    val quantity: Int = 1
 )
 
 @Serializable
@@ -120,6 +122,7 @@ data class CartwiseOrder(
     val shippingAddress: ShippingAddress? = null,
     val billingAddress: BillingAddress? = null,
     val selectedVariety: String? = null,
+    val quantity: Int = 1,
     val websiteSafety: WebsiteSafety? = null,
     val liveViewUrl: String? = null,
     val failureReason: String? = null,

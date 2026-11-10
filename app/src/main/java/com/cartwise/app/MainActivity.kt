@@ -18,7 +18,11 @@ import com.cartwise.app.data.*
 import com.cartwise.app.ui.screens.*
 import com.cartwise.app.ui.theme.BgDark
 import com.cartwise.app.ui.theme.CartwiseTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -147,11 +151,11 @@ class MainActivity : ComponentActivity() {
                                 cancelNotice = cancelNotice.value,
                                 isSafetyCheckEnabled = isSafetyCheckEnabled.value,
                                 onDismissCancelNotice = { cancelNotice.value = null },
-                                onPayWithPayPal = { shipping, billing ->
-                                    initiatePayPalOrder(deal, shipping, billing)
+                                onPayWithPayPal = { shipping, billing, variety, qty ->
+                                    initiatePayPalOrder(deal, shipping, billing, variety, qty)
                                 },
-                                onDemoSandboxFastPass = { shipping, billing ->
-                                    fastPassPayPalOrder(deal, shipping, billing)
+                                onDemoSandboxFastPass = { shipping, billing, variety, qty ->
+                                    fastPassPayPalOrder(deal, shipping, billing, variety, qty)
                                 },
                                 onSwitchToDemoMarket = {
                                     selectedDeal.value = Deal(
@@ -285,6 +289,45 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
+     * Parse serialized varieties parameter from Demo Market deep link or web share
+     */
+    private fun parseVariantsParam(raw: String): List<ProductVariety> {
+        val list = mutableListOf<ProductVariety>()
+        try {
+            val trimmed = raw.trim()
+            if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                val jsonArr = JSONArray(trimmed)
+                for (i in 0 until jsonArr.length()) {
+                    val obj = jsonArr.getJSONObject(i)
+                    val name = obj.optString("name")
+                    val sku = obj.optString("sku")
+                    val inStock = obj.optBoolean("inStock", true)
+                    val stockCount = obj.optInt("stockCount", if (inStock) 10 else 0)
+                    if (name.isNotBlank()) {
+                        list.add(ProductVariety(id = "var-$i", name = name, sku = sku, inStock = inStock, stockCount = stockCount))
+                    }
+                }
+            } else {
+                // Pipe-delimited: Name:SKU:inStock:stockCount|...
+                val entries = trimmed.split("|")
+                for ((i, entry) in entries.withIndex()) {
+                    if (entry.isBlank()) continue
+                    val parts = entry.split(":")
+                    val name = Uri.decode(parts.getOrNull(0) ?: "").trim()
+                    val sku = Uri.decode(parts.getOrNull(1) ?: "").trim()
+                    val inStockFlag = parts.getOrNull(2)?.trim()
+                    val inStock = if (inStockFlag == "0" || inStockFlag.equals("false", true)) false else true
+                    val stockCount = parts.getOrNull(3)?.toIntOrNull() ?: if (inStock) 10 else 0
+                    if (name.isNotBlank()) {
+                        list.add(ProductVariety(id = "var-$i", name = name, sku = sku, inStock = inStock, stockCount = stockCount))
+                    }
+                }
+            }
+        } catch (e: Exception) {}
+        return list
+    }
+
+    /**
      * Handle direct product deep links:
      * - cartwise://product?id=...
      * - cartwise://buy?id=...
@@ -295,6 +338,14 @@ class MainActivity : ComponentActivity() {
         val fallbackTitle = uri.getQueryParameter("title")
         val fallbackPrice = uri.getQueryParameter("price")?.toDoubleOrNull()
         val fallbackShipping = uri.getQueryParameter("shipping")?.toDoubleOrNull()
+        val requestedVariety = uri.getQueryParameter("variety")
+            ?: uri.getQueryParameter("variant")
+            ?: uri.getQueryParameter("sku")
+        val requestedQuantity = uri.getQueryParameter("quantity")?.toIntOrNull()
+            ?: uri.getQueryParameter("qty")?.toIntOrNull()
+            ?: 1
+        val rawVariants = uri.getQueryParameter("variants") ?: uri.getQueryParameter("allVariants")
+        val parsedVarieties = if (!rawVariants.isNullOrBlank()) parseVariantsParam(rawVariants) else null
 
         if (productId.isNullOrBlank()) {
             val path = uri.path ?: ""
@@ -306,36 +357,87 @@ class MainActivity : ComponentActivity() {
         }
 
         if (!productId.isNullOrBlank()) {
-            extractProductAndReadyForPayment(productId, fallbackTitle, fallbackPrice, fallbackShipping)
+            extractProductAndReadyForPayment(
+                productId = productId,
+                fallbackTitle = fallbackTitle,
+                fallbackPrice = fallbackPrice,
+                fallbackShipping = fallbackShipping,
+                requestedVariety = requestedVariety,
+                requestedQuantity = requestedQuantity,
+                incomingVarieties = parsedVarieties
+            )
         }
     }
 
     /**
-     * Parse shared text from Demo Market or browser, extract product ID or URL, and prepare payment
+     * Parse shared text from Demo Market or browser, extract product ID, variety, quantity or URL, and prepare payment
      */
     private fun extractSharedItemAndReadyForPayment(text: String) {
-        val prodIdRegex = Regex("""prod-[a-zA-Z0-9\-]+""")
         val urlRegex = Regex("""https?://[^\s]+""")
+        val matchedUrl = urlRegex.find(text)?.value
 
+        // Check if text has quantity info like "x2" or "qty: 2"
+        val qtyRegex = Regex("""\bx([1-9][0-9]?)\b""", RegexOption.IGNORE_CASE)
+        val textQty = qtyRegex.find(text)?.groupValues?.getOrNull(1)?.toIntOrNull()
+
+        // Check if text has variety info in parentheses, e.g. "(Deep Navy)"
+        val parenRegex = Regex("""\(([^)]+)\)""")
+        val textVariety = parenRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+
+        if (!matchedUrl.isNullOrBlank()) {
+            try {
+                val parsedUri = Uri.parse(matchedUrl)
+                var productId = parsedUri.getQueryParameter("id")
+                val fallbackTitle = parsedUri.getQueryParameter("title")
+                val fallbackPrice = parsedUri.getQueryParameter("price")?.toDoubleOrNull()
+                val fallbackShipping = parsedUri.getQueryParameter("shipping")?.toDoubleOrNull()
+                val urlVariety = parsedUri.getQueryParameter("variety")
+                    ?: parsedUri.getQueryParameter("variant")
+                    ?: parsedUri.getQueryParameter("sku")
+                val urlQty = parsedUri.getQueryParameter("quantity")?.toIntOrNull()
+                    ?: parsedUri.getQueryParameter("qty")?.toIntOrNull()
+                val rawVariants = parsedUri.getQueryParameter("variants") ?: parsedUri.getQueryParameter("allVariants")
+                val parsedVarieties = if (!rawVariants.isNullOrBlank()) parseVariantsParam(rawVariants) else null
+
+                if (productId.isNullOrBlank()) {
+                    val path = parsedUri.path ?: ""
+                    if (path.contains("/product/")) {
+                        productId = path.substringAfter("/product/").substringBefore("/").substringBefore("?")
+                    } else if (parsedUri.lastPathSegment != null && parsedUri.lastPathSegment != "product" && parsedUri.lastPathSegment != "buy") {
+                        productId = parsedUri.lastPathSegment
+                    }
+                }
+
+                if (!productId.isNullOrBlank()) {
+                    extractProductAndReadyForPayment(
+                        productId = productId,
+                        fallbackTitle = fallbackTitle,
+                        fallbackPrice = fallbackPrice,
+                        fallbackShipping = fallbackShipping,
+                        requestedVariety = urlVariety ?: textVariety,
+                        requestedQuantity = urlQty ?: textQty ?: 1,
+                        incomingVarieties = parsedVarieties
+                    )
+                    return
+                }
+            } catch (e: Exception) {
+                // fallback to regex matching
+            }
+        }
+
+        val prodIdRegex = Regex("""prod-[a-zA-Z0-9\-]+""")
         val matchedId = prodIdRegex.find(text)?.value
 
         if (!matchedId.isNullOrBlank()) {
-            extractProductAndReadyForPayment(matchedId)
+            extractProductAndReadyForPayment(
+                productId = matchedId,
+                requestedVariety = textVariety,
+                requestedQuantity = textQty ?: 1
+            )
         } else {
-            val matchedUrl = urlRegex.find(text)?.value
-            if (!matchedUrl.isNullOrBlank()) {
-                try {
-                    val parsedUri = Uri.parse(matchedUrl)
-                    handleProductDeepLink(parsedUri)
-                } catch (e: Exception) {
-                    searchQuery.value = text
-                    executeSearch(text)
-                }
-            } else {
-                // If it's general text, run search for it
-                searchQuery.value = text
-                executeSearch(text)
-            }
+            // If it's general text, run search for it
+            searchQuery.value = text
+            executeSearch(text)
         }
     }
 
@@ -346,32 +448,79 @@ class MainActivity : ComponentActivity() {
         productId: String,
         fallbackTitle: String? = null,
         fallbackPrice: Double? = null,
-        fallbackShipping: Double? = null
+        fallbackShipping: Double? = null,
+        requestedVariety: String? = null,
+        requestedQuantity: Int = 1,
+        incomingVarieties: List<ProductVariety>? = null
     ) {
         val knownDeal = DemoCatalog.items[productId]
+        val safeQty = maxOf(1, requestedQuantity)
+
+        // Combine base varieties: incomingVarieties -> knownDeal.varieties -> empty
+        val baseVarieties = when {
+            !incomingVarieties.isNullOrEmpty() -> incomingVarieties
+            knownDeal != null && knownDeal.varieties.isNotEmpty() -> knownDeal.varieties
+            else -> emptyList()
+        }
+
+        // Find variety by SKU, ID or Name if requested
+        val matchedVariety = if (!requestedVariety.isNullOrBlank()) {
+            val cleanReq = requestedVariety.trim().lowercase()
+            baseVarieties.find { v ->
+                v.sku.equals(cleanReq, ignoreCase = true) ||
+                v.name.equals(cleanReq, ignoreCase = true) ||
+                v.id.equals(cleanReq, ignoreCase = true) ||
+                cleanReq.contains(v.sku.lowercase()) ||
+                cleanReq.contains(v.name.lowercase()) ||
+                v.name.lowercase().contains(cleanReq)
+            }?.name ?: requestedVariety.trim()
+        } else null
+
+        val chosenVariety = matchedVariety ?: knownDeal?.selectedVarietyName?.ifBlank { null }
+            ?: baseVarieties.firstOrNull { it.inStock }?.name
+            ?: baseVarieties.firstOrNull()?.name
+            ?: "Standard"
+
+        // Ensure chosenVariety is ALWAYS included in varieties list
+        val finalVarieties = if (chosenVariety.isNotBlank() && baseVarieties.none { it.name.equals(chosenVariety, ignoreCase = true) }) {
+            baseVarieties + ProductVariety(
+                id = "var-custom",
+                name = chosenVariety,
+                inStock = true,
+                stockCount = 10
+            )
+        } else {
+            baseVarieties
+        }
 
         if (knownDeal != null) {
-            val dealToUse = if (fallbackTitle != null || fallbackPrice != null) {
-                knownDeal.copy(
-                    title = fallbackTitle ?: knownDeal.title,
-                    price = fallbackPrice ?: knownDeal.price,
-                    shippingCost = fallbackShipping ?: knownDeal.shippingCost,
-                    totalCost = (fallbackPrice ?: knownDeal.price) + (fallbackShipping ?: knownDeal.shippingCost)
-                )
-            } else {
-                knownDeal
-            }
+            val unitPrice = fallbackPrice ?: knownDeal.price
+            val shipping = fallbackShipping ?: knownDeal.shippingCost
+            val subtotal = unitPrice * safeQty
+
+            val dealToUse = knownDeal.copy(
+                title = fallbackTitle ?: knownDeal.title,
+                price = unitPrice,
+                shippingCost = shipping,
+                totalCost = subtotal + shipping,
+                varieties = finalVarieties,
+                selectedVarietyName = chosenVariety,
+                quantity = safeQty
+            )
             selectedDeal.value = dealToUse
             cancelNotice.value = null
             currentScreen.value = Screen.CONFIRM
         } else {
+            val unitPrice = fallbackPrice ?: 29.99
+            val shipping = fallbackShipping ?: 5.00
+            val subtotal = unitPrice * safeQty
             val fallbackDeal = Deal(
                 id = productId,
                 title = fallbackTitle ?: "Demo Market Item ($productId)",
                 brand = "Demo Market",
-                price = fallbackPrice ?: 29.99,
-                shippingCost = fallbackShipping ?: 5.00,
-                totalCost = (fallbackPrice ?: 29.99) + (fallbackShipping ?: 5.00),
+                price = unitPrice,
+                shippingCost = shipping,
+                totalCost = subtotal + shipping,
                 currency = "USD",
                 storeName = "Demo Market",
                 storeUrl = "https://cartwise-demo-market.onrender.com/product/$productId",
@@ -380,6 +529,9 @@ class MainActivity : ComponentActivity() {
                 reviewsCount = 120,
                 inStock = true,
                 stockCount = 20,
+                varieties = finalVarieties,
+                selectedVarietyName = chosenVariety,
+                quantity = safeQty,
                 reasonWhy = "Extracted from Demo Market share sheet. Ready for instant PayPal Escrow authorization.",
                 safety = WebsiteSafety(
                     domain = "cartwise-demo-market.onrender.com",
@@ -392,6 +544,67 @@ class MainActivity : ComponentActivity() {
             selectedDeal.value = fallbackDeal
             cancelNotice.value = null
             currentScreen.value = Screen.CONFIRM
+        }
+
+        // Asynchronously sync live variants and inventory from Demo Market server
+        if (productId.isNotBlank()) {
+            fetchLiveProductVariants(productId, chosenVariety)
+        }
+    }
+
+    /**
+     * Asynchronously sync product details and all variants from the live Demo Market API
+     */
+    private fun fetchLiveProductVariants(productId: String, preferredVariety: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val bodyStr = apiClient.fetchLiveDemoProduct(productId)
+                if (!bodyStr.isNullOrBlank()) {
+                    val jsonObj = JSONObject(bodyStr)
+                    val variantsArray = jsonObj.optJSONArray("variants")
+                    if (variantsArray != null && variantsArray.length() > 0) {
+                        val liveVarieties = mutableListOf<ProductVariety>()
+                        for (i in 0 until variantsArray.length()) {
+                            val item = variantsArray.getJSONObject(i)
+                            val vName = item.optString("name", "")
+                            val vSku = item.optString("sku", "")
+                            val vInStock = item.optBoolean("inStock", true)
+                            val vStockCount = item.optInt("stockCount", if (vInStock) 10 else 0)
+                            if (vName.isNotBlank()) {
+                                liveVarieties.add(
+                                    ProductVariety(
+                                        id = "var-$i",
+                                        name = vName,
+                                        sku = vSku,
+                                        inStock = vInStock,
+                                        stockCount = vStockCount
+                                    )
+                                )
+                            }
+                        }
+
+                        if (liveVarieties.isNotEmpty()) {
+                            withContext(Dispatchers.Main) {
+                                selectedDeal.value?.let { current ->
+                                    if (current.id == productId) {
+                                        val matched = liveVarieties.find {
+                                            it.name.equals(preferredVariety, ignoreCase = true) ||
+                                            it.sku.equals(preferredVariety, ignoreCase = true)
+                                        }
+                                        val stillChosen = matched?.name ?: current.selectedVarietyName
+                                        selectedDeal.value = current.copy(
+                                            varieties = liveVarieties,
+                                            selectedVarietyName = stillChosen
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore network errors; fallback catalog is already displayed
+            }
         }
     }
 
@@ -605,7 +818,9 @@ class MainActivity : ComponentActivity() {
     private fun initiatePayPalOrder(
         deal: Deal,
         shippingAddress: ShippingAddress,
-        billingAddress: BillingAddress
+        billingAddress: BillingAddress,
+        chosenVariety: String = deal.selectedVarietyName,
+        quantity: Int = deal.quantity
     ) {
         cancelNotice.value = null
         savedShippingAddress.value = shippingAddress
@@ -613,12 +828,27 @@ class MainActivity : ComponentActivity() {
         OrderStorage.saveShippingAddress(this, shippingAddress)
         OrderStorage.saveBillingAddress(this, billingAddress)
 
+        val safeQty = maxOf(1, quantity)
+        val resolvedVariety = chosenVariety.ifBlank { deal.selectedVarietyName.ifBlank { "Standard" } }
+        val effectiveDeal = deal.copy(
+            selectedVarietyName = resolvedVariety,
+            quantity = safeQty
+        )
+
         lifecycleScope.launch {
             try {
-                val order = apiClient.createOrder(deal, shippingAddress, billingAddress)
+                val order = apiClient.createOrder(
+                    deal = effectiveDeal,
+                    shippingAddress = shippingAddress,
+                    billingAddress = billingAddress,
+                    selectedVariety = resolvedVariety,
+                    quantity = safeQty
+                )
                 activeOrder.value = order.copy(
                     shippingAddress = shippingAddress,
-                    billingAddress = billingAddress
+                    billingAddress = billingAddress,
+                    selectedVariety = resolvedVariety,
+                    quantity = safeQty
                 )
                 pendingOrderId = order.id
 
@@ -644,7 +874,9 @@ class MainActivity : ComponentActivity() {
     private fun fastPassPayPalOrder(
         deal: Deal,
         shippingAddress: ShippingAddress,
-        billingAddress: BillingAddress
+        billingAddress: BillingAddress,
+        chosenVariety: String = deal.selectedVarietyName,
+        quantity: Int = deal.quantity
     ) {
         cancelNotice.value = null
         savedShippingAddress.value = shippingAddress
@@ -652,41 +884,33 @@ class MainActivity : ComponentActivity() {
         OrderStorage.saveShippingAddress(this, shippingAddress)
         OrderStorage.saveBillingAddress(this, billingAddress)
 
+        val safeQty = maxOf(1, quantity)
+        val resolvedVariety = chosenVariety.ifBlank { deal.selectedVarietyName.ifBlank { "Standard" } }
+        val unitPrice = if (deal.price > 0.0) deal.price else 34.99
+        val itemSubtotal = Math.round(unitPrice * safeQty * 100.0) / 100.0
+        val shipping = if (deal.shippingCost >= 0.0) deal.shippingCost else 5.00
+        val serviceFee = 3.00
+        val totalHold = Math.round((itemSubtotal + shipping + serviceFee) * 100.0) / 100.0
+
+        val effectiveDeal = deal.copy(
+            selectedVarietyName = resolvedVariety,
+            quantity = safeQty
+        )
+
         lifecycleScope.launch {
-            val chosenVariety = deal.selectedVarietyName.ifBlank { "Matte Black" }
             try {
-                // Demo Fast-Pass ALWAYS routes to our official Demo Market: https://cartwise-demo-market.onrender.com/
-                val demoDeal = Deal(
-                    id = "prod-earbuds-01",
-                    title = if (deal.title.isNotBlank()) deal.title else "SoundPulse Air Wireless Noise-Cancelling Earbuds",
-                    brand = "SoundPulse",
-                    price = 34.99,
-                    shippingCost = 5.00,
-                    totalCost = 39.99,
-                    storeName = "Cartwise Demo Market",
-                    storeUrl = "https://cartwise-demo-market.onrender.com/product/prod-earbuds-01",
-                    rating = 4.8,
-                    reasonWhy = "Official Cartwise Demo Market: 100% guaranteed checkout capture.",
-                    selectedVarietyName = chosenVariety,
-                    varieties = deal.varieties.ifEmpty {
-                        listOf(
-                            ProductVariety(id = "var-blk", name = "Matte Black", stockCount = 15, inStock = true),
-                            ProductVariety(id = "var-wht", name = "Arctic White", stockCount = 2, inStock = true)
-                        )
-                    },
-                    safety = WebsiteSafety(
-                        domain = "cartwise-demo-market.onrender.com",
-                        score = 98,
-                        level = "SAFE",
-                        sslVerified = true,
-                        summary = "Official Cartwise Sandbox Store. 256-bit TLS encrypted, sandbox payment isolation, 100% money-back escrow guarantee."
-                    )
+                val order = apiClient.createOrder(
+                    deal = effectiveDeal,
+                    shippingAddress = shippingAddress,
+                    billingAddress = billingAddress,
+                    selectedVariety = resolvedVariety,
+                    quantity = safeQty
                 )
-                val order = apiClient.createOrder(demoDeal, shippingAddress, billingAddress)
                 activeOrder.value = order.copy(
                     shippingAddress = shippingAddress,
                     billingAddress = billingAddress,
-                    selectedVariety = chosenVariety
+                    selectedVariety = resolvedVariety,
+                    quantity = safeQty
                 )
                 pendingOrderId = order.id
                 onPayPalApprovalCompleted(order.id)
@@ -697,16 +921,17 @@ class MainActivity : ComponentActivity() {
                     id = orderId,
                     status = "PENDING_APPROVAL",
                     itemTitle = if (deal.title.isNotBlank()) deal.title else "SoundPulse Air Wireless Noise-Cancelling Earbuds",
-                    itemUrl = "https://cartwise-demo-market.onrender.com/product/prod-earbuds-01",
-                    merchantName = "Cartwise Demo Market",
-                    itemPrice = 34.99,
-                    shippingCost = 5.00,
-                    serviceFee = 3.00,
-                    totalAmount = 42.99,
+                    itemUrl = deal.storeUrl.ifBlank { "https://cartwise-demo-market.onrender.com/product/${deal.id}" },
+                    merchantName = deal.storeName.ifBlank { "Cartwise Demo Market" },
+                    itemPrice = itemSubtotal,
+                    shippingCost = shipping,
+                    serviceFee = serviceFee,
+                    totalAmount = totalHold,
                     cardUsed = "123456*****2234",
                     shippingAddress = shippingAddress,
                     billingAddress = billingAddress,
-                    selectedVariety = chosenVariety,
+                    selectedVariety = resolvedVariety,
+                    quantity = safeQty,
                     guestEmail = shippingAddress.email.ifBlank { "ada.lovelace@gmail.com" },
                     guestPhone = shippingAddress.phone.ifBlank { "+234 801 234 5678" },
                     merchantPasswordRequired = true,

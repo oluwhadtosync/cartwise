@@ -69,17 +69,28 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
         deal: Deal,
         shippingAddress: ShippingAddress? = null,
         billingAddress: BillingAddress? = null,
-        selectedVariety: String? = null
+        selectedVariety: String? = null,
+        quantity: Int = deal.quantity
     ): CartwiseOrder = withContext(Dispatchers.IO) {
+        val qty = maxOf(1, quantity)
+        val variety = selectedVariety?.ifBlank { null } ?: deal.selectedVarietyName.ifBlank { null }
+        val titleWithVariety = if (!variety.isNullOrBlank()) {
+            if (qty > 1) "${deal.title} (${variety}) x$qty" else "${deal.title} (${variety})"
+        } else {
+            if (qty > 1) "${deal.title} x$qty" else deal.title
+        }
+        val subtotal = deal.price * qty
+
         val reqBody = CreateOrderRequest(
-            itemTitle = if (!selectedVariety.isNullOrBlank()) "${deal.title} (${selectedVariety})" else deal.title,
+            itemTitle = titleWithVariety,
             itemUrl = deal.storeUrl,
-            itemPrice = deal.price,
+            itemPrice = subtotal,
             shippingCost = deal.shippingCost,
             merchantName = deal.storeName,
             shippingAddress = shippingAddress,
             billingAddress = billingAddress,
-            selectedVariety = selectedVariety ?: deal.selectedVarietyName
+            selectedVariety = variety,
+            quantity = qty
         )
         val body = json.encodeToString(CreateOrderRequest.serializer(), reqBody)
         val request = Request.Builder()
@@ -168,5 +179,21 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
                 // connection retry handled by client
             }
         })
+    }
+
+    /**
+     * Fetch live product variants and stock from Cartwise Demo Market
+     */
+    suspend fun fetchLiveDemoProduct(productId: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("https://cartwise-demo-market.onrender.com/api/products/$productId")
+                .get()
+                .build()
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) response.body?.string() else null
+        } catch (e: Exception) {
+            null
+        }
     }
 }
