@@ -290,10 +290,44 @@ object DemoCatalog {
             stockCount = 20,
             reasonWhy = "Extracted from Demo Market share sheet. Ready for PayPal Escrow authorization.",
             varieties = listOf(
-                ProductVariety(id = "var-blk", name = "Charcoal Black", sku = "TS-BP-BLK", inStock = true),
-                ProductVariety(id = "var-gry", name = "Heather Gray", sku = "TS-BP-GRY", inStock = true)
+                ProductVariety(id = "var-blk-15", name = "Charcoal Black (15.6\")", sku = "TS-BP-BLK-15", inStock = true, stockCount = 20, priceOffset = 0.0),
+                ProductVariety(id = "var-blk-17", name = "Charcoal Black (17.3\" Pro)", sku = "TS-BP-BLK-17", inStock = true, stockCount = 10, priceOffset = 8.0),
+                ProductVariety(id = "var-gry-15", name = "Heather Gray (15.6\")", sku = "TS-BP-GRY-15", inStock = true, stockCount = 15, priceOffset = 0.0),
+                ProductVariety(id = "var-gry-17", name = "Heather Gray (17.3\" Pro)", sku = "TS-BP-GRY-17", inStock = true, stockCount = 8, priceOffset = 8.0)
             ),
-            selectedVarietyName = "Charcoal Black",
+            selectedVarietyName = "Charcoal Black (15.6\")",
+            safety = WebsiteSafety(domain = "cartwise-demo-market.onrender.com", score = 98, level = "SAFE")
+        ),
+        "prod-hoodie-13" to Deal(
+            id = "prod-hoodie-13",
+            title = "Apex Pro All-Weather Tech Fleece Zip Hoodie",
+            brand = "Apex Pro",
+            price = 49.99,
+            shippingCost = 5.50,
+            totalCost = 55.49,
+            currency = "USD",
+            storeName = "Demo Market",
+            storeUrl = "https://cartwise-demo-market.onrender.com/product/prod-hoodie-13",
+            imageUrl = "https://cartwise-demo-market.onrender.com/public/images/products/prod-hoodie-13.png",
+            rating = 4.9,
+            reviewsCount = 165,
+            inStock = true,
+            stockCount = 50,
+            reasonWhy = "Official Demo Market: Multi-attribute apparel variant with dynamic size/color selectors and live price offsets.",
+            varieties = listOf(
+                ProductVariety(id = "var-blk-s", name = "Stealth Black / S", sku = "AP-HD-BLK-S", inStock = true, stockCount = 12, priceOffset = 0.0, color = "Stealth Black", size = "S"),
+                ProductVariety(id = "var-blk-m", name = "Stealth Black / M", sku = "AP-HD-BLK-M", inStock = true, stockCount = 18, priceOffset = 0.0, color = "Stealth Black", size = "M"),
+                ProductVariety(id = "var-blk-l", name = "Stealth Black / L", sku = "AP-HD-BLK-L", inStock = true, stockCount = 10, priceOffset = 0.0, color = "Stealth Black", size = "L"),
+                ProductVariety(id = "var-blk-xl", name = "Stealth Black / XL", sku = "AP-HD-BLK-XL", inStock = true, stockCount = 6, priceOffset = 4.0, color = "Stealth Black", size = "XL"),
+                ProductVariety(id = "var-blk-xxl", name = "Stealth Black / XXL", sku = "AP-HD-BLK-XXL", inStock = false, stockCount = 0, priceOffset = 6.0, color = "Stealth Black", size = "XXL"),
+                ProductVariety(id = "var-gry-s", name = "Heather Gray / S", sku = "AP-HD-GRY-S", inStock = true, stockCount = 8, priceOffset = 0.0, color = "Heather Gray", size = "S"),
+                ProductVariety(id = "var-gry-m", name = "Heather Gray / M", sku = "AP-HD-GRY-M", inStock = true, stockCount = 14, priceOffset = 0.0, color = "Heather Gray", size = "M"),
+                ProductVariety(id = "var-gry-l", name = "Heather Gray / L", sku = "AP-HD-GRY-L", inStock = true, stockCount = 12, priceOffset = 0.0, color = "Heather Gray", size = "L"),
+                ProductVariety(id = "var-gry-xl", name = "Heather Gray / XL", sku = "AP-HD-GRY-XL", inStock = true, stockCount = 5, priceOffset = 4.0, color = "Heather Gray", size = "XL"),
+                ProductVariety(id = "var-nvy-m", name = "Deep Navy / M", sku = "AP-HD-NVY-M", inStock = true, stockCount = 9, priceOffset = 0.0, color = "Deep Navy", size = "M"),
+                ProductVariety(id = "var-nvy-l", name = "Deep Navy / L", sku = "AP-HD-NVY-L", inStock = true, stockCount = 7, priceOffset = 0.0, color = "Deep Navy", size = "L")
+            ),
+            selectedVarietyName = "Stealth Black / M",
             safety = WebsiteSafety(domain = "cartwise-demo-market.onrender.com", score = 98, level = "SAFE")
         )
     )

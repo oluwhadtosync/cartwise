@@ -70,7 +70,9 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
         shippingAddress: ShippingAddress? = null,
         billingAddress: BillingAddress? = null,
         selectedVariety: String? = null,
-        quantity: Int = deal.quantity
+        quantity: Int = deal.quantity,
+        effectiveItemPrice: Double? = null,
+        effectiveShippingCost: Double? = null
     ): CartwiseOrder = withContext(Dispatchers.IO) {
         val qty = maxOf(1, quantity)
         val variety = selectedVariety?.ifBlank { null } ?: deal.selectedVarietyName.ifBlank { null }
@@ -79,13 +81,14 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
         } else {
             if (qty > 1) "${deal.title} x$qty" else deal.title
         }
-        val subtotal = deal.price * qty
+        val subtotal = effectiveItemPrice ?: (deal.price * qty)
+        val shipping = effectiveShippingCost ?: deal.shippingCost
 
         val reqBody = CreateOrderRequest(
             itemTitle = titleWithVariety,
             itemUrl = deal.storeUrl,
             itemPrice = subtotal,
-            shippingCost = deal.shippingCost,
+            shippingCost = shipping,
             merchantName = deal.storeName,
             shippingAddress = shippingAddress,
             billingAddress = billingAddress,

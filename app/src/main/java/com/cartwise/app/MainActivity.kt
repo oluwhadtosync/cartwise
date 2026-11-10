@@ -151,11 +151,11 @@ class MainActivity : ComponentActivity() {
                                 cancelNotice = cancelNotice.value,
                                 isSafetyCheckEnabled = isSafetyCheckEnabled.value,
                                 onDismissCancelNotice = { cancelNotice.value = null },
-                                onPayWithPayPal = { shipping, billing, variety, qty ->
-                                    initiatePayPalOrder(deal, shipping, billing, variety, qty)
+                                onPayWithPayPal = { shipping, billing, variety, qty, subtotal, shipCost ->
+                                    initiatePayPalOrder(deal, shipping, billing, variety, qty, subtotal, shipCost)
                                 },
-                                onDemoSandboxFastPass = { shipping, billing, variety, qty ->
-                                    fastPassPayPalOrder(deal, shipping, billing, variety, qty)
+                                onDemoSandboxFastPass = { shipping, billing, variety, qty, subtotal, shipCost ->
+                                    fastPassPayPalOrder(deal, shipping, billing, variety, qty, subtotal, shipCost)
                                 },
                                 onSwitchToDemoMarket = {
                                     selectedDeal.value = Deal(
@@ -303,12 +303,24 @@ class MainActivity : ComponentActivity() {
                     val sku = obj.optString("sku")
                     val inStock = obj.optBoolean("inStock", true)
                     val stockCount = obj.optInt("stockCount", if (inStock) 10 else 0)
+                    val priceOffset = obj.optDouble("priceOffset", 0.0)
+                    val color = obj.optString("color").ifBlank { null }
+                    val size = obj.optString("size").ifBlank { null }
                     if (name.isNotBlank()) {
-                        list.add(ProductVariety(id = "var-$i", name = name, sku = sku, inStock = inStock, stockCount = stockCount))
+                        list.add(ProductVariety(
+                            id = "var-$i",
+                            name = name,
+                            sku = sku,
+                            inStock = inStock,
+                            stockCount = stockCount,
+                            priceOffset = priceOffset,
+                            color = color,
+                            size = size
+                        ))
                     }
                 }
             } else {
-                // Pipe-delimited: Name:SKU:inStock:stockCount|...
+                // Pipe-delimited: Name:SKU:inStock:stockCount:priceOffset:color:size|...
                 val entries = trimmed.split("|")
                 for ((i, entry) in entries.withIndex()) {
                     if (entry.isBlank()) continue
@@ -318,8 +330,20 @@ class MainActivity : ComponentActivity() {
                     val inStockFlag = parts.getOrNull(2)?.trim()
                     val inStock = if (inStockFlag == "0" || inStockFlag.equals("false", true)) false else true
                     val stockCount = parts.getOrNull(3)?.toIntOrNull() ?: if (inStock) 10 else 0
+                    val priceOffset = parts.getOrNull(4)?.toDoubleOrNull() ?: 0.0
+                    val color = Uri.decode(parts.getOrNull(5) ?: "").trim().ifBlank { null }
+                    val size = Uri.decode(parts.getOrNull(6) ?: "").trim().ifBlank { null }
                     if (name.isNotBlank()) {
-                        list.add(ProductVariety(id = "var-$i", name = name, sku = sku, inStock = inStock, stockCount = stockCount))
+                        list.add(ProductVariety(
+                            id = "var-$i",
+                            name = name,
+                            sku = sku,
+                            inStock = inStock,
+                            stockCount = stockCount,
+                            priceOffset = priceOffset,
+                            color = color,
+                            size = size
+                        ))
                     }
                 }
             }
@@ -570,6 +594,9 @@ class MainActivity : ComponentActivity() {
                             val vSku = item.optString("sku", "")
                             val vInStock = item.optBoolean("inStock", true)
                             val vStockCount = item.optInt("stockCount", if (vInStock) 10 else 0)
+                            val vPriceOffset = item.optDouble("priceOffset", 0.0)
+                            val vColor = item.optString("color").ifBlank { null }
+                            val vSize = item.optString("size").ifBlank { null }
                             if (vName.isNotBlank()) {
                                 liveVarieties.add(
                                     ProductVariety(
@@ -577,7 +604,10 @@ class MainActivity : ComponentActivity() {
                                         name = vName,
                                         sku = vSku,
                                         inStock = vInStock,
-                                        stockCount = vStockCount
+                                        stockCount = vStockCount,
+                                        priceOffset = vPriceOffset,
+                                        color = vColor,
+                                        size = vSize
                                     )
                                 )
                             }
@@ -820,7 +850,9 @@ class MainActivity : ComponentActivity() {
         shippingAddress: ShippingAddress,
         billingAddress: BillingAddress,
         chosenVariety: String = deal.selectedVarietyName,
-        quantity: Int = deal.quantity
+        quantity: Int = deal.quantity,
+        effectiveSubtotal: Double? = null,
+        effectiveShipping: Double? = null
     ) {
         cancelNotice.value = null
         savedShippingAddress.value = shippingAddress
@@ -830,9 +862,16 @@ class MainActivity : ComponentActivity() {
 
         val safeQty = maxOf(1, quantity)
         val resolvedVariety = chosenVariety.ifBlank { deal.selectedVarietyName.ifBlank { "Standard" } }
+        val finalSubtotal = effectiveSubtotal ?: (deal.price * safeQty)
+        val finalShipping = effectiveShipping ?: (deal.shippingCost + maxOf(0, safeQty - 1) * 1.50)
+        val finalUnitPrice = finalSubtotal / safeQty
+
         val effectiveDeal = deal.copy(
             selectedVarietyName = resolvedVariety,
-            quantity = safeQty
+            quantity = safeQty,
+            price = finalUnitPrice,
+            shippingCost = finalShipping,
+            totalCost = finalSubtotal + finalShipping
         )
 
         lifecycleScope.launch {
@@ -842,7 +881,9 @@ class MainActivity : ComponentActivity() {
                     shippingAddress = shippingAddress,
                     billingAddress = billingAddress,
                     selectedVariety = resolvedVariety,
-                    quantity = safeQty
+                    quantity = safeQty,
+                    effectiveItemPrice = finalSubtotal,
+                    effectiveShippingCost = finalShipping
                 )
                 activeOrder.value = order.copy(
                     shippingAddress = shippingAddress,
@@ -876,7 +917,9 @@ class MainActivity : ComponentActivity() {
         shippingAddress: ShippingAddress,
         billingAddress: BillingAddress,
         chosenVariety: String = deal.selectedVarietyName,
-        quantity: Int = deal.quantity
+        quantity: Int = deal.quantity,
+        effectiveSubtotal: Double? = null,
+        effectiveShipping: Double? = null
     ) {
         cancelNotice.value = null
         savedShippingAddress.value = shippingAddress
@@ -886,15 +929,18 @@ class MainActivity : ComponentActivity() {
 
         val safeQty = maxOf(1, quantity)
         val resolvedVariety = chosenVariety.ifBlank { deal.selectedVarietyName.ifBlank { "Standard" } }
-        val unitPrice = if (deal.price > 0.0) deal.price else 34.99
-        val itemSubtotal = Math.round(unitPrice * safeQty * 100.0) / 100.0
-        val shipping = if (deal.shippingCost >= 0.0) deal.shippingCost else 5.00
+        val finalSubtotal = effectiveSubtotal ?: (deal.price * safeQty)
+        val finalShipping = effectiveShipping ?: (deal.shippingCost + maxOf(0, safeQty - 1) * 1.50)
         val serviceFee = 3.00
-        val totalHold = Math.round((itemSubtotal + shipping + serviceFee) * 100.0) / 100.0
+        val totalHold = Math.round((finalSubtotal + finalShipping + serviceFee) * 100.0) / 100.0
+        val finalUnitPrice = finalSubtotal / safeQty
 
         val effectiveDeal = deal.copy(
             selectedVarietyName = resolvedVariety,
-            quantity = safeQty
+            quantity = safeQty,
+            price = finalUnitPrice,
+            shippingCost = finalShipping,
+            totalCost = finalSubtotal + finalShipping
         )
 
         lifecycleScope.launch {
@@ -904,7 +950,9 @@ class MainActivity : ComponentActivity() {
                     shippingAddress = shippingAddress,
                     billingAddress = billingAddress,
                     selectedVariety = resolvedVariety,
-                    quantity = safeQty
+                    quantity = safeQty,
+                    effectiveItemPrice = finalSubtotal,
+                    effectiveShippingCost = finalShipping
                 )
                 activeOrder.value = order.copy(
                     shippingAddress = shippingAddress,
@@ -920,11 +968,11 @@ class MainActivity : ComponentActivity() {
                 val mockOrder = CartwiseOrder(
                     id = orderId,
                     status = "PENDING_APPROVAL",
-                    itemTitle = if (deal.title.isNotBlank()) deal.title else "SoundPulse Air Wireless Noise-Cancelling Earbuds",
+                    itemTitle = if (deal.title.isNotBlank()) deal.title else "Demo Market Item",
                     itemUrl = deal.storeUrl.ifBlank { "https://cartwise-demo-market.onrender.com/product/${deal.id}" },
                     merchantName = deal.storeName.ifBlank { "Cartwise Demo Market" },
-                    itemPrice = itemSubtotal,
-                    shippingCost = shipping,
+                    itemPrice = finalSubtotal,
+                    shippingCost = finalShipping,
                     serviceFee = serviceFee,
                     totalAmount = totalHold,
                     cardUsed = "123456*****2234",

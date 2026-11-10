@@ -1509,13 +1509,50 @@ fun ConfirmScreen(
     cancelNotice: String? = null,
     isSafetyCheckEnabled: Boolean = false,
     onDismissCancelNotice: () -> Unit = {},
-    onPayWithPayPal: (ShippingAddress, BillingAddress, String, Int) -> Unit,
-    onDemoSandboxFastPass: (ShippingAddress, BillingAddress, String, Int) -> Unit = { _, _, _, _ -> },
+    onPayWithPayPal: (ShippingAddress, BillingAddress, String, Int, Double, Double) -> Unit,
+    onDemoSandboxFastPass: (ShippingAddress, BillingAddress, String, Int, Double, Double) -> Unit = { _, _, _, _, _, _ -> },
     onSwitchToDemoMarket: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     val isDemoMarket = deal.storeName.contains("Demo Market", ignoreCase = true) || deal.storeUrl.contains("cartwise-demo-market")
+
+    // Multi-Attribute Variant Detection (e.g. Clothes: Color & Size separate dimensions)
+    val distinctColors = remember(deal.varieties) {
+        val fromColorField = deal.varieties.mapNotNull { it.color?.ifBlank { null } }.distinct()
+        if (fromColorField.isNotEmpty()) fromColorField
+        else {
+            val parts = deal.varieties.map { it.name.split("/").map { p -> p.trim() } }
+            if (parts.isNotEmpty() && parts.all { it.size == 2 }) {
+                parts.map { it[0] }.distinct()
+            } else emptyList()
+        }
+    }
+
+    val distinctSizes = remember(deal.varieties) {
+        val fromSizeField = deal.varieties.mapNotNull { it.size?.ifBlank { null } }.distinct()
+        if (fromSizeField.isNotEmpty()) fromSizeField
+        else {
+            val parts = deal.varieties.map { it.name.split("/").map { p -> p.trim() } }
+            if (parts.isNotEmpty() && parts.all { it.size == 2 }) {
+                parts.map { it[1] }.distinct()
+            } else emptyList()
+        }
+    }
+
+    val isMultiAttribute = distinctColors.size > 1 && distinctSizes.size > 1
+
+    var selectedColor by remember(deal.id) {
+        val initialColor = deal.varieties.find { it.name.equals(deal.selectedVarietyName, ignoreCase = true) }?.color
+            ?: distinctColors.firstOrNull() ?: ""
+        mutableStateOf(initialColor)
+    }
+
+    var selectedSize by remember(deal.id) {
+        val initialSize = deal.varieties.find { it.name.equals(deal.selectedVarietyName, ignoreCase = true) }?.size
+            ?: distinctSizes.firstOrNull() ?: ""
+        mutableStateOf(initialSize)
+    }
 
     // Interactive Variety & Quantity Selection
     var chosenVariety by remember(deal.id) {
@@ -1531,6 +1568,12 @@ fun ConfirmScreen(
     LaunchedEffect(deal.selectedVarietyName) {
         if (deal.selectedVarietyName.isNotBlank() && deal.selectedVarietyName != chosenVariety) {
             chosenVariety = deal.selectedVarietyName
+            if (isMultiAttribute) {
+                deal.varieties.find { it.name.equals(deal.selectedVarietyName, ignoreCase = true) }?.let { v ->
+                    v.color?.let { selectedColor = it }
+                    v.size?.let { selectedSize = it }
+                }
+            }
         }
     }
 
@@ -1538,12 +1581,43 @@ fun ConfirmScreen(
         mutableStateOf(maxOf(1, deal.quantity))
     }
 
-    val selectedVarietyObj = deal.varieties.find { it.name.equals(chosenVariety, ignoreCase = true) }
+    // Match composite variety when multi-attribute
+    val activeCompositeVariety = if (isMultiAttribute) {
+        deal.varieties.find { v ->
+            (v.color.equals(selectedColor, ignoreCase = true) && v.size.equals(selectedSize, ignoreCase = true)) ||
+            v.name.equals("$selectedColor / $selectedSize", ignoreCase = true) ||
+            v.name.equals("$selectedSize / $selectedColor", ignoreCase = true) ||
+            (v.name.contains(selectedColor, ignoreCase = true) && v.name.contains(selectedSize, ignoreCase = true))
+        } ?: deal.varieties.firstOrNull { it.color.equals(selectedColor, ignoreCase = true) }
+        ?: deal.varieties.firstOrNull()
+    } else null
+
+    val selectedVarietyObj = if (isMultiAttribute) {
+        activeCompositeVariety
+    } else {
+        deal.varieties.find { it.name.equals(chosenVariety, ignoreCase = true) || it.sku.equals(chosenVariety, ignoreCase = true) }
+    }
+
+    val effectiveVarietyName = if (isMultiAttribute) {
+        activeCompositeVariety?.name ?: "$selectedColor / $selectedSize"
+    } else chosenVariety
+
     val isSelectedSoldOut = selectedVarietyObj?.inStock == false
 
-    val itemSubtotal = deal.price * quantity
+    // Variant Price Offset calculation (e.g. XL costs +$4.00, Pro capacity costs +$8.00)
+    val priceOffset = selectedVarietyObj?.priceOffset ?: 0.0
+    val unitPrice = Math.round((deal.price + priceOffset) * 100.0) / 100.0
+    val itemSubtotal = Math.round(unitPrice * quantity * 100.0) / 100.0
+
+    // Quantity-dependent shipping cost calculation
+    // Base shipping + $1.50 per additional unit (cross-border air freight weight scaling)
+    val baseShipping = deal.shippingCost
+    val extraUnits = maxOf(0, quantity - 1)
+    val incrementalPerItem = 1.50
+    val totalShipping = Math.round((baseShipping + extraUnits * incrementalPerItem) * 100.0) / 100.0
+
     val serviceFee = 3.00
-    val totalHold = itemSubtotal + deal.shippingCost + serviceFee
+    val totalHold = Math.round((itemSubtotal + totalShipping + serviceFee) * 100.0) / 100.0
 
     // Shipping & Billing Address States (Prefilled so judges don't have to fill anything)
     var shippingFullName by remember { mutableStateOf(initialShippingAddress.fullName) }
@@ -1681,8 +1755,105 @@ fun ConfirmScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(deal.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
 
-                    // Interactive Variety Selection (Chips with In Stock / Sold Out indication)
-                    if (deal.varieties.isNotEmpty()) {
+                    // Interactive Multi-Attribute (Color & Size) or Single-Attribute (Variety) Selection
+                    if (isMultiAttribute) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        // Row 1: Choose Color
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Choose Color", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                            Text(selectedColor, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(distinctColors) { color ->
+                                val isSelected = color.equals(selectedColor, ignoreCase = true)
+                                val chipBg = if (isSelected) AccentCyan.copy(alpha = 0.2f) else Color(0xFF0F172A)
+                                val chipBorder = if (isSelected) AccentCyan else Color(0xFF1E293B)
+                                val chipTextColor = if (isSelected) AccentCyan else TextPrimary
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(chipBg)
+                                        .border(1.dp, chipBorder, RoundedCornerShape(8.dp))
+                                        .clickable { selectedColor = color }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (isSelected) {
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(13.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
+                                        Text(text = color, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, color = chipTextColor)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        // Row 2: Choose Size
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Choose Size", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                            Text(
+                                text = if (isSelectedSoldOut) "● Sold Out" else "● In Stock",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSelectedSoldOut) DangerRed else SuccessGreen
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(distinctSizes) { size ->
+                                val isSelected = size.equals(selectedSize, ignoreCase = true)
+                                val matchingVariety = deal.varieties.find { v ->
+                                    (v.color.equals(selectedColor, ignoreCase = true) && v.size.equals(size, ignoreCase = true)) ||
+                                    (v.name.contains(selectedColor, ignoreCase = true) && v.name.contains(size, ignoreCase = true))
+                                }
+                                val isSoldOut = matchingVariety?.inStock == false
+                                val offset = matchingVariety?.priceOffset ?: 0.0
+                                val offsetText = if (offset > 0.0) " (+$$${"%.2f".format(offset)})" else if (offset < 0.0) " (-$$${"%.2f".format(-offset)})" else ""
+                                val chipBg = if (isSelected) AccentCyan.copy(alpha = 0.2f) else Color(0xFF0F172A)
+                                val chipBorder = if (isSelected) AccentCyan else if (isSoldOut) Color(0xFF334155).copy(alpha = 0.5f) else Color(0xFF1E293B)
+                                val chipTextColor = if (isSelected) AccentCyan else if (isSoldOut) Color(0xFF64748B) else TextPrimary
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(chipBg)
+                                        .border(1.dp, chipBorder, RoundedCornerShape(8.dp))
+                                        .clickable { selectedSize = size }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (isSelected) {
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(13.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
+                                        Text(
+                                            text = size + offsetText + if (isSoldOut) " (Sold Out)" else "",
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = chipTextColor
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else if (deal.varieties.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(10.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1713,6 +1884,8 @@ fun ConfirmScreen(
                             items(deal.varieties) { v ->
                                 val isSelected = v.name.equals(chosenVariety, ignoreCase = true)
                                 val isSoldOut = !v.inStock
+                                val offset = v.priceOffset
+                                val offsetText = if (offset > 0.0) " (+$$${"%.2f".format(offset)})" else if (offset < 0.0) " (-$$${"%.2f".format(-offset)})" else ""
                                 val chipBg = if (isSelected) AccentCyan.copy(alpha = 0.2f) else Color(0xFF0F172A)
                                 val chipBorder = if (isSelected) AccentCyan else if (isSoldOut) Color(0xFF334155).copy(alpha = 0.5f) else Color(0xFF1E293B)
                                 val chipTextColor = if (isSelected) AccentCyan else if (isSoldOut) Color(0xFF64748B) else TextPrimary
@@ -1738,7 +1911,7 @@ fun ConfirmScreen(
                                             Spacer(modifier = Modifier.width(4.dp))
                                         }
                                         Text(
-                                            text = v.name + if (isSoldOut) " (Sold Out)" else "",
+                                            text = v.name + offsetText + if (isSoldOut) " (Sold Out)" else "",
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = chipTextColor
@@ -1968,13 +2141,21 @@ fun ConfirmScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(if (quantity > 1) "Item Price ($${deal.price} × $quantity)" else "Item Price", color = TextSecondary, fontSize = 14.sp)
+                        val priceLabel = if (quantity > 1) {
+                            if (priceOffset != 0.0) "Item Price ($${"%.2f".format(unitPrice)} × $quantity)"
+                            else "Item Price ($${deal.price} × $quantity)"
+                        } else {
+                            if (priceOffset != 0.0) "Item Price ($${"%.2f".format(unitPrice)})"
+                            else "Item Price"
+                        }
+                        Text(priceLabel, color = TextSecondary, fontSize = 14.sp)
                         Text("$${"%.2f".format(itemSubtotal)}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Shipping to Lagos, Nigeria", color = TextSecondary, fontSize = 14.sp)
-                        Text("$${deal.shippingCost}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        val shipLabel = if (quantity > 1) "Shipping to Lagos, Nigeria ($quantity items)" else "Shipping to Lagos, Nigeria"
+                        Text(shipLabel, color = TextSecondary, fontSize = 14.sp)
+                        Text("$${"%.2f".format(totalShipping)}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -2473,7 +2654,7 @@ fun ConfirmScreen(
             }
 
             Button(
-                onClick = { onPayWithPayPal(currentShipping(), currentBilling(), chosenVariety, quantity) },
+                onClick = { onPayWithPayPal(currentShipping(), currentBilling(), effectiveVarietyName, quantity, itemSubtotal, totalShipping) },
                 enabled = !isSelectedSoldOut,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -2524,7 +2705,7 @@ fun ConfirmScreen(
 
             // Demo Market Fast-Pass Option (Guaranteed Capture on cartwise-demo-market.onrender.com)
             OutlinedButton(
-                onClick = { onDemoSandboxFastPass(currentShipping(), currentBilling(), chosenVariety, quantity) },
+                onClick = { onDemoSandboxFastPass(currentShipping(), currentBilling(), effectiveVarietyName, quantity, itemSubtotal, totalShipping) },
                 enabled = !isSelectedSoldOut,
                 modifier = Modifier
                     .fillMaxWidth()

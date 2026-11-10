@@ -9,7 +9,9 @@ data class ProductVariety(
     val sku: String = "",
     val inStock: Boolean = true,
     val stockCount: Int = 10,
-    val priceOffset: Double = 0.0
+    val priceOffset: Double = 0.0,
+    val color: String? = null,
+    val size: String? = null
 )
 
 @Serializable
