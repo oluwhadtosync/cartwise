@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const initialProducts = require('./products');
 
 const app = express();
@@ -14,7 +15,158 @@ let orders = [];
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Product Image endpoint with zero-downtime SVG fallback
+app.get('/public/images/products/:file', (req, res) => {
+  const file = req.params.file;
+  const filePath = path.join(__dirname, '../public/images/products', file);
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.sendFile(filePath);
+  }
+  const id = file.replace(/\.(png|jpg|jpeg|webp|svg)$/i, '');
+  const product = products.find(p => p.id === id);
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  return res.send(generateProductSvgFallback(product || { id, title: id, brand: 'Demo Market', iconType: 'box' }));
+});
+
 app.use('/public', express.static(path.join(__dirname, '../public')));
+
+function generateProductSvgFallback(product) {
+  const title = (product && product.title) || 'Cartwise Product';
+  const brand = (product && product.brand) || 'Demo Market';
+  const icon = (product && product.iconType) || 'box';
+  
+  let iconSvg = '';
+  switch(icon) {
+    case 'earbuds':
+      iconSvg = `<g stroke="#0284c7" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="160" cy="125" r="28" fill="#e0f2fe"/>
+        <path d="M160 153 v45 a8 8 0 0 1 -8 8 h-6"/>
+        <circle cx="240" cy="125" r="28" fill="#e0f2fe"/>
+        <path d="M240 153 v45 a8 8 0 0 0 8 8 h6"/>
+        <path d="M125 125 a45 45 0 0 1 0 -20 M275 125 a45 45 0 0 0 0 -20" stroke="#38bdf8" stroke-width="4"/>
+      </g>`;
+      break;
+    case 'watch':
+      iconSvg = `<g stroke="#059669" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="172" y="75" width="56" height="40" rx="8" fill="#d1fae5"/>
+        <rect x="172" y="175" width="56" height="40" rx="8" fill="#d1fae5"/>
+        <rect x="156" y="105" width="88" height="80" rx="18" fill="#ffffff" stroke="#059669"/>
+        <path d="M180 140 h40 M180 153 h24" stroke="#10b981" stroke-width="4"/>
+      </g>`;
+      break;
+    case 'powerbank':
+      iconSvg = `<g stroke="#d97706" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="150" y="85" width="100" height="120" rx="16" fill="#fef3c7"/>
+        <path d="M185 85 v-12 h30 v12"/>
+        <path d="M205 115 l-16 26 h18 l-6 26" fill="#f59e0b" stroke="#b45309" stroke-width="3"/>
+      </g>`;
+      break;
+    case 'keyboard':
+      iconSvg = `<g stroke="#4f46e5" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="120" y="100" width="160" height="90" rx="14" fill="#e0e7ff"/>
+        <rect x="135" y="115" width="22" height="16" rx="4" fill="#ffffff"/>
+        <rect x="165" y="115" width="22" height="16" rx="4" fill="#ffffff"/>
+        <rect x="195" y="115" width="22" height="16" rx="4" fill="#ffffff"/>
+        <rect x="225" y="115" width="40" height="16" rx="4" fill="#ffffff"/>
+        <rect x="145" y="140" width="110" height="16" rx="4" fill="#ffffff"/>
+      </g>`;
+      break;
+    case 'mouse':
+      iconSvg = `<g stroke="#7c3aed" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="165" y="90" width="70" height="110" rx="35" fill="#ede9fe"/>
+        <path d="M200 90 v40"/>
+        <rect x="195" y="105" width="10" height="18" rx="5" fill="#8b5cf6" stroke="none"/>
+      </g>`;
+      break;
+    case 'lamp':
+      iconSvg = `<g stroke="#ea580c" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M150 200 h100 M200 200 v-60 l-30 -30 h-20"/>
+        <polygon points="135,110 165,80 185,100 155,130" fill="#ffedd5"/>
+        <path d="M140 135 l-25 40 M160 140 l-10 35" stroke="#f97316" stroke-width="3" stroke-dasharray="4,4"/>
+      </g>`;
+      break;
+    case 'speaker':
+      iconSvg = `<g stroke="#0284c7" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="160" y="90" width="80" height="110" rx="20" fill="#e0f2fe"/>
+        <circle cx="200" cy="130" r="18" fill="#38bdf8"/>
+        <circle cx="200" cy="170" r="12" fill="#38bdf8"/>
+      </g>`;
+      break;
+    case 'webcam':
+      iconSvg = `<g stroke="#2563eb" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="200" cy="125" rx="50" ry="32" fill="#dbeafe"/>
+        <circle cx="200" cy="125" r="16" fill="#1d4ed8"/>
+        <circle cx="204" cy="121" r="4" fill="#ffffff" stroke="none"/>
+        <path d="M200 157 v28 M165 200 h70"/>
+      </g>`;
+      break;
+    case 'hub':
+      iconSvg = `<g stroke="#0f766e" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="145" y="120" width="110" height="50" rx="10" fill="#ccfbf1"/>
+        <path d="M145 145 h-35 a12 12 0 0 1 -12 -12 v-10"/>
+        <rect x="165" y="137" width="18" height="16" rx="3" fill="#0d9488"/>
+        <rect x="195" y="137" width="18" height="16" rx="3" fill="#0d9488"/>
+        <rect x="225" y="137" width="18" height="16" rx="3" fill="#0d9488"/>
+      </g>`;
+      break;
+    case 'fan':
+      iconSvg = `<g stroke="#0369a1" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="200" cy="130" r="45" fill="#e0f2fe"/>
+        <path d="M200 130 l-18 -26 M200 130 l26 -14 M200 130 l-8 30" stroke="#0284c7" stroke-width="8"/>
+        <circle cx="200" cy="130" r="10" fill="#0369a1" stroke="none"/>
+        <path d="M200 175 v25 M170 200 h60"/>
+      </g>`;
+      break;
+    case 'headphones':
+      iconSvg = `<g stroke="#6366f1" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M145 145 a55 55 0 0 1 110 0"/>
+        <rect x="135" y="135" width="22" height="42" rx="10" fill="#e0e7ff"/>
+        <rect x="243" y="135" width="22" height="42" rx="10" fill="#e0e7ff"/>
+      </g>`;
+      break;
+    case 'backpack':
+      iconSvg = `<g stroke="#334155" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="155" y="100" width="90" height="100" rx="22" fill="#f1f5f9"/>
+        <path d="M175 100 v-18 a12 12 0 0 1 24 0 v18"/>
+        <rect x="168" y="145" width="64" height="42" rx="8" fill="#e2e8f0"/>
+        <path d="M168 145 h64" stroke="#94a3b8" stroke-width="4"/>
+      </g>`;
+      break;
+    case 'hoodie':
+      iconSvg = `<g stroke="#0f172a" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M150 105 l-30 35 l22 18 l18 -22 v64 h80 v-64 l18 22 l22 -18 l-30 -35 z" fill="#e2e8f0"/>
+        <path d="M175 105 a25 25 0 0 0 50 0" fill="#cbd5e1"/>
+        <path d="M200 125 v75"/>
+        <rect x="175" y="165" width="50" height="24" rx="6" fill="#f8fafc"/>
+      </g>`;
+      break;
+    default:
+      iconSvg = `<g stroke="#64748b" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="150" y="95" width="100" height="100" rx="16" fill="#f1f5f9"/>
+        <path d="M150 125 h100 M200 95 v100"/>
+      </g>`;
+  }
+
+  const safeBrand = String(brand).replace(/[<>&"]/g, '');
+  const safeTitle = String(title).replace(/[<>&"]/g, '');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+    <defs>
+      <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#f8fafc"/>
+      </linearGradient>
+    </defs>
+    <rect width="400" height="300" fill="url(#bgGrad)"/>
+    <rect x="1" y="1" width="398" height="298" rx="16" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+    ${iconSvg}
+    <text x="200" y="248" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">${safeBrand}</text>
+    <text x="200" y="268" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#64748b" text-anchor="middle">${safeTitle.substring(0, 38)}</text>
+  </svg>`;
+}
 
 // Helper to calculate total for an item + shipping
 function calculateTotal(product, quantity = 1, country = "NG") {
@@ -764,8 +916,12 @@ function renderPage(title, content) {
     function getSelectedVariantAndQty() {
       const variantEl = document.getElementById('variantSelect');
       const selectedVariantSku = variantEl ? variantEl.value : '';
-      const selectedVariantText = variantEl && variantEl.selectedIndex >= 0 ? variantEl.options[variantEl.selectedIndex].text : '';
-      const selectedVariantName = selectedVariantText ? selectedVariantText.replace(/\s*\([^)]*\)\s*$/, '').trim() : '';
+      const selectedOpt = variantEl && variantEl.selectedIndex >= 0 ? variantEl.options[variantEl.selectedIndex] : null;
+      const selectedVariantText = selectedOpt ? selectedOpt.text : '';
+      const selectedVariantName = selectedVariantText ? selectedVariantText.replace(/\s*(\[[^\]]*\]|\([^)]*\))\s*$/g, '').trim() : '';
+      const priceOffset = selectedOpt ? parseFloat(selectedOpt.getAttribute('data-price-offset')) || 0 : 0;
+      const color = selectedOpt ? selectedOpt.getAttribute('data-color') || '' : '';
+      const size = selectedOpt ? selectedOpt.getAttribute('data-size') || '' : '';
 
       const qtyEl = document.getElementById('qtySelect');
       const selectedQty = qtyEl ? parseInt(qtyEl.value, 10) || 1 : 1;
@@ -773,7 +929,10 @@ function renderPage(title, content) {
       return {
         sku: selectedVariantSku,
         name: selectedVariantName,
-        quantity: selectedQty
+        quantity: selectedQty,
+        priceOffset: priceOffset,
+        color: color,
+        size: size
       };
     }
 
@@ -785,11 +944,22 @@ function renderPage(title, content) {
       for (let i = 0; i < variantEl.options.length; i++) {
         const opt = variantEl.options[i];
         const sku = opt.value || '';
-        const text = (opt.text || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+        const text = (opt.text || '').replace(/\s*(\[[^\]]*\]|\([^)]*\))\s*$/g, '').trim();
         const inStock = opt.getAttribute('data-in-stock') || '1';
         const stockCount = opt.getAttribute('data-stock-count') || (inStock === '0' ? '0' : '10');
+        const priceOffset = opt.getAttribute('data-price-offset') || '0';
+        const color = opt.getAttribute('data-color') || '';
+        const size = opt.getAttribute('data-size') || '';
         if (text) {
-          list.push(encodeURIComponent(text) + ':' + encodeURIComponent(sku) + ':' + inStock + ':' + stockCount);
+          list.push(
+            encodeURIComponent(text) + ':' +
+            encodeURIComponent(sku) + ':' +
+            inStock + ':' +
+            stockCount + ':' +
+            priceOffset + ':' +
+            encodeURIComponent(color) + ':' +
+            encodeURIComponent(size)
+          );
         }
       }
       return list.join('|');
@@ -800,13 +970,19 @@ function renderPage(title, content) {
       const origin = window.location.origin;
       const vInfo = getSelectedVariantAndQty();
       const allVars = getAllVariantsString();
+      const effectiveUnitPrice = price + vInfo.priceOffset;
+      const incrementalShipping = (vInfo.quantity - 1) * 1.50;
+      const effectiveShipping = shipping + Math.max(0, incrementalShipping);
       const variantParams = (vInfo.sku ? '&variant=' + encodeURIComponent(vInfo.sku) : '') +
                             (vInfo.name ? '&variety=' + encodeURIComponent(vInfo.name) : '') +
                             (vInfo.quantity > 1 ? '&quantity=' + vInfo.quantity : '') +
+                            (vInfo.priceOffset !== 0 ? '&priceOffset=' + vInfo.priceOffset : '') +
+                            (vInfo.color ? '&color=' + encodeURIComponent(vInfo.color) : '') +
+                            (vInfo.size ? '&size=' + encodeURIComponent(vInfo.size) : '') +
                             (allVars ? '&allVariants=' + encodeURIComponent(allVars) : '');
       const productUrl = origin + '/product/' + id + (variantParams ? '?' + variantParams.substring(1) : '');
-      const deepLink = 'cartwise://product?id=' + encodeURIComponent(id) + '&title=' + encodeURIComponent(title) + '&price=' + price + '&shipping=' + shipping + variantParams;
-      const shareText = 'Buy ' + title + (vInfo.name ? ' (' + vInfo.name + ')' : '') + (vInfo.quantity > 1 ? ' x' + vInfo.quantity : '') + ' on Demo Market for $' + (price * vInfo.quantity).toFixed(2) + ' with PayPal Escrow on Cartwise AI: ' + productUrl;
+      const deepLink = 'cartwise://product?id=' + encodeURIComponent(id) + '&title=' + encodeURIComponent(title) + '&price=' + effectiveUnitPrice.toFixed(2) + '&shipping=' + effectiveShipping.toFixed(2) + variantParams;
+      const shareText = 'Buy ' + title + (vInfo.name ? ' (' + vInfo.name + ')' : '') + (vInfo.quantity > 1 ? ' x' + vInfo.quantity : '') + ' on Demo Market for $' + (effectiveUnitPrice * vInfo.quantity).toFixed(2) + ' with PayPal Escrow on Cartwise AI: ' + productUrl;
 
       if (navigator.share) {
         navigator.share({
@@ -827,12 +1003,18 @@ function renderPage(title, content) {
       const origin = window.location.origin;
       const vInfo = getSelectedVariantAndQty();
       const allVars = getAllVariantsString();
+      const effectiveUnitPrice = price + vInfo.priceOffset;
+      const incrementalShipping = (vInfo.quantity - 1) * 1.50;
+      const effectiveShipping = shipping + Math.max(0, incrementalShipping);
       const variantParams = (vInfo.sku ? '&variant=' + encodeURIComponent(vInfo.sku) : '') +
                             (vInfo.name ? '&variety=' + encodeURIComponent(vInfo.name) : '') +
                             (vInfo.quantity > 1 ? '&quantity=' + vInfo.quantity : '') +
+                            (vInfo.priceOffset !== 0 ? '&priceOffset=' + vInfo.priceOffset : '') +
+                            (vInfo.color ? '&color=' + encodeURIComponent(vInfo.color) : '') +
+                            (vInfo.size ? '&size=' + encodeURIComponent(vInfo.size) : '') +
                             (allVars ? '&allVariants=' + encodeURIComponent(allVars) : '');
       const productUrl = origin + '/product/' + id + (variantParams ? '?' + variantParams.substring(1) : '');
-      const deepLink = 'cartwise://product?id=' + encodeURIComponent(id) + '&title=' + encodeURIComponent(title) + '&price=' + price + '&shipping=' + shipping + variantParams;
+      const deepLink = 'cartwise://product?id=' + encodeURIComponent(id) + '&title=' + encodeURIComponent(title) + '&price=' + effectiveUnitPrice.toFixed(2) + '&shipping=' + effectiveShipping.toFixed(2) + variantParams;
       const shareText = 'Buy ' + title + (vInfo.name ? ' (' + vInfo.name + ')' : '') + (vInfo.quantity > 1 ? ' x' + vInfo.quantity : '') + ' on Demo Market with PayPal Escrow on Cartwise AI: ' + productUrl;
 
       // First attempt native share if on mobile (Cartwise APK handles text/plain)
@@ -947,7 +1129,7 @@ app.get('/', (req, res) => {
          data-search="${escapeHtml(searchBlob)}"
          style="${isVisible ? 'display:flex;' : 'display:none;'}">
       <div class="card-img-wrap">
-        <img src="${p.image}" alt="${escapeHtml(p.title)}" class="card-img" loading="lazy" />
+        <img src="${p.image}" alt="${escapeHtml(p.title)}" class="card-img" loading="lazy" onerror="this.onerror=null; this.src='/public/images/products/${p.id}.svg';" />
         <div style="position: absolute; top: 0.75rem; right: 0.75rem;">
           <span class="badge ${p.inStock ? 'badge-in-stock' : 'badge-out-stock'}">
             ${p.inStock ? 'In Stock' : 'Out of Stock'}
@@ -1288,7 +1470,7 @@ app.get('/product/:id', (req, res) => {
   }
 
   const variantOptions = product.variants.map((v, i) => `
-    <option value="${v.sku}" data-in-stock="${v.inStock ? '1' : '0'}" data-stock-count="${v.stockCount ?? (v.inStock ? 10 : 0)}" ${i === 0 ? 'selected' : ''}>${v.name} (${v.sku})</option>
+    <option value="${v.sku}" data-in-stock="${v.inStock ? '1' : '0'}" data-stock-count="${v.stockCount ?? (v.inStock ? 10 : 0)}" data-price-offset="${v.priceOffset || 0}" data-color="${v.color || ''}" data-size="${v.size || ''}" ${i === 0 ? 'selected' : ''}>${v.name} (${v.sku})${v.priceOffset > 0 ? ' [+$' + v.priceOffset.toFixed(2) + ']' : ''}</option>
   `).join('');
 
   const featuresList = product.features.map(f => `
@@ -1296,6 +1478,8 @@ app.get('/product/:id', (req, res) => {
       <span style="color: var(--success); font-weight: bold;">✓</span> <span>${f}</span>
     </li>
   `).join('');
+
+  const hasMultiAttr = Boolean(product.colors && product.sizes);
 
   const content = `
     <div style="margin-bottom: 1.5rem;">
@@ -1307,7 +1491,7 @@ app.get('/product/:id', (req, res) => {
       <!-- Real Product Image Box -->
       <div class="product-detail-image-box">
         <div style="width: 100%; max-width: 320px; height: 280px; display: flex; align-items: center; justify-content: center;">
-          <img src="${product.image}" alt="${product.title}" class="product-detail-img" />
+          <img src="${product.image}" alt="${product.title}" class="product-detail-img" onerror="this.onerror=null; this.src='/public/images/products/${product.id}.svg';" />
         </div>
         <div style="margin-top: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
           <span class="badge ${product.inStock ? 'badge-in-stock' : 'badge-out-stock'}">
@@ -1345,8 +1529,8 @@ app.get('/product/:id', (req, res) => {
           ${product.title}
         </h1>
         <div style="display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
-          <div style="font-size: 2rem; font-weight: 800; color: #0f172a;">$${product.price.toFixed(2)}</div>
-          <div style="font-size: 0.9rem; color: var(--accent-blue); font-weight: 600;">
+          <div id="productPriceDisplay" style="font-size: 2rem; font-weight: 800; color: #0f172a;">$${product.price.toFixed(2)}</div>
+          <div id="shippingDisplay" style="font-size: 0.9rem; color: var(--accent-blue); font-weight: 600;">
             + $${product.shippingCost.toFixed(2)} shipping to Lagos, NG
           </div>
         </div>
@@ -1362,22 +1546,98 @@ app.get('/product/:id', (req, res) => {
         <form action="/checkout" method="GET" style="border-top: 1px solid var(--card-border); padding-top: 1.25rem;">
           <input type="hidden" name="productId" value="${product.id}">
           
+          ${hasMultiAttr ? `
+            <!-- Multi-Attribute Clothes Selectors: Color & Size separately -->
+            <div class="form-row" style="margin-bottom: 0.75rem;">
+              <div>
+                <label for="colorSelect">Choose Color</label>
+                <select id="colorSelect" onchange="syncMultiAttributes()">
+                  ${product.colors.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label for="sizeSelect">Choose Size</label>
+                <select id="sizeSelect" onchange="syncMultiAttributes()">
+                  ${product.sizes.map(s => `<option value="${s}">${s}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          ` : ''}
+
           <div class="form-row">
-            <div>
+            <div style="${hasMultiAttr ? 'display:none;' : ''}">
               <label for="variantSelect">Choose Variant</label>
-              <select id="variantSelect" name="variant">
+              <select id="variantSelect" name="variant" onchange="updatePriceAndShipping()">
                 ${variantOptions}
               </select>
             </div>
-            <div>
+            <div style="${hasMultiAttr ? 'width: 100%;' : ''}">
               <label for="qtySelect">Quantity</label>
-              <select id="qtySelect" name="quantity">
+              <select id="qtySelect" name="quantity" onchange="updatePriceAndShipping()">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
               </select>
             </div>
           </div>
+
+          <script>
+            function syncMultiAttributes() {
+              const colorEl = document.getElementById('colorSelect');
+              const sizeEl = document.getElementById('sizeSelect');
+              const variantEl = document.getElementById('variantSelect');
+              if (!colorEl || !sizeEl || !variantEl) return;
+              const chosenColor = colorEl.value;
+              const chosenSize = sizeEl.value;
+              for (let i = 0; i < variantEl.options.length; i++) {
+                const opt = variantEl.options[i];
+                const c = opt.getAttribute('data-color');
+                const s = opt.getAttribute('data-size');
+                if (c === chosenColor && s === chosenSize) {
+                  variantEl.selectedIndex = i;
+                  break;
+                }
+              }
+              updatePriceAndShipping();
+            }
+
+            function updatePriceAndShipping() {
+              const variantEl = document.getElementById('variantSelect');
+              const qtyEl = document.getElementById('qtySelect');
+              const priceDisplayEl = document.getElementById('productPriceDisplay');
+              const shippingDisplayEl = document.getElementById('shippingDisplay');
+              const buyNowBtn = document.getElementById('buyNowBtn');
+              if (!variantEl) return;
+
+              const basePrice = ${product.price};
+              const baseShipping = ${product.shippingCost};
+              const selectedOpt = variantEl.options[variantEl.selectedIndex];
+              const offset = selectedOpt ? parseFloat(selectedOpt.getAttribute('data-price-offset')) || 0 : 0;
+              const qty = qtyEl ? parseInt(qtyEl.value, 10) || 1 : 1;
+
+              const unitPrice = basePrice + offset;
+              const subtotal = unitPrice * qty;
+              const shipping = baseShipping + Math.max(0, qty - 1) * 1.50;
+              const total = subtotal + shipping;
+
+              if (priceDisplayEl) {
+                priceDisplayEl.textContent = '$' + unitPrice.toFixed(2);
+              }
+              if (shippingDisplayEl) {
+                shippingDisplayEl.textContent = '+ $' + shipping.toFixed(2) + ' shipping to Lagos, NG' + (qty > 1 ? ' (' + qty + ' items)' : '');
+              }
+              if (buyNowBtn) {
+                buyNowBtn.textContent = 'Proceed to Card Checkout ($' + total.toFixed(2) + ')';
+              }
+            }
+
+            // Initial call if multi-attribute
+            if (${hasMultiAttr}) {
+              setTimeout(syncMultiAttributes, 50);
+            }
+          </script>
 
           ${product.inStock ? `
             <!-- Orange Gradient Checkout Button -->
@@ -1550,7 +1810,7 @@ app.get('/checkout', (req, res) => {
 
             <div style="display: flex; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--card-border); margin-bottom: 1.25rem;">
               <div style="width: 70px; height: 70px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.35rem; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                <img src="${product.image}" alt="${product.title}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                <img src="${product.image}" alt="${product.title}" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="this.onerror=null; this.src='/public/images/products/${product.id}.svg';" />
               </div>
               <div style="flex: 1; min-width: 0;">
                 <div style="font-size: 0.9rem; font-weight: 700; color: #0f172a; line-height: 1.3;">${product.title}</div>
