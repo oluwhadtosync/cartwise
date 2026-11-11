@@ -56,6 +56,7 @@ import com.cartwise.app.data.CartwiseOrder
 import com.cartwise.app.data.Deal
 import com.cartwise.app.data.ProductVariety
 import com.cartwise.app.data.ShippingAddress
+import com.cartwise.app.data.ShippingMethod
 import com.cartwise.app.data.TimelineStep
 import com.cartwise.app.data.WebsiteSafety
 import com.cartwise.app.ui.theme.*
@@ -438,6 +439,11 @@ fun OnboardingScreenPreview() {
 // 2. ASK SCREEN (NATURAL LANGUAGE SEARCH)
 // -------------------------------------------------------------
 
+enum class AskInputMode {
+    AI_SEARCH,
+    PASTE_LINK
+}
+
 @Composable
 fun AskScreen(
     queryText: String,
@@ -447,11 +453,18 @@ fun AskScreen(
     onToggleSafetyCheck: (Boolean) -> Unit = {},
     selectedModel: String = "gemini-3.8-flash",
     onSelectModel: (String) -> Unit = {},
+    shippingAddress: ShippingAddress = ShippingAddress(),
+    onUpdateShippingAddress: (ShippingAddress) -> Unit = {},
     onSearchSubmitted: () -> Unit,
     onQuickPromptSelected: (String) -> Unit,
+    onExtractLinkSubmitted: (String) -> Unit = {},
     onViewHistory: () -> Unit
 ) {
+    var currentMode by remember { mutableStateOf(AskInputMode.AI_SEARCH) }
+    var directLinkInput by remember { mutableStateOf("") }
+    val clipboardManager = LocalClipboardManager.current
     var pendingPrompt by remember { mutableStateOf<String?>(null) }
+    var showShippingAddressDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     val suggestedPrompts = listOf(
@@ -529,6 +542,201 @@ fun AskScreen(
         )
     }
 
+    // Prefilled Shipping Destination & Address Settings Dialog
+    if (showShippingAddressDialog) {
+        var editFullName by remember { mutableStateOf(shippingAddress.fullName) }
+        var editAddress by remember { mutableStateOf(shippingAddress.address) }
+        var editCity by remember { mutableStateOf(shippingAddress.city) }
+        var editState by remember { mutableStateOf(shippingAddress.state) }
+        var editCountry by remember { mutableStateOf(shippingAddress.country) }
+        var editPostalCode by remember { mutableStateOf(shippingAddress.postalCode ?: "100001") }
+        var editPhone by remember { mutableStateOf(shippingAddress.phone ?: "+234 801 234 5678") }
+        var editEmail by remember { mutableStateOf(shippingAddress.email) }
+
+        AlertDialog(
+            onDismissRequest = { showShippingAddressDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Place,
+                    contentDescription = null,
+                    tint = AccentCyan,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Shipping Destination & Address",
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        fontSize = 17.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Cloud executions use this destination to check real-time shipping varieties and rates before ordering.",
+                        fontSize = 11.5.sp,
+                        color = TextSecondary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        lineHeight = 15.sp
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = editFullName,
+                        onValueChange = { editFullName = it },
+                        label = { Text("Full Name", fontSize = 11.sp) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = CardBorder,
+                            focusedLabelColor = AccentCyan,
+                            unfocusedLabelColor = TextSecondary
+                        )
+                    )
+                    OutlinedTextField(
+                        value = editAddress,
+                        onValueChange = { editAddress = it },
+                        label = { Text("Street Address", fontSize = 11.sp) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = CardBorder,
+                            focusedLabelColor = AccentCyan,
+                            unfocusedLabelColor = TextSecondary
+                        )
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = editCity,
+                            onValueChange = { editCity = it },
+                            label = { Text("City", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedBorderColor = AccentCyan,
+                                unfocusedBorderColor = CardBorder,
+                                focusedLabelColor = AccentCyan,
+                                unfocusedLabelColor = TextSecondary
+                            )
+                        )
+                        OutlinedTextField(
+                            value = editState,
+                            onValueChange = { editState = it },
+                            label = { Text("State", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedBorderColor = AccentCyan,
+                                unfocusedBorderColor = CardBorder,
+                                focusedLabelColor = AccentCyan,
+                                unfocusedLabelColor = TextSecondary
+                            )
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = editCountry,
+                            onValueChange = { editCountry = it },
+                            label = { Text("Country", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedBorderColor = AccentCyan,
+                                unfocusedBorderColor = CardBorder,
+                                focusedLabelColor = AccentCyan,
+                                unfocusedLabelColor = TextSecondary
+                            )
+                        )
+                        OutlinedTextField(
+                            value = editPostalCode,
+                            onValueChange = { editPostalCode = it },
+                            label = { Text("Postal Code", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedBorderColor = AccentCyan,
+                                unfocusedBorderColor = CardBorder,
+                                focusedLabelColor = AccentCyan,
+                                unfocusedLabelColor = TextSecondary
+                            )
+                        )
+                    }
+                    OutlinedTextField(
+                        value = editPhone,
+                        onValueChange = { editPhone = it },
+                        label = { Text("Phone Number", fontSize = 11.sp) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = CardBorder,
+                            focusedLabelColor = AccentCyan,
+                            unfocusedLabelColor = TextSecondary
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val updated = shippingAddress.copy(
+                            fullName = editFullName.ifBlank { "Ada Lovelace" },
+                            address = editAddress.ifBlank { "14 Marina Street, Lagos Island" },
+                            city = editCity.ifBlank { "Lagos" },
+                            state = editState.ifBlank { "Lagos" },
+                            country = editCountry.ifBlank { "Nigeria" },
+                            postalCode = editPostalCode.ifBlank { "100001" },
+                            phone = editPhone.ifBlank { "+234 801 234 5678" },
+                            email = editEmail.ifBlank { "ada.lovelace@gmail.com" }
+                        )
+                        onUpdateShippingAddress(updated)
+                        showShippingAddressDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Save Address", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showShippingAddressDialog = false }) {
+                    Text("Cancel", color = TextMuted)
+                }
+            },
+            containerColor = CardDark,
+            shape = RoundedCornerShape(18.dp)
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -544,7 +752,13 @@ fun AskScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { showShippingAddressDialog = true }
+                    .padding(vertical = 4.dp, horizontal = 2.dp)
+            ) {
                 Box(
                     modifier = Modifier
                         .size(38.dp)
@@ -557,11 +771,54 @@ fun AskScreen(
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text("Cartwise", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text("Lagos, Nigeria 🇳🇬", fontSize = 11.sp, color = TextSecondary)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${shippingAddress.city.ifBlank { "Lagos" }}, ${shippingAddress.country.ifBlank { "Nigeria" }} 🇳🇬",
+                            fontSize = 11.sp,
+                            color = AccentCyan
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit Destination",
+                            tint = AccentCyan.copy(alpha = 0.7f),
+                            modifier = Modifier.size(10.dp)
+                        )
+                    }
                 }
             }
-            IconButton(onClick = onViewHistory) {
-                Icon(Icons.Default.History, contentDescription = "Order History", tint = TextSecondary)
+
+            // Right Actions: Shipping Address Setting Button + Order History Button
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = AccentCyan.copy(alpha = 0.12f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AccentCyan.copy(alpha = 0.35f)),
+                    modifier = Modifier.clickable { showShippingAddressDialog = true }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.LocalShipping,
+                            contentDescription = "Shipping Address Setting",
+                            tint = AccentCyan,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Address",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AccentCyan
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(6.dp))
+                IconButton(onClick = onViewHistory) {
+                    Icon(Icons.Default.History, contentDescription = "Order History", tint = TextSecondary)
+                }
             }
         }
 
@@ -575,197 +832,603 @@ fun AskScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Search Input Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardDark),
-            border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(CardBorder, PrimaryIndigo)))
+        // Floating Dual-Tab Switcher (Option C: Floating Dual-Tab Switcher)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                OutlinedTextField(
-                    value = queryText,
-                    onValueChange = onQueryChanged,
-                    placeholder = {
-                        Text("e.g. Find noise-cancelling earbuds under $40 that ship to Lagos...", color = TextMuted, fontSize = 14.sp)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
-                    ),
-                    maxLines = 4,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { onSearchSubmitted() })
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Gemini AI Model Selector
-                Column(
+            // Tab 1: AI Search (50% width)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { currentMode = AskInputMode.AI_SEARCH }
+                    .padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        tint = if (currentMode == AskInputMode.AI_SEARCH) AccentCyan else TextMuted,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "AI Search",
+                        fontSize = 14.sp,
+                        fontWeight = if (currentMode == AskInputMode.AI_SEARCH) FontWeight.Bold else FontWeight.Medium,
+                        color = if (currentMode == AskInputMode.AI_SEARCH) Color.White else TextMuted
+                    )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp, bottom = 4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            tint = AccentCyan,
-                            modifier = Modifier.size(13.dp)
+                        .height(2.5.dp)
+                        .background(
+                            if (currentMode == AskInputMode.AI_SEARCH) AccentCyan else Color.Transparent,
+                            RoundedCornerShape(2.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "AI SEARCH MODEL",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.8.sp,
-                            color = TextMuted
-                        )
-                    }
+                )
+            }
 
-                    // Tidy single-line chips
-                    Row(
+            // Tab 2: Paste Link (50% width)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { currentMode = AskInputMode.PASTE_LINK }
+                    .padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Link,
+                        contentDescription = null,
+                        tint = if (currentMode == AskInputMode.PASTE_LINK) AccentCyan else TextMuted,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Paste Link",
+                        fontSize = 14.sp,
+                        fontWeight = if (currentMode == AskInputMode.PASTE_LINK) FontWeight.Bold else FontWeight.Medium,
+                        color = if (currentMode == AskInputMode.PASTE_LINK) Color.White else TextMuted
+                    )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.5.dp)
+                        .background(
+                            if (currentMode == AskInputMode.PASTE_LINK) AccentCyan else Color.Transparent,
+                            RoundedCornerShape(2.dp)
+                        )
+                )
+            }
+        }
+
+        if (currentMode == AskInputMode.AI_SEARCH) {
+            // Search Input Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = CardDark),
+                border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(CardBorder, PrimaryIndigo)))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    OutlinedTextField(
+                        value = queryText,
+                        onValueChange = onQueryChanged,
+                        placeholder = {
+                            Text("e.g. Find noise-cancelling earbuds under $40 that ship to Lagos...", color = TextMuted, fontSize = 14.sp)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary
+                        ),
+                        maxLines = 4,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { onSearchSubmitted() })
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Gemini AI Model Selector
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(top = 4.dp, bottom = 4.dp)
                     ) {
-                        listOf(
-                            "gemini-3.8-flash" to "Gemini 3.8 Flash",
-                            "gemini-3.7-flash" to "Gemini 3.7 Flash",
-                            "gemini-2.5-flash" to "Gemini 2.5 Flash"
-                        ).forEach { (id, label) ->
-                            val isSelected = selectedModel == id
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) PrimaryIndigo.copy(alpha = 0.32f) else Color(0xFF0F172A),
-                                border = BorderStroke(
-                                    width = if (isSelected) 1.5.dp else 1.dp,
-                                    color = if (isSelected) AccentCyan else CardBorder
-                                ),
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable { onSelectModel(id) }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = AccentCyan,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "AI SEARCH MODEL",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
+                                color = TextMuted
+                            )
+                        }
+
+                        // Tidy single-line chips
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            listOf(
+                                "gemini-3.8-flash" to "Gemini 3.8 Flash",
+                                "gemini-3.7-flash" to "Gemini 3.7 Flash",
+                                "gemini-2.5-flash" to "Gemini 2.5 Flash"
+                            ).forEach { (id, label) ->
+                                val isSelected = selectedModel == id
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isSelected) PrimaryIndigo.copy(alpha = 0.32f) else Color(0xFF0F172A),
+                                    border = BorderStroke(
+                                        width = if (isSelected) 1.5.dp else 1.dp,
+                                        color = if (isSelected) AccentCyan else CardBorder
+                                    ),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { onSelectModel(id) }
                                 ) {
-                                    if (isSelected) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(6.dp)
-                                                .clip(CircleShape)
-                                                .background(AccentCyan)
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (isSelected) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(AccentCyan)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                        }
+                                        Text(
+                                            text = label,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else TextMuted,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
                                     }
-                                    Text(
-                                        text = label,
-                                        fontSize = 12.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSelected) Color.White else TextMuted,
-                                        maxLines = 1,
-                                        softWrap = false
-                                    )
                                 }
                             }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                // AI Risk Score Toggle Button (Clean single-row, inactive by default)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (isSafetyCheckEnabled) Color(0xFF042F2E) else Color(0xFF0F172A))
-                        .border(
-                            1.dp,
-                            if (isSafetyCheckEnabled) SuccessGreen.copy(alpha = 0.6f) else CardBorder,
-                            RoundedCornerShape(12.dp)
-                        )
-                        .clickable { onToggleSafetyCheck(!isSafetyCheckEnabled) }
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                    // AI Risk Score Toggle Button (Clean single-row, inactive by default)
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSafetyCheckEnabled) Color(0xFF042F2E) else Color(0xFF0F172A))
+                            .border(
+                                1.dp,
+                                if (isSafetyCheckEnabled) SuccessGreen.copy(alpha = 0.6f) else CardBorder,
+                                RoundedCornerShape(12.dp)
+                            )
+                            .clickable { onToggleSafetyCheck(!isSafetyCheckEnabled) }
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(if (isSafetyCheckEnabled) SuccessGreen.copy(alpha = 0.2f) else Color(0xFF1E293B)),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isSafetyCheckEnabled) SuccessGreen.copy(alpha = 0.2f) else Color(0xFF1E293B)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (isSafetyCheckEnabled) Icons.Default.VerifiedUser else Icons.Default.Security,
+                                    contentDescription = null,
+                                    tint = if (isSafetyCheckEnabled) SuccessGreen else TextSecondary,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "AI Merchant Risk Score",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (isSafetyCheckEnabled) "Risk score active" else "Risk score inactive",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = if (isSafetyCheckEnabled) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSafetyCheckEnabled) SuccessGreen else TextMuted
+                                )
+                            }
+                        }
+
+                        Switch(
+                            checked = isSafetyCheckEnabled,
+                            onCheckedChange = onToggleSafetyCheck,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = SuccessGreen,
+                                uncheckedThumbColor = Color(0xFF94A3B8),
+                                uncheckedTrackColor = Color(0xFF1E293B)
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = onSearchSubmitted,
+                        enabled = queryText.isNotBlank() && !isLoading,
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (selectedModel.contains("3.8")) "Gemini 3.8 is searching deals..." else "Gemini is searching deals...", color = Color.White, fontWeight = FontWeight.Bold)
+                        } else {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = AccentCyan)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Find Best Landed Deal", fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                }
+            }
+        } else {
+            // Direct Store Link Card (Option C: Floating Dual-Tab Switcher - Spacious & Responsive)
+            val trimmedLink = directLinkInput.trim()
+            val detectedStoreLabel = remember(trimmedLink) {
+                val lower = trimmedLink.lowercase()
+                when {
+                    lower.contains("aliexpress") -> "AliExpress (Buyer Protection)"
+                    lower.contains("amazon") -> "Amazon (Escrow Secured)"
+                    lower.contains("ebay") -> "eBay (Money Back Guarantee)"
+                    lower.contains("jumia") -> "Jumia (Lagos Express)"
+                    lower.contains("shopify") || lower.contains("myshopify") -> "Shopify Store"
+                    lower.contains("cartwise-demo-market") || lower.contains("demo-market") -> "Cartwise Demo Market"
+                    lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("www.") -> "Web Store (Escrow Protected)"
+                    else -> null
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = CardDark),
+                border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(CardBorder, AccentCyan)))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Header Row: Label & Paste Clipboard Action
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(
-                                imageVector = if (isSafetyCheckEnabled) Icons.Default.VerifiedUser else Icons.Default.Security,
+                                imageVector = Icons.Default.Link,
                                 contentDescription = null,
-                                tint = if (isSafetyCheckEnabled) SuccessGreen else TextSecondary,
-                                modifier = Modifier.size(17.dp)
+                                tint = AccentCyan,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "PASTE STORE LINK",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextMuted,
+                                letterSpacing = 0.5.sp
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
+
+                        // Prominent Paste Chip Button
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = PrimaryIndigo.copy(alpha = 0.35f),
+                            border = BorderStroke(1.dp, PrimaryIndigo),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    val clipText = clipboardManager.getText()?.text
+                                    if (!clipText.isNullOrBlank()) {
+                                        directLinkInput = clipText.trim()
+                                    }
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentPaste,
+                                    contentDescription = "Paste",
+                                    tint = AccentCyan,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = "Paste",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    // Full-Width Responsive URL Input Box
+                    OutlinedTextField(
+                        value = directLinkInput,
+                        onValueChange = { directLinkInput = it },
+                        placeholder = {
                             Text(
-                                text = "AI Merchant Risk Score",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary
+                                text = "Paste AliExpress, Amazon, Shopify or demo link...",
+                                color = TextMuted,
+                                fontSize = 13.sp
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
+                        },
+                        singleLine = false,
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null,
+                                tint = if (directLinkInput.isNotBlank()) AccentCyan else TextMuted,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            if (directLinkInput.isNotBlank()) {
+                                IconButton(
+                                    onClick = { directLinkInput = "" },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear",
+                                        tint = TextMuted,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = BgDark,
+                            unfocusedContainerColor = BgDark,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = CardBorder,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary
+                        )
+                    )
+
+                    // Detected Store Badge Pill (Realtime Feedback)
+                    if (detectedStoreLabel != null) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = AccentCyan.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, AccentCyan.copy(alpha = 0.35f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = AccentCyan,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = "Detected Store: $detectedStoreLabel",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AccentCyan
+                                )
+                            }
+                        }
+                    }
+
+                    // Quick Demo Market sample link shortcut (when empty)
+                    if (directLinkInput.isBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFF0F172A),
+                            border = BorderStroke(1.dp, CardBorder),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    directLinkInput = "https://cartwise-demo-market.onrender.com/product/prod-hoodie-13"
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "💡 Try Demo:",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AccentCyan
+                                )
+                                Text(
+                                    text = "Apex Pro Tech Fleece Hoodie",
+                                    fontSize = 11.5.sp,
+                                    color = TextSecondary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = null,
+                                    tint = TextMuted,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Feature Highlights Checklist
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = SuccessGreen,
+                                modifier = Modifier.size(15.dp)
+                            )
                             Text(
-                                text = if (isSafetyCheckEnabled) "Risk score active" else "Risk score inactive",
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isSafetyCheckEnabled) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSafetyCheckEnabled) SuccessGreen else TextMuted
+                                text = "Extracts product title, image, price & varieties",
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = SuccessGreen,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Text(
+                                text = "Calculates landed Lagos shipping & PayPal Escrow hold",
+                                fontSize = 12.sp,
+                                color = TextSecondary
                             )
                         }
                     }
 
-                    Switch(
-                        checked = isSafetyCheckEnabled,
-                        onCheckedChange = onToggleSafetyCheck,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = SuccessGreen,
-                            uncheckedThumbColor = Color(0xFF94A3B8),
-                            uncheckedTrackColor = Color(0xFF1E293B)
+                    // Supported Store Badges (Horizontally Scrollable - never squished or line-broken)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Supported:",
+                            fontSize = 11.sp,
+                            color = TextMuted,
+                            fontWeight = FontWeight.SemiBold
                         )
-                    )
-                }
+                        listOf("AliExpress", "Amazon", "Shopify", "eBay", "Jumia", "Demo Market").forEach { store ->
+                            val isDetected = detectedStoreLabel?.contains(store, ignoreCase = true) == true
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isDetected) AccentCyan.copy(alpha = 0.2f) else Color(0xFF0F172A),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isDetected) AccentCyan else CardBorder
+                                )
+                            ) {
+                                Text(
+                                    text = store,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = if (isDetected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isDetected) AccentCyan else TextSecondary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = onSearchSubmitted,
-                    enabled = queryText.isNotBlank() && !isLoading,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(if (selectedModel.contains("3.8")) "Gemini 3.8 is searching deals..." else "Gemini is searching deals...", color = Color.White, fontWeight = FontWeight.Bold)
-                    } else {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = AccentCyan)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Find Best Landed Deal", fontWeight = FontWeight.Bold, color = Color.White)
+                    // Primary Extract CTA Button
+                    Button(
+                        onClick = {
+                            onExtractLinkSubmitted(directLinkInput.trim())
+                        },
+                        enabled = directLinkInput.isNotBlank() && !isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Extracting with Cloud Browser & AI...",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Bolt,
+                                contentDescription = null,
+                                tint = AccentCyan,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Extract Deal & Buy with Escrow",
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -1050,17 +1713,37 @@ fun DealCard(
 ) {
     val context = LocalContext.current
 
-    // Varieties setup (defaulting to 3 realistic variants if not provided)
+    // Varieties setup (intelligent category-tailored fallback if not provided by backend)
     val varieties = remember(deal) {
         if (deal.varieties.isNotEmpty()) {
             deal.varieties
         } else {
-            listOf(
-                ProductVariety("Matte Black", "VAR-BLK", inStock = deal.inStock, stockCount = if (deal.inStock) deal.stockCount else 0),
-                ProductVariety("Arctic White", "VAR-WHT", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 2) else 0),
-                ProductVariety("Deep Navy", "VAR-NVY", inStock = deal.inStock, stockCount = if (deal.inStock) minOf(2, deal.stockCount) else 0),
-                ProductVariety("Special Edition", "VAR-LTD", inStock = false, stockCount = 0)
-            )
+            val titleLower = deal.title.lowercase()
+            when {
+                titleLower.contains("earbud") || titleLower.contains("headphone") || titleLower.contains("earphone") || titleLower.contains("audio") || titleLower.contains("headset") || titleLower.contains("airpod") -> listOf(
+                    ProductVariety(id = "var-1", name = "Midnight Black", sku = "VAR-BLK", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount) else 0, priceOffset = 0.0, unitPrice = deal.price),
+                    ProductVariety(id = "var-2", name = "Pearl White", sku = "VAR-WHT", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 2) else 0, priceOffset = 0.0, unitPrice = deal.price),
+                    ProductVariety(id = "var-3", name = "Navy Blue", sku = "VAR-BLU", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 3) else 0, priceOffset = 0.0, unitPrice = deal.price)
+                )
+                (titleLower.contains("phone") && !titleLower.contains("headphone") && !titleLower.contains("earphone")) || titleLower.contains("redmi") || titleLower.contains("xiaomi") || titleLower.contains("iphone") || titleLower.contains("samsung") || titleLower.contains("pixel") -> listOf(
+                    ProductVariety(id = "var-1", name = "4GB RAM + 128GB Storage (Midnight Black)", sku = "VAR-128-BLK", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount) else 0, priceOffset = 0.0, unitPrice = deal.price),
+                    ProductVariety(id = "var-2", name = "6GB RAM + 128GB Storage (Starry Blue)", sku = "VAR-128-BLU", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 2) else 0, priceOffset = 12.0, unitPrice = deal.price + 12.0),
+                    ProductVariety(id = "var-3", name = "8GB RAM + 256GB Storage (Sage Green)", sku = "VAR-256-GRN", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 3) else 0, priceOffset = 25.0, unitPrice = deal.price + 25.0)
+                )
+                titleLower.contains("screen") || titleLower.contains("oled") || titleLower.contains("lcd") || titleLower.contains("digitizer") -> listOf(
+                    ProductVariety(id = "var-1", name = "OLED Without Frame", sku = "VAR-NO-FRAME", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount) else 0, priceOffset = 0.0, unitPrice = deal.price),
+                    ProductVariety(id = "var-2", name = "OLED With Frame (Black)", sku = "VAR-FRAME-BLK", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 2) else 0, priceOffset = 7.50, unitPrice = deal.price + 7.50),
+                    ProductVariety(id = "var-3", name = "OLED With Frame (Aurora)", sku = "VAR-FRAME-AUR", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 3) else 0, priceOffset = 7.50, unitPrice = deal.price + 7.50)
+                )
+                titleLower.contains("keyboard") || titleLower.contains("keychron") -> listOf(
+                    ProductVariety(id = "var-1", name = "Linear Red Switches", sku = "SW-RED", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount) else 0, priceOffset = 0.0, unitPrice = deal.price),
+                    ProductVariety(id = "var-2", name = "Tactile Brown Switches", sku = "SW-BRN", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 2) else 0, priceOffset = 0.0, unitPrice = deal.price),
+                    ProductVariety(id = "var-3", name = "Clicky Blue Switches", sku = "SW-BLU", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount / 3) else 0, priceOffset = 0.0, unitPrice = deal.price)
+                )
+                else -> listOf(
+                    ProductVariety(id = "var-std", name = "Standard Edition", sku = "STD-01", inStock = deal.inStock, stockCount = if (deal.inStock) maxOf(1, deal.stockCount) else 0, priceOffset = 0.0, unitPrice = deal.price)
+                )
+            }
         }
     }
 
@@ -1071,6 +1754,57 @@ fun DealCard(
 
     val selectedVariety = varieties.getOrNull(selectedVarietyIndex) ?: varieties.first()
     val isSelectedSoldOut = !selectedVariety.inStock || selectedVariety.stockCount <= 0
+
+    // Quantity state for this deal
+    var quantity by remember(deal.id) { mutableStateOf(maxOf(1, deal.quantity)) }
+
+    // Shipping methods for this deal
+    val isAliDeal = deal.storeName.contains("AliExpress", ignoreCase = true) || deal.storeUrl.contains("aliexpress")
+    val isJumiaDeal = deal.storeName.contains("Jumia", ignoreCase = true) || deal.storeUrl.contains("jumia")
+    val availableShippingMethods = remember(deal.id, deal.shippingMethods) {
+        if (deal.shippingMethods.isNotEmpty()) deal.shippingMethods
+        else if (isJumiaDeal) {
+            val cost = if (deal.isFreeShipping) 0.0 else (if (deal.shippingCost > 0.0) deal.shippingCost else 0.85)
+            val pickupCost = if (deal.isFreeShipping) 0.0 else (if (deal.shippingCost > 0.0) (deal.shippingCost - 0.45).coerceAtLeast(0.0) else 0.40)
+            listOf(
+                ShippingMethod("ship_jumia_door", "Jumia Door Delivery", "Jumia Logistics", cost, "1 - 3 business days", true, cost == 0.0),
+                ShippingMethod("ship_jumia_pickup", "Jumia Pickup Station", "Jumia Express", pickupCost, "1 - 2 business days", true, false)
+            )
+        } else if (isAliDeal) {
+            listOf(
+                ShippingMethod("ship_aliexpress_std", "AliExpress Standard Shipping", "AliExpress", if (deal.isFreeShipping) 0.0 else deal.shippingCost, "14 - 21 business days", true, deal.isFreeShipping || deal.shippingCost == 0.0)
+            )
+        } else {
+            val cost = if (deal.isFreeShipping) 0.0 else deal.shippingCost
+            listOf(
+                ShippingMethod("ship_std", "${deal.storeName} Standard Delivery", "${deal.storeName} Logistics", cost, "7 - 14 business days", true, cost == 0.0)
+            )
+        }
+    }
+
+    var selectedShippingMethodId by remember(deal.id, availableShippingMethods) {
+        mutableStateOf(
+            availableShippingMethods.firstOrNull { it.isFree }?.id
+                ?: deal.selectedShippingMethodId?.takeIf { id -> availableShippingMethods.any { it.id == id } }
+                ?: availableShippingMethods.firstOrNull()?.id
+                ?: ""
+        )
+    }
+
+    val selectedShippingMethod = availableShippingMethods.find { it.id == selectedShippingMethodId }
+        ?: availableShippingMethods.firstOrNull()
+
+    val isFreeShipping = selectedShippingMethod?.isFree == true || (selectedShippingMethod?.cost ?: 0.0) == 0.0
+    val methodBaseCost = if (isFreeShipping) 0.0 else (selectedShippingMethod?.cost ?: 0.0)
+    val extraUnits = maxOf(0, quantity - 1)
+    val incrementalPerItem = if (isFreeShipping) 0.0 else (if (deal.incrementalShippingPerUnit > 0.0) deal.incrementalShippingPerUnit else (if (selectedShippingMethod?.carrier?.contains("DHL", true) == true || selectedShippingMethod?.carrier?.contains("UPS", true) == true) 3.50 else 1.50))
+    val totalShipping = if (isFreeShipping) 0.0 else Math.round((methodBaseCost + extraUnits * incrementalPerItem) * 100.0) / 100.0
+
+    val variantSpecificPrice = selectedVariety.unitPrice?.takeIf { it > 0.0 }
+    val priceOffset = selectedVariety.priceOffset
+    val unitPrice = variantSpecificPrice ?: (Math.round((deal.price + priceOffset) * 100.0) / 100.0)
+    val itemSubtotal = Math.round(unitPrice * quantity * 100.0) / 100.0
+    val totalLandedCost = Math.round((itemSubtotal + totalShipping) * 100.0) / 100.0
 
     // Domain AI Safety Analysis
     val safety = deal.safety ?: WebsiteSafety(
@@ -1313,7 +2047,7 @@ fun DealCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Store Varieties / Colors:",
+                        text = if (varieties.size > 1) "Store Varieties & Options:" else "Specification / Edition:",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextSecondary
@@ -1444,6 +2178,141 @@ fun DealCard(
                 }
             }
 
+            // Shipping Methods Selector
+            Spacer(modifier = Modifier.height(10.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Shipping Method (${availableShippingMethods.size} Available):",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary
+                    )
+                    Text(
+                        text = selectedShippingMethod?.carrier ?: "",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AccentCyan
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(availableShippingMethods) { m ->
+                        val isSelected = m.id == selectedShippingMethodId
+                        val costLabel = if (m.isFree || m.cost == 0.0) "FREE" else "$${m.cost}"
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color(0xFF042F2E) else Color(0xFF0F172A))
+                                .border(
+                                    1.dp,
+                                    if (isSelected) SuccessGreen else CardBorder,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable { selectedShippingMethodId = m.id }
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = m.name,
+                                        fontSize = 11.5.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) SuccessGreen else TextPrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = costLabel,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = if (m.isFree || m.cost == 0.0) SuccessGreen else TextPrimary
+                                    )
+                                }
+                                if (!m.estimatedDelivery.isNullOrBlank()) {
+                                    Text(
+                                        text = m.estimatedDelivery,
+                                        fontSize = 9.5.sp,
+                                        color = TextMuted
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Quantity Stepper with Incremental Shipping Scaling
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF0F172A))
+                    .border(1.dp, CardBorder, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Item Quantity",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (isFreeShipping) "Free shipping applied" else (if (quantity > 1) "+$$incrementalPerItem/extra unit shipping" else "Shipping scales +$$incrementalPerItem per extra unit"),
+                        fontSize = 10.5.sp,
+                        color = if (isFreeShipping) SuccessGreen else TextSecondary
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (quantity > 1) Color(0xFF1E293B) else Color(0xFF0F172A))
+                            .border(1.dp, CardBorder, RoundedCornerShape(6.dp))
+                            .clickable(enabled = quantity > 1) { quantity-- },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("-", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (quantity > 1) TextPrimary else TextMuted)
+                    }
+
+                    Text(
+                        text = "$quantity",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(horizontal = 10.dp)
+                    )
+
+                    val maxStock = if (selectedVariety.stockCount > 0) selectedVariety.stockCount else 10
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (quantity < maxStock) Color(0xFF1E293B) else Color(0xFF0F172A))
+                            .border(1.dp, CardBorder, RoundedCornerShape(6.dp))
+                            .clickable(enabled = quantity < maxStock) { quantity++ },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("+", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (quantity < maxStock) TextPrimary else TextMuted)
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(14.dp))
 
             // Pricing Row & Buy Button
@@ -1454,13 +2323,13 @@ fun DealCard(
             ) {
                 Column {
                     Text(
-                        text = "$${deal.totalCost}",
+                        text = "$$totalLandedCost",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = TextPrimary
                     )
                     Text(
-                        text = "$${deal.price} item + $${deal.shippingCost} shipping",
+                        text = "$$itemSubtotal ($quantity" + "x) + $$totalShipping shipping",
                         fontSize = 11.sp,
                         color = TextSecondary
                     )
@@ -1470,9 +2339,15 @@ fun DealCard(
                     onClick = {
                         val configuredDeal = deal.copy(
                             selectedVarietyName = selectedVariety.name,
+                            selectedShippingMethodId = selectedShippingMethodId,
+                            shippingCost = totalShipping,
+                            price = unitPrice,
+                            totalCost = totalLandedCost,
+                            quantity = quantity,
                             inStock = !isSelectedSoldOut,
                             stockCount = selectedVariety.stockCount,
                             varieties = varieties,
+                            shippingMethods = availableShippingMethods,
                             safety = safety
                         )
                         onSelect(configuredDeal)
@@ -1484,12 +2359,12 @@ fun DealCard(
                         disabledContainerColor = Color(0xFF334155),
                         disabledContentColor = Color(0xFF94A3B8)
                     ),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
                 ) {
                     Text(
-                        text = if (isSelectedSoldOut) "Variety Sold Out" else "Select Deal",
+                        text = if (isSelectedSoldOut) "Variety Sold Out" else "Select Deal & Review ($$totalLandedCost)",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontSize = 12.5.sp
                     )
                 }
             }
@@ -1509,6 +2384,7 @@ fun ConfirmScreen(
     cancelNotice: String? = null,
     isSafetyCheckEnabled: Boolean = false,
     onDismissCancelNotice: () -> Unit = {},
+    onUpdateDealDetails: (String, Double) -> Unit = { _, _ -> },
     onPayWithPayPal: (ShippingAddress, BillingAddress, String, Int, Double, Double) -> Unit,
     onDemoSandboxFastPass: (ShippingAddress, BillingAddress, String, Int, Double, Double) -> Unit = { _, _, _, _, _, _ -> },
     onSwitchToDemoMarket: () -> Unit = {},
@@ -1516,6 +2392,10 @@ fun ConfirmScreen(
 ) {
     val scrollState = rememberScrollState()
     val isDemoMarket = deal.storeName.contains("Demo Market", ignoreCase = true) || deal.storeUrl.contains("cartwise-demo-market")
+
+    var editableTitle by remember(deal.id, deal.title) { mutableStateOf(deal.title) }
+    var editablePrice by remember(deal.id, deal.price) { mutableStateOf(deal.price) }
+    var isEditingItemDetails by remember { mutableStateOf(false) }
 
     // Multi-Attribute Variant Detection (e.g. Clothes: Color & Size separate dimensions)
     val distinctColors = remember(deal.varieties) {
@@ -1604,17 +2484,57 @@ fun ConfirmScreen(
 
     val isSelectedSoldOut = selectedVarietyObj?.inStock == false
 
-    // Variant Price Offset calculation (e.g. XL costs +$4.00, Pro capacity costs +$8.00)
+    // Variant Price Calculation (Supports variant-specific prices or offset)
+    val variantSpecificPrice = selectedVarietyObj?.unitPrice?.takeIf { it > 0.0 }
     val priceOffset = selectedVarietyObj?.priceOffset ?: 0.0
-    val unitPrice = Math.round((deal.price + priceOffset) * 100.0) / 100.0
+    val effectiveBasePrice = editablePrice
+    val unitPrice = variantSpecificPrice ?: (Math.round((effectiveBasePrice + priceOffset) * 100.0) / 100.0)
     val itemSubtotal = Math.round(unitPrice * quantity * 100.0) / 100.0
 
-    // Quantity-dependent shipping cost calculation
-    // Base shipping + $1.50 per additional unit (cross-border air freight weight scaling)
-    val baseShipping = deal.shippingCost
+    val isAliExpressDeal = deal.storeName.contains("AliExpress", ignoreCase = true) || deal.storeUrl.contains("aliexpress")
+
+    val isJumiaDeal = deal.storeName.contains("Jumia", ignoreCase = true) || deal.storeUrl.contains("jumia")
+
+    // Shipping Varieties and Quantity-dependent shipping cost calculation
+    val availableShippingMethods = remember(deal.id, deal.shippingMethods) {
+        if (deal.shippingMethods.isNotEmpty()) deal.shippingMethods
+        else if (isJumiaDeal) {
+            val cost = if (deal.isFreeShipping) 0.0 else (if (deal.shippingCost > 0.0) deal.shippingCost else 0.85)
+            val pickupCost = if (deal.isFreeShipping) 0.0 else (if (deal.shippingCost > 0.0) (deal.shippingCost - 0.45).coerceAtLeast(0.0) else 0.40)
+            listOf(
+                ShippingMethod("ship_jumia_door", "Jumia Door Delivery", "Jumia Logistics", cost, "1 - 3 business days", true, cost == 0.0),
+                ShippingMethod("ship_jumia_pickup", "Jumia Pickup Station", "Jumia Express", pickupCost, "1 - 2 business days", true, false)
+            )
+        } else if (isAliExpressDeal) {
+            listOf(
+                ShippingMethod("ship_aliexpress_std", "AliExpress Standard Shipping", "AliExpress", if (deal.isFreeShipping) 0.0 else deal.shippingCost, "14 - 21 business days", true, deal.isFreeShipping || deal.shippingCost == 0.0)
+            )
+        } else {
+            val shipCost = if (deal.isFreeShipping) 0.0 else deal.shippingCost
+            listOf(
+                ShippingMethod("ship_std", "${deal.storeName} Standard Delivery", "${deal.storeName} Logistics", shipCost, "7 - 14 business days", true, shipCost == 0.0)
+            )
+        }
+    }
+
+    var selectedShippingMethodId by remember(deal.id, availableShippingMethods) {
+        mutableStateOf(
+            availableShippingMethods.firstOrNull { it.isFree }?.id
+                ?: deal.selectedShippingMethodId?.takeIf { id -> availableShippingMethods.any { it.id == id } }
+                ?: availableShippingMethods.firstOrNull()?.id
+                ?: ""
+        )
+    }
+
+    val selectedShippingMethod = availableShippingMethods.find { it.id == selectedShippingMethodId }
+        ?: availableShippingMethods.firstOrNull()
+
+    val methodBaseCost = selectedShippingMethod?.cost ?: (if (deal.isFreeShipping || isAliExpressDeal) 0.0 else deal.shippingCost)
+    val isFreeShipping = selectedShippingMethod?.isFree ?: (methodBaseCost == 0.0 || deal.isFreeShipping || isAliExpressDeal)
+    val baseShipping = if (isFreeShipping) 0.0 else methodBaseCost
     val extraUnits = maxOf(0, quantity - 1)
-    val incrementalPerItem = 1.50
-    val totalShipping = Math.round((baseShipping + extraUnits * incrementalPerItem) * 100.0) / 100.0
+    val incrementalPerItem = if (isFreeShipping) 0.0 else (if (deal.incrementalShippingPerUnit > 0.0) deal.incrementalShippingPerUnit else 1.50)
+    val totalShipping = if (isFreeShipping) 0.0 else Math.round((baseShipping + extraUnits * incrementalPerItem) * 100.0) / 100.0
 
     val serviceFee = 3.00
     val totalHold = Math.round((itemSubtotal + totalShipping + serviceFee) * 100.0) / 100.0
@@ -1752,8 +2672,92 @@ fun ConfirmScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(deal.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    if (isEditingItemDetails) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                            border = BorderStroke(1.dp, AccentCyan)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Edit Item Details", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                                OutlinedTextField(
+                                    value = editableTitle,
+                                    onValueChange = { editableTitle = it },
+                                    label = { Text("Product Title", fontSize = 11.sp) },
+                                    singleLine = false,
+                                    maxLines = 2,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary,
+                                        focusedBorderColor = AccentCyan,
+                                        unfocusedBorderColor = CardBorder,
+                                        focusedLabelColor = AccentCyan,
+                                        unfocusedLabelColor = TextSecondary
+                                    )
+                                )
+                                OutlinedTextField(
+                                    value = if (editablePrice > 0.0) editablePrice.toString() else "",
+                                    onValueChange = { editablePrice = it.toDoubleOrNull() ?: editablePrice },
+                                    label = { Text("Unit Price (USD)", fontSize = 11.sp) },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary,
+                                        focusedBorderColor = AccentCyan,
+                                        unfocusedBorderColor = CardBorder,
+                                        focusedLabelColor = AccentCyan,
+                                        unfocusedLabelColor = TextSecondary
+                                    )
+                                )
+                                Button(
+                                    onClick = {
+                                        onUpdateDealDetails(editableTitle, editablePrice)
+                                        isEditingItemDetails = false
+                                    },
+                                    modifier = Modifier.align(Alignment.End),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
+                                ) {
+                                    Text("Done", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                }
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = editableTitle,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = AccentCyan.copy(alpha = 0.15f),
+                                border = BorderStroke(1.dp, AccentCyan.copy(alpha = 0.4f)),
+                                modifier = Modifier.clickable { isEditingItemDetails = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit Details", tint = AccentCyan, modifier = Modifier.size(12.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Edit", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AccentCyan)
+                                }
+                            }
+                        }
+                    }
 
                     // Interactive Multi-Attribute (Color & Size) or Single-Attribute (Variety) Selection
                     if (isMultiAttribute) {
@@ -1861,7 +2865,7 @@ fun ConfirmScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Choose Variety",
+                                "Choose Variety (${deal.varieties.size} Available)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextSecondary
@@ -1877,15 +2881,22 @@ fun ConfirmScreen(
                         }
                         Spacer(modifier = Modifier.height(6.dp))
 
-                        LazyRow(
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            items(deal.varieties) { v ->
+                            deal.varieties.forEach { v ->
                                 val isSelected = v.name.equals(chosenVariety, ignoreCase = true)
                                 val isSoldOut = !v.inStock
+                                val specificPrice = v.unitPrice?.takeIf { it > 0.0 }
                                 val offset = v.priceOffset
-                                val offsetText = if (offset > 0.0) " (+$$${"%.2f".format(offset)})" else if (offset < 0.0) " (-$$${"%.2f".format(-offset)})" else ""
+                                val priceBadge = when {
+                                    specificPrice != null -> " ($${"%.2f".format(specificPrice)})"
+                                    offset > 0.0 -> " (+$$${"%.2f".format(offset)})"
+                                    offset < 0.0 -> " (-$$${"%.2f".format(-offset)})"
+                                    else -> ""
+                                }
                                 val chipBg = if (isSelected) AccentCyan.copy(alpha = 0.2f) else Color(0xFF0F172A)
                                 val chipBorder = if (isSelected) AccentCyan else if (isSoldOut) Color(0xFF334155).copy(alpha = 0.5f) else Color(0xFF1E293B)
                                 val chipTextColor = if (isSelected) AccentCyan else if (isSoldOut) Color(0xFF64748B) else TextPrimary
@@ -1897,6 +2908,9 @@ fun ConfirmScreen(
                                         .border(1.dp, chipBorder, RoundedCornerShape(8.dp))
                                         .clickable {
                                             chosenVariety = v.name
+                                            if (v.unitPrice != null && v.unitPrice > 0.0) {
+                                                editablePrice = v.unitPrice
+                                            }
                                         }
                                         .padding(horizontal = 10.dp, vertical = 6.dp)
                                 ) {
@@ -1911,7 +2925,7 @@ fun ConfirmScreen(
                                             Spacer(modifier = Modifier.width(4.dp))
                                         }
                                         Text(
-                                            text = v.name + offsetText + if (isSoldOut) " (Sold Out)" else "",
+                                            text = v.name + priceBadge + if (isSoldOut) " (Sold Out)" else "",
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = chipTextColor
@@ -1953,7 +2967,7 @@ fun ConfirmScreen(
                         Column {
                             Text("Quantity", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                             Text(
-                                text = "$${deal.price} / unit",
+                                text = "$${"%.2f".format(unitPrice)} / unit",
                                 fontSize = 11.sp,
                                 color = TextSecondary
                             )
@@ -1999,6 +3013,132 @@ fun ConfirmScreen(
                                     tint = if (quantity < 10 && !isSelectedSoldOut) TextPrimary else Color(0xFF64748B),
                                     modifier = Modifier.size(15.dp)
                                 )
+                            }
+                        }
+                    }
+
+                    // Interactive Shipping Method / Varieties Selector
+                    if (availableShippingMethods.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.LocalShipping,
+                                    contentDescription = null,
+                                    tint = AccentCyan,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "Choose Shipping Method (${availableShippingMethods.size} Available)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextSecondary
+                                )
+                            }
+                            Text(
+                                "to ${shippingCity.ifBlank { "Lagos" }}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = AccentCyan
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            availableShippingMethods.forEach { method ->
+                                val isSelected = method.id == selectedShippingMethodId
+                                val cardBg = if (isSelected) AccentCyan.copy(alpha = 0.12f) else Color(0xFF0F172A)
+                                val cardBorder = if (isSelected) AccentCyan else Color(0xFF1E293B)
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(cardBg)
+                                        .border(1.dp, cardBorder, RoundedCornerShape(10.dp))
+                                        .clickable { selectedShippingMethodId = method.id }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(18.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (isSelected) AccentCyan else Color.Transparent)
+                                                    .border(1.5.dp, if (isSelected) AccentCyan else Color(0xFF64748B), CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (isSelected) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(6.dp)
+                                                            .clip(CircleShape)
+                                                            .background(Color.Black)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Column {
+                                                Text(
+                                                    text = method.name,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                                    color = if (isSelected) AccentCyan else TextPrimary
+                                                )
+                                                val detailText = buildString {
+                                                    if (!method.estimatedDelivery.isNullOrBlank()) {
+                                                        append(method.estimatedDelivery)
+                                                    }
+                                                    if (method.trackingAvailable) {
+                                                        if (isNotEmpty()) append(" • ")
+                                                        append("Tracking available")
+                                                    }
+                                                }
+                                                if (detailText.isNotBlank()) {
+                                                    Text(
+                                                        text = detailText,
+                                                        fontSize = 11.sp,
+                                                        color = TextSecondary
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(if (method.isFree || method.cost == 0.0) Color(0xFF0F291E) else Color(0xFF1E293B))
+                                                .border(1.dp, if (method.isFree || method.cost == 0.0) SuccessGreen.copy(alpha = 0.5f) else Color(0xFF334155), RoundedCornerShape(6.dp))
+                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = if (method.isFree || method.cost == 0.0) "FREE ($0.00)" else "$${"%.2f".format(method.cost)}",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (method.isFree || method.cost == 0.0) SuccessGreen else TextPrimary
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -2142,20 +3282,29 @@ fun ConfirmScreen(
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         val priceLabel = if (quantity > 1) {
-                            if (priceOffset != 0.0) "Item Price ($${"%.2f".format(unitPrice)} × $quantity)"
-                            else "Item Price ($${deal.price} × $quantity)"
+                            "Item Price ($${"%.2f".format(unitPrice)} × $quantity)"
                         } else {
-                            if (priceOffset != 0.0) "Item Price ($${"%.2f".format(unitPrice)})"
-                            else "Item Price"
+                            "Item Price ($${"%.2f".format(unitPrice)})"
                         }
                         Text(priceLabel, color = TextSecondary, fontSize = 14.sp)
                         Text("$${"%.2f".format(itemSubtotal)}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        val shipLabel = if (quantity > 1) "Shipping to Lagos, Nigeria ($quantity items)" else "Shipping to Lagos, Nigeria"
-                        Text(shipLabel, color = TextSecondary, fontSize = 14.sp)
-                        Text("$${"%.2f".format(totalShipping)}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        val carrierName = selectedShippingMethod?.name?.takeIf { it.isNotBlank() } ?: "Standard"
+                        val shipLabel = if (quantity > 1) {
+                            "Shipping ($carrierName) to ${shippingCity.ifBlank { "Lagos" }} ($quantity items)"
+                        } else {
+                            "Shipping ($carrierName) to ${shippingCity.ifBlank { "Lagos" }}"
+                        }
+                        Text(shipLabel, color = TextSecondary, fontSize = 13.5.sp, modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (totalShipping == 0.0) "FREE ($0.00)" else "$${"%.2f".format(totalShipping)}",
+                            color = if (totalShipping == 0.0) SuccessGreen else TextPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

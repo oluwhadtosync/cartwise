@@ -43,16 +43,18 @@ Warning: SDK processing. This version only understands SDK XML versions up to 3 
 > Task :app:compileDebugKotlin
 w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/OrdersHistoryScreen.kt:86:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
 w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/OrdersHistoryScreen.kt:137:39 'val Icons.Filled.ReceiptLong: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ReceiptLong.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:322:65 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:417:40 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:955:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:1200:39 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:1683:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:2041:48 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:2852:46 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:3064:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:3316:44 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
-w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:3597:52 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:323:65 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:418:40 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:465:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:1314:65 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:1618:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:1934:39 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:2603:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:3181:48 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:4001:46 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:4213:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:4465:44 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/Screens.kt:4746:52 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
 
 > Task :app:compileDebugJavaWithJavac NO-SOURCE
 > Task :app:dexBuilderDebug
@@ -64,5 +66,5 @@ w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/S
 > Task :app:createDebugApkListingFileRedirect UP-TO-DATE
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 2m 38s
+BUILD SUCCESSFUL in 4m 19s
 37 actionable tasks: 4 executed, 33 up-to-date

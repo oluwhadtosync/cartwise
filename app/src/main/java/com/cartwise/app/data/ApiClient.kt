@@ -63,6 +63,54 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
         }
 
     /**
+     * Extract full product details, varieties, and real pricing from any web link
+     * using Kernel Cloud Browser and Gemini AI on the backend
+     */
+    suspend fun extractProductViaCloudBrowser(
+        url: String,
+        shippingAddress: ShippingAddress? = null
+    ): Deal? = withContext(Dispatchers.IO) {
+        val destCountry = shippingAddress?.country?.ifBlank { "NG" } ?: "NG"
+        val destCity = shippingAddress?.city?.ifBlank { "Lagos" } ?: "Lagos"
+        val reqBody = ExtractRequest(
+            url = url.trim(),
+            destinationCountry = destCountry,
+            destinationCity = destCity,
+            shippingAddress = shippingAddress
+        )
+        val bodyStr = json.encodeToString(ExtractRequest.serializer(), reqBody)
+
+        val candidateUrls = listOf(
+            "$baseUrl/api/extract",
+            "http://127.0.0.1:3000/api/extract",
+            "http://10.0.2.2:3000/api/extract"
+        )
+
+        for (endpoint in candidateUrls) {
+            try {
+                val request = Request.Builder()
+                    .url(endpoint)
+                    .post(bodyStr.toRequestBody("application/json".toMediaType()))
+                    .build()
+
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val resStr = response.body?.string()
+                    if (!resStr.isNullOrBlank()) {
+                        val parsed = json.decodeFromString(ExtractResponse.serializer(), resStr)
+                        if (parsed.deal != null) {
+                            return@withContext parsed.deal
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Continue to next endpoint
+            }
+        }
+        null
+    }
+
+    /**
      * Create Cartwise Order with PayPal AUTHORIZE intent
      */
     suspend fun createOrder(
@@ -199,4 +247,92 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
             null
         }
     }
+
+    /**
+     * Fetch live metadata (og:title, og:image, og:price, title tag) from any external store URL (AliExpress, Amazon, etc.)
+     */
+    suspend fun fetchWebPageMeta(url: String): ExtractedWebMeta? = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .get()
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return@withContext null
+
+            val stream = response.body?.byteStream() ?: return@withContext null
+            val buffer = ByteArray(256 * 1024)
+            val bytesRead = stream.read(buffer, 0, buffer.size)
+            if (bytesRead <= 0) return@withContext null
+            val html = String(buffer, 0, bytesRead, Charsets.UTF_8)
+
+            fun extractMeta(prop: String): String? {
+                val escaped = Regex.escape(prop)
+                val pattern1 = Regex("""<meta\s+[^>]*?(?:property|name)=["'](?:og:|twitter:|product:|)$escaped["'][^>]*?content=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+                val m1 = pattern1.find(html)?.groupValues?.getOrNull(1)
+                if (!m1.isNullOrBlank()) return decodeHtmlEntities(m1).trim()
+
+                val pattern2 = Regex("""<meta\s+[^>]*?content=["']([^"']+)["'][^>]*?(?:property|name)=["'](?:og:|twitter:|product:|)$escaped["']""", RegexOption.IGNORE_CASE)
+                val m2 = pattern2.find(html)?.groupValues?.getOrNull(1)
+                if (!m2.isNullOrBlank()) return decodeHtmlEntities(m2).trim()
+
+                return null
+            }
+
+            val metaTitle = extractMeta("title")
+                ?: Regex("""<title[^>]*>([^<]+)</title>""", RegexOption.IGNORE_CASE).find(html)?.groupValues?.getOrNull(1)?.let { decodeHtmlEntities(it).trim() }
+                ?: Regex(""""(?:name|subject|productTitle|itemTitle)":\s*"([^"]{4,120})"""", RegexOption.IGNORE_CASE).find(html)?.groupValues?.getOrNull(1)?.let { decodeHtmlEntities(it).trim() }
+
+            val metaImage = extractMeta("image")
+                ?: Regex(""""(?:image|mainPic|imageUrl|picUrl)":\s*"([^"]+?\.(?:jpg|jpeg|png|webp)[^"]*)"""", RegexOption.IGNORE_CASE).find(html)?.groupValues?.getOrNull(1)?.let { decodeHtmlEntities(it).trim() }
+
+            val priceStr = extractMeta("price:amount")
+                ?: extractMeta("price")
+                ?: Regex(""""(?:price|actSkuMultiCurrencyDisplayPrice|minPrice|lowPrice)":\s*"?[A-Z$₦]*\s*([0-9]+\.?[0-9]*)"?""", RegexOption.IGNORE_CASE).find(html)?.groupValues?.getOrNull(1)
+                ?: Regex("""["']price["']\s*:\s*["']?([0-9]+\.?[0-9]*)["']?""", RegexOption.IGNORE_CASE).find(html)?.groupValues?.getOrNull(1)
+
+            val metaCurrency = extractMeta("price:currency") ?: "USD"
+            val metaSiteName = extractMeta("site_name")
+            val metaDesc = extractMeta("description")
+
+            val parsedPrice = priceStr?.toDoubleOrNull()
+
+            ExtractedWebMeta(
+                title = metaTitle?.takeIf { it.isNotBlank() && it.length > 3 && !it.contains("AliExpress Shopping") },
+                imageUrl = metaImage?.takeIf { it.isNotBlank() },
+                price = parsedPrice,
+                currency = metaCurrency,
+                siteName = metaSiteName?.takeIf { it.isNotBlank() },
+                description = metaDesc?.takeIf { it.isNotBlank() }
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun decodeHtmlEntities(input: String): String {
+        return input
+            .replace("&quot;", "\"")
+            .replace("&amp;", "&")
+            .replace("&apos;", "'")
+            .replace("&#39;", "'")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&#x2F;", "/")
+            .replace("&nbsp;", " ")
+    }
 }
+
+@kotlinx.serialization.Serializable
+data class ExtractedWebMeta(
+    val title: String? = null,
+    val imageUrl: String? = null,
+    val price: Double? = null,
+    val currency: String? = null,
+    val siteName: String? = null,
+    val description: String? = null
+)

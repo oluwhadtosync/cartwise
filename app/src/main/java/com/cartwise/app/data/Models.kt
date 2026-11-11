@@ -3,6 +3,17 @@ package com.cartwise.app.data
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class ShippingMethod(
+    val id: String = "",
+    val name: String,
+    val carrier: String? = null,
+    val cost: Double = 0.0,
+    val estimatedDelivery: String? = null,
+    val trackingAvailable: Boolean = true,
+    val isFree: Boolean = cost == 0.0
+)
+
+@Serializable
 data class ProductVariety(
     val id: String = "",
     val name: String,
@@ -10,8 +21,10 @@ data class ProductVariety(
     val inStock: Boolean = true,
     val stockCount: Int = 10,
     val priceOffset: Double = 0.0,
+    val unitPrice: Double? = null,
     val color: String? = null,
-    val size: String? = null
+    val size: String? = null,
+    val imageUrl: String? = null
 )
 
 @Serializable
@@ -42,6 +55,8 @@ data class Deal(
     val category: String = "",
     val price: Double,
     val shippingCost: Double,
+    val incrementalShippingPerUnit: Double = 0.0,
+    val isFreeShipping: Boolean = false,
     val totalCost: Double,
     val currency: String = "USD",
     val storeName: String,
@@ -55,6 +70,8 @@ data class Deal(
     val score: Int = 95,
     val varieties: List<ProductVariety> = emptyList(),
     val selectedVarietyName: String = "",
+    val shippingMethods: List<ShippingMethod> = emptyList(),
+    val selectedShippingMethodId: String? = null,
     val quantity: Int = 1,
     val safety: WebsiteSafety? = null
 )
@@ -64,6 +81,24 @@ data class SearchResponse(
     val query: String,
     val deals: List<Deal>,
     val totalFound: Int = 0
+)
+
+@Serializable
+data class ExtractRequest(
+    val url: String,
+    val destinationCountry: String = "NG",
+    val destinationCity: String = "Lagos",
+    val shippingAddress: ShippingAddress? = null
+)
+
+@Serializable
+data class ExtractResponse(
+    val success: Boolean = true,
+    val deal: Deal? = null,
+    val rawTitle: String? = null,
+    val originalPriceText: String? = null,
+    val extractedVia: String? = null,
+    val error: String? = null
 )
 
 @Serializable
