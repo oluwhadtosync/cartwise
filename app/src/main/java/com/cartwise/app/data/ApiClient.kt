@@ -146,6 +146,7 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
         val body = json.encodeToString(CreateOrderRequest.serializer(), reqBody)
         val request = Request.Builder()
             .url("$baseUrl/api/orders")
+            .header("User-Agent", "Cartwise-Android/1.0")
             .post(body.toRequestBody("application/json".toMediaType()))
             .build()
 

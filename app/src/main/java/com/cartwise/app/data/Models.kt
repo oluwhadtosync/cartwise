@@ -111,7 +111,8 @@ data class CreateOrderRequest(
     val shippingAddress: ShippingAddress? = null,
     val billingAddress: BillingAddress? = null,
     val selectedVariety: String? = null,
-    val quantity: Int = 1
+    val quantity: Int = 1,
+    val client: String = "android"
 )
 
 @Serializable
@@ -160,6 +161,7 @@ data class CartwiseOrder(
     val billingAddress: BillingAddress? = null,
     val selectedVariety: String? = null,
     val quantity: Int = 1,
+    val client: String? = null,
     val websiteSafety: WebsiteSafety? = null,
     val liveViewUrl: String? = null,
     val failureReason: String? = null,
