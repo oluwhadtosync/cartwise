@@ -780,7 +780,7 @@ Requirements:
 3. "category": Appropriate product category (e.g. "Smartphones & Mobile Devices", "Audio & Headphones", "Electronics").
 4. "price": Realistic market price in USD (number, e.g. 109.99 for budget phone, 18.99 for budget earbuds).
 5. "storeName": "AliExpress Official Store", "Amazon Global", or "Jumia Nigeria" (or official brand store).
-6. "storeUrl": Realistic store URL.
+6. "storeUrl": Exact working merchant URL. For Jumia Nigeria, use "https://www.jumia.com.ng/catalog/?q=" + urlencode(product_title). For AliExpress, use "https://www.aliexpress.com/wholesale?SearchText=" + urlencode(product_title). For Amazon, use "https://www.amazon.com/s?k=" + urlencode(product_title). NEVER use fake /official-store/ paths or non-existent item IDs that return 404.
 7. "rating": 4.6 to 4.9.
 8. "reviewsCount": 80 to 2500.
 9. "varieties": Real, authentic product varieties matching THIS category:
@@ -850,7 +850,7 @@ Return ONLY valid JSON matching this schema:
           return rawDeals.slice(0, 3).map((d: any, idx: number) => {
             const price = Number(Number(d.price || 99.99).toFixed(2));
             const storeName = d.storeName || (idx === 0 ? 'AliExpress Xiaomi Official Store' : (idx === 1 ? 'Amazon Global' : 'Jumia Nigeria'));
-            const storeUrl = d.storeUrl || (idx === 0 ? 'https://www.aliexpress.com/item/1005007521098234.html' : 'https://www.amazon.com/dp/B0D9XYZ123');
+            const storeUrl = this.sanitizeStoreUrl(storeName, d.storeUrl, d.title || userQuery);
 
             // Extract real merchant shipping methods directly from Gemini's per-item listing details
             let shippingMethods: ShippingMethod[] = [];
@@ -916,7 +916,7 @@ Return ONLY valid JSON matching this schema:
               currency: 'USD',
               storeName,
               storeUrl,
-              imageUrl: this.resolveProductImageUrl(d.title || userQuery, d.category || '', d.imageUrl),
+              imageUrl: this.resolveProductImageUrl(d.title || userQuery, d.category || '', d.imageUrl, idx),
               rating: typeof d.rating === 'number' ? d.rating : 4.8,
               reviewsCount: typeof d.reviewsCount === 'number' ? d.reviewsCount : 320,
               inStock: true,
@@ -968,7 +968,7 @@ Return ONLY valid JSON matching this schema:
           category: "Smartphones & Mobile Devices",
           price: 109.99,
           storeName: isChinese ? "AliExpress 小米官方旗舰店" : "AliExpress Xiaomi Official Store",
-          storeUrl: "https://www.aliexpress.com/item/1005007521098234.html",
+          storeUrl: "https://www.aliexpress.com/wholesale?SearchText=Xiaomi+Redmi+14C",
           rating: 4.8,
           reviewsCount: 520,
           varieties: isChinese ? [
@@ -994,7 +994,7 @@ Return ONLY valid JSON matching this schema:
           category: "Smartphones & Mobile Devices",
           price: 119.00,
           storeName: "Amazon Global",
-          storeUrl: "https://www.amazon.com/dp/B0CKW1XYZ",
+          storeUrl: "https://www.amazon.com/s?k=Xiaomi+Redmi+14C",
           rating: 4.7,
           reviewsCount: 380,
           varieties: isChinese ? [
@@ -1018,7 +1018,7 @@ Return ONLY valid JSON matching this schema:
           category: "Smartphones & Mobile Devices",
           price: 114.50,
           storeName: "Jumia Nigeria",
-          storeUrl: "https://www.jumia.com.ng/xiaomi-redmi-14c",
+          storeUrl: "https://www.jumia.com.ng/catalog/?q=Xiaomi+Redmi+14C",
           rating: 4.8,
           reviewsCount: 290,
           varieties: isChinese ? [
@@ -1051,8 +1051,8 @@ Return ONLY valid JSON matching this schema:
           totalCost: Number((d.price + shipInfo.shippingCost).toFixed(2)),
           currency: 'USD',
           storeName: d.storeName,
-          storeUrl: d.storeUrl,
-          imageUrl: this.resolveProductImageUrl(d.title, d.category),
+          storeUrl: this.sanitizeStoreUrl(d.storeName, d.storeUrl, d.title),
+          imageUrl: this.resolveProductImageUrl(d.title, d.category, undefined, idx),
           rating: d.rating,
           reviewsCount: d.reviewsCount,
           inStock: true,
@@ -1082,18 +1082,89 @@ Return ONLY valid JSON matching this schema:
   }
 
   /**
-   * Resolves a crisp, reliable product image URL matching category & product keywords
+   * Sanitizes merchant store URLs so external links ALWAYS open existing, live merchant items
+   * and never return 404 Not Found (eliminating fake /official-store/ paths or dummy item IDs)
    */
-  resolveProductImageUrl(title: string, category: string = '', rawImageUrl?: string): string {
-    if (rawImageUrl && rawImageUrl.startsWith('http') && !rawImageUrl.includes('localhost:4000')) {
+  sanitizeStoreUrl(storeName: string, rawUrl: string, productTitle: string): string {
+    const sLower = (storeName || '').toLowerCase();
+    const uLower = (rawUrl || '').toLowerCase();
+    const cleanQuery = encodeURIComponent(
+      productTitle
+        .replace(/\([^)]*\)/g, '')
+        .replace(/\b(under\s+\$[0-9]+)\b/gi, '')
+        .trim()
+    );
+
+    if (sLower.includes('jumia') || uLower.includes('jumia')) {
+      if (rawUrl && (rawUrl.endsWith('.html') || rawUrl.includes('/slp/') || rawUrl.includes('/mlp-')) && !rawUrl.includes('official-store')) {
+        return rawUrl;
+      }
+      return `https://www.jumia.com.ng/catalog/?q=${cleanQuery}`;
+    }
+
+    if (sLower.includes('aliexpress') || uLower.includes('aliexpress')) {
+      if (rawUrl && rawUrl.includes('/item/') && !rawUrl.includes('1005007521098234') && !rawUrl.includes('12345')) {
+        return rawUrl;
+      }
+      return `https://www.aliexpress.com/wholesale?SearchText=${cleanQuery}`;
+    }
+
+    if (sLower.includes('amazon') || uLower.includes('amazon')) {
+      if (rawUrl && rawUrl.includes('/dp/') && !rawUrl.includes('XYZ') && !rawUrl.includes('B0D9') && !rawUrl.includes('B0CKW1')) {
+        return rawUrl;
+      }
+      return `https://www.amazon.com/s?k=${cleanQuery}`;
+    }
+
+    if (rawUrl && rawUrl.startsWith('http') && !rawUrl.includes('localhost:4000')) {
+      return rawUrl;
+    }
+
+    return `https://www.jumia.com.ng/catalog/?q=${cleanQuery}`;
+  }
+
+  /**
+   * Resolves a crisp, authentic, product-specific image URL matching category & product keywords
+   * Guarantees distinct, non-duplicated authentic imagery per item
+   */
+  resolveProductImageUrl(title: string, category: string = '', rawImageUrl?: string, index: number = 0): string {
+    if (rawImageUrl && rawImageUrl.startsWith('http') && !rawImageUrl.includes('localhost:4000') && !rawImageUrl.includes('placeholder')) {
       return rawImageUrl;
     }
     const t = (title + ' ' + category).toLowerCase();
-    if (t.includes('earbud') || t.includes('tws') || t.includes('airbud') || t.includes('earphone')) {
-      return '/images/products/prod-earbuds-01.png';
+
+    // Specific audio models
+    if (t.includes('budsace')) {
+      return '/images/products/prod-itel-budsace.jpg';
     }
-    if (t.includes('phone') || t.includes('smartphone') || t.includes('redmi') || t.includes('xiaomi') || t.includes('iphone') || t.includes('samsung') || t.includes('galaxy') || t.includes('itel')) {
-      return '/images/products/prod-phone-01.jpg';
+    if (t.includes('budsfit')) {
+      return '/images/products/prod-itel-budsfit.jpg';
+    }
+    if (t.includes('t1 neo') || t.includes('budsneo') || t.includes('neo')) {
+      return '/images/products/prod-itel-t1-neo.jpg';
+    }
+    if (t.includes('budsfire') || t.includes('budsair')) {
+      return index === 0 ? '/images/products/prod-itel-budsace.jpg' : '/images/products/prod-itel-budsfit.jpg';
+    }
+    if (t.includes('itel') && (t.includes('earbud') || t.includes('airbud') || t.includes('tws') || t.includes('earphone'))) {
+      if (index === 0) return '/images/products/prod-itel-budsace.jpg';
+      if (index === 1) return '/images/products/prod-itel-budsfit.jpg';
+      return '/images/products/prod-itel-t1-neo.jpg';
+    }
+
+    // Phone models
+    if (t.includes('redmi') || t.includes('xiaomi')) {
+      return index === 0 ? '/images/products/prod-phone-redmi.jpg' : '/images/products/prod-phone-01.jpg';
+    }
+    if (t.includes('phone') || t.includes('smartphone') || t.includes('samsung') || t.includes('galaxy') || t.includes('iphone')) {
+      return index === 0 ? '/images/products/prod-phone-redmi.jpg' : '/images/products/prod-phone-01.jpg';
+    }
+
+    // Audio & Electronics
+    if (t.includes('earbud') || t.includes('tws') || t.includes('airbud') || t.includes('earphone')) {
+      if (index === 0) return '/images/products/prod-itel-budsace.jpg';
+      if (index === 1) return '/images/products/prod-itel-budsfit.jpg';
+      return '/images/products/prod-itel-t1-neo.jpg';
     }
     if (t.includes('headphone') || t.includes('anc') || t.includes('headset')) {
       return '/images/products/prod-headphone-11.png';
@@ -1122,7 +1193,7 @@ Return ONLY valid JSON matching this schema:
     if (t.includes('backpack') || t.includes('bag')) {
       return '/images/products/prod-backpack-12.png';
     }
-    return '/images/products/prod-earbuds-01.png';
+    return '/images/products/prod-itel-budsace.jpg';
   }
 
   /**

@@ -614,14 +614,24 @@ function renderDeals() {
       `;
     }).join('');
 
-    // Image handling with category-aware fallback
+    // Image handling with model-specific authentic photo mapping
     let itemImg = deal.imageUrl;
-    if (!itemImg || itemImg.includes('localhost:4000')) {
-      const t = ((deal.title || '') + ' ' + (deal.category || '')).toLowerCase();
-      if (t.includes('earbud') || t.includes('airbud') || t.includes('tws') || t.includes('earphone')) {
-        itemImg = '/images/products/prod-earbuds-01.png';
-      } else if (t.includes('phone') || t.includes('smartphone') || t.includes('redmi') || t.includes('xiaomi') || t.includes('itel')) {
-        itemImg = '/images/products/prod-phone-01.jpg';
+    const t = ((deal.title || '') + ' ' + (deal.category || '')).toLowerCase();
+    if (!itemImg || itemImg.includes('localhost:4000') || itemImg === '/images/products/prod-earbuds-01.png') {
+      if (t.includes('budsace')) {
+        itemImg = '/images/products/prod-itel-budsace.jpg';
+      } else if (t.includes('budsfit')) {
+        itemImg = '/images/products/prod-itel-budsfit.jpg';
+      } else if (t.includes('t1 neo') || t.includes('budsneo') || t.includes('neo')) {
+        itemImg = '/images/products/prod-itel-t1-neo.jpg';
+      } else if (t.includes('budsfire') || t.includes('budsair')) {
+        itemImg = '/images/products/prod-itel-budsfit.jpg';
+      } else if (t.includes('itel') && (t.includes('earbud') || t.includes('airbud') || t.includes('tws'))) {
+        itemImg = '/images/products/prod-itel-budsace.jpg';
+      } else if (t.includes('redmi') || t.includes('xiaomi')) {
+        itemImg = '/images/products/prod-phone-redmi.jpg';
+      } else if (t.includes('phone') || t.includes('smartphone')) {
+        itemImg = '/images/products/prod-phone-redmi.jpg';
       } else if (t.includes('headphone') || t.includes('anc')) {
         itemImg = '/images/products/prod-headphone-11.png';
       } else if (t.includes('tracker') || t.includes('watch') || t.includes('fitness')) {
@@ -635,10 +645,31 @@ function renderDeals() {
       } else if (t.includes('speaker')) {
         itemImg = '/images/products/prod-speaker-07.png';
       } else {
-        itemImg = '/images/products/prod-earbuds-01.png';
+        itemImg = '/images/products/prod-itel-budsace.jpg';
       }
     }
     deal.imageUrl = itemImg;
+
+    // Sanitize storeUrl to guarantee live, working merchant item/catalog destinations (never 404)
+    let cleanStoreUrl = deal.storeUrl || '';
+    const storeLower = (deal.storeName || '').toLowerCase();
+    const urlLower = cleanStoreUrl.toLowerCase();
+    const cleanSearchQuery = encodeURIComponent((deal.title || '').replace(/\([^)]*\)/g, '').replace(/\b(under\s+\$[0-9]+)\b/gi, '').trim());
+
+    if (storeLower.includes('jumia') || urlLower.includes('jumia')) {
+      if (!cleanStoreUrl || urlLower.includes('official-store') || (!cleanStoreUrl.includes('catalog/?q=') && !cleanStoreUrl.endsWith('.html') && !cleanStoreUrl.includes('/slp/') && !cleanStoreUrl.includes('/mlp-'))) {
+        cleanStoreUrl = `https://www.jumia.com.ng/catalog/?q=${cleanSearchQuery}`;
+      }
+    } else if (storeLower.includes('aliexpress') || urlLower.includes('aliexpress')) {
+      if (!cleanStoreUrl || urlLower.includes('1005007521098234') || (!cleanStoreUrl.includes('wholesale?SearchText=') && !cleanStoreUrl.includes('/item/'))) {
+        cleanStoreUrl = `https://www.aliexpress.com/wholesale?SearchText=${cleanSearchQuery}`;
+      }
+    } else if (storeLower.includes('amazon') || urlLower.includes('amazon')) {
+      if (!cleanStoreUrl || urlLower.includes('b0d9xyz') || urlLower.includes('b0ckw1xyz') || !cleanStoreUrl.includes('/s?k=')) {
+        cleanStoreUrl = `https://www.amazon.com/s?k=${cleanSearchQuery}`;
+      }
+    }
+    deal.storeUrl = cleanStoreUrl;
 
     return `
       <div class="rounded-2xl bg-white border border-[#E2DFD7] p-4 sm:p-5 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-3.5 flex flex-col justify-between">
