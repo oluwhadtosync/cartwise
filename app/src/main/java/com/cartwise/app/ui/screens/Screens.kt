@@ -3981,8 +3981,13 @@ fun AgentLiveScreen(
                             .background(Color(0xFF1F2937))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
+                        val directUrl = when {
+                            !order.itemUrl.isNullOrBlank() && order.itemUrl.startsWith("http") -> order.itemUrl
+                            order.merchantName.contains("Demo Market", ignoreCase = true) -> "https://cartwise-demo-market.onrender.com/product/${order.id}"
+                            else -> "https://${order.merchantName.lowercase().replace(" ", "")}.com/product"
+                        }
                         Text(
-                            text = "🔒 https://${order.merchantName.lowercase().replace(" ", "")}.com/checkout",
+                            text = "🔒 $directUrl",
                             fontSize = 11.sp,
                             color = Color(0xFF94A3B8),
                             maxLines = 1,
