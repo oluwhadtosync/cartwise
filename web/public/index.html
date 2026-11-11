@@ -918,26 +918,27 @@
       <!-- Live Browser Session Stream -->
       <div class="rounded-2xl bg-white border border-[#E2DFD7] overflow-hidden shadow-[0_2px_8px_rgba(13,38,28,0.04)]">
         <div class="px-4 py-2.5 bg-[#F9F8F5] border-b border-[#E2DFD7] flex items-center justify-between text-xs text-[#4A5550] font-mono">
-          <div class="flex items-center gap-2">
-            <div class="flex gap-1.5">
+          <div class="flex items-center gap-2 truncate max-w-[75%] sm:max-w-[80%]">
+            <div class="flex gap-1.5 shrink-0">
               <div class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></div>
               <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
               <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
             </div>
             <span class="text-[#8C9690] text-[11px]">|</span>
-            <span id="agent-browser-url" class="truncate text-[#0D1F18]">https://cartwise-demo-market.onrender.com/checkout</span>
+            <a id="agent-browser-url" href="#" target="_blank" rel="noopener noreferrer" class="truncate text-[#0D1F18] hover:text-[#0F5132] hover:underline transition">https://www.jumia.com.ng</a>
           </div>
-          <span class="text-[10px] text-[#0F5132] uppercase font-bold tracking-wider">KERNEL CLOUD BROWSER</span>
+          <span class="text-[10px] text-[#0F5132] uppercase font-bold tracking-wider shrink-0">KERNEL CLOUD BROWSER</span>
         </div>
 
-        <div class="relative w-full h-56 sm:h-72 bg-[#F4F2EC] flex items-center justify-center overflow-hidden">
+        <div class="relative w-full min-h-[220px] sm:min-h-[260px] bg-[#F4F2EC] flex items-center justify-center overflow-hidden p-4">
           <iframe id="agent-live-frame" src="" class="w-full h-full border-none hidden"></iframe>
-          <div id="agent-sim-screen" class="text-center p-6 space-y-3">
-            <div class="w-12 h-12 rounded-full bg-[#E6F4EA] border border-[#B7E1CD] flex items-center justify-center mx-auto text-[#0F5132] animate-spin">
-              <i data-lucide="loader-2" class="w-6 h-6"></i>
+          <div id="agent-sim-screen" class="text-center w-full max-w-md space-y-3">
+            <div id="agent-item-card-preview" class="transition-all"></div>
+            <div class="w-10 h-10 rounded-full bg-[#E6F4EA] border border-[#B7E1CD] flex items-center justify-center mx-auto text-[#0F5132] animate-spin">
+              <i data-lucide="loader-2" class="w-5 h-5"></i>
             </div>
             <div class="text-sm font-bold text-[#0D1F18]" id="agent-sim-title">Booting Isolated Cloud Browser...</div>
-            <div class="text-xs text-[#4A5550] font-mono max-w-sm mx-auto" id="agent-sim-desc">
+            <div class="text-xs text-[#4A5550] font-mono max-w-sm mx-auto leading-relaxed" id="agent-sim-desc">
               Injecting Cartwise single-use purchasing card into merchant checkout form...
             </div>
           </div>

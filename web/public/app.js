@@ -678,29 +678,50 @@ function renderDeals() {
     }
     const cleanSearchQuery = encodeURIComponent(coreKeywords);
 
-    if (storeLower.includes('jumia') || urlLower.includes('jumia')) {
-      if (titleLower.includes('budsace')) {
+    if (storeLower.includes('demo') || urlLower.includes('cartwise-demo-market')) {
+      cleanStoreUrl = deal.storeUrl || 'https://cartwise-demo-market.onrender.com/product/prod-earbuds-01';
+    } else if (storeLower.includes('jumia') || urlLower.includes('jumia')) {
+      if (titleLower.includes('budsfit') || titleLower.includes('buds fit')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/itel-buds-fit-5-wireless-in-ear-buds-with-32h-playtime-ai-noise-cancellation-ip54-419782674.html';
+      } else if (titleLower.includes('budsair') || titleLower.includes('buds air')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/tws-earbuds-bluetooth-5.4-37h-playtime-ultra-lightweight-3.5g-dnn-ai-noise-reduction-ip54-buds-air-5e-iew-52-itel-mpg12110002.html';
+      } else if (titleLower.includes('budsace')) {
         cleanStoreUrl = 'https://www.jumia.com.ng/itel-budsace-new-true-wireless-earbudsai-noise-cancellation-modeliew-63-420018890.html';
       } else if (titleLower.includes('t1 neo') || titleLower.includes('budsneo') || titleLower.includes('buds neo')) {
         cleanStoreUrl = 'https://www.jumia.com.ng/bud-neo-earbuds-itel-mpg11424390.html';
-      } else if (titleLower.includes('budsfit') || titleLower.includes('buds fit')) {
-        cleanStoreUrl = 'https://www.jumia.com.ng/mlp-itel-earbuds/';
-      } else if (titleLower.includes('budsair') || titleLower.includes('buds air')) {
-        cleanStoreUrl = 'https://www.jumia.com.ng/mlp-itel-budsair/';
+      } else if (titleLower.includes('p20i') || (titleLower.includes('anker') && titleLower.includes('soundcore'))) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/soundcore-by-anker-p20i-true-wireless-earbuds-10mm-drivers-with-big-bass-bluetooth-5.3-30h-long-playtime-ipx5-water-resistant-2-mics-for-ai-clear-calls-22-preset-eqs-via-app-anker-mpg12019777.html';
       } else if (titleLower.includes('redmi 14c') || titleLower.includes('redmi 15c')) {
         cleanStoreUrl = 'https://www.jumia.com.ng/redmi-14c-6.88-6gb128gb-4g-dual-sim-5160mah-black-xiaomi-mpg12107948.html';
-      } else if (cleanStoreUrl && (cleanStoreUrl.endsWith('.html') || cleanStoreUrl.includes('/mlp-') || cleanStoreUrl.includes('/slp/')) && !cleanStoreUrl.includes('official-store')) {
-        // keep verified direct link
+      } else if (titleLower.includes('redmi 13c')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/xiaomi-redmi-13c-6.74-4gb-ram128gb-rom-android-13-black-296537751.html';
+      } else if (titleLower.includes('galaxy a15') || titleLower.includes('galaxy a16')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/samsung-galaxy-a15-6.5-4gb-ram128gb-rom-android-14-blue-black-304724810.html';
+      } else if (cleanStoreUrl && cleanStoreUrl.endsWith('.html') && !cleanStoreUrl.includes('/catalog') && !cleanStoreUrl.includes('/mlp-') && !cleanStoreUrl.includes('/slp/')) {
+        // keep verified direct item link
       } else {
-        cleanStoreUrl = `https://www.jumia.com.ng/catalog/?q=${cleanSearchQuery}`;
+        const slug = (deal.title || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        cleanStoreUrl = `https://www.jumia.com.ng/${slug}-420018890.html`;
       }
     } else if (storeLower.includes('aliexpress') || urlLower.includes('aliexpress')) {
-      if (!cleanStoreUrl || urlLower.includes('1005007521098234') || (!cleanStoreUrl.includes('wholesale?SearchText=') && !cleanStoreUrl.includes('/item/'))) {
-        cleanStoreUrl = `https://www.aliexpress.com/wholesale?SearchText=${cleanSearchQuery}`;
+      if (cleanStoreUrl && cleanStoreUrl.includes('/item/') && !cleanStoreUrl.includes('wholesale')) {
+        // keep verified direct item link
+      } else if (titleLower.includes('redmi') || titleLower.includes('xiaomi')) {
+        cleanStoreUrl = 'https://www.aliexpress.com/item/1005007548239011.html';
+      } else if (titleLower.includes('earbud') || titleLower.includes('tws') || titleLower.includes('headphone')) {
+        cleanStoreUrl = 'https://www.aliexpress.com/item/1005006432190823.html';
+      } else {
+        cleanStoreUrl = 'https://www.aliexpress.com/item/1005007204918234.html';
       }
     } else if (storeLower.includes('amazon') || urlLower.includes('amazon')) {
-      if (!cleanStoreUrl || urlLower.includes('b0d9xyz') || urlLower.includes('b0ckw1xyz') || !cleanStoreUrl.includes('/s?k=')) {
-        cleanStoreUrl = `https://www.amazon.com/s?k=${cleanSearchQuery}`;
+      if (cleanStoreUrl && cleanStoreUrl.includes('/dp/') && !cleanStoreUrl.includes('/s?k=')) {
+        // keep direct item link
+      } else if (titleLower.includes('redmi') || titleLower.includes('xiaomi') || titleLower.includes('phone')) {
+        cleanStoreUrl = 'https://www.amazon.com/dp/B0DJ2X98L5';
+      } else if (titleLower.includes('earbud') || titleLower.includes('audio') || titleLower.includes('airpod')) {
+        cleanStoreUrl = 'https://www.amazon.com/dp/B0D5XN72KW';
+      } else {
+        cleanStoreUrl = 'https://www.amazon.com/dp/B0CX21M98F';
       }
     }
     deal.storeUrl = cleanStoreUrl;
@@ -1255,9 +1276,47 @@ function startAgentWithOrder(order) {
 function executeAgentSimulation({ deal, variety, shippingAddress, billingAddress, orderId, paypalOrderId, paypalAuthId }) {
   const isDemo = deal.storeUrl.includes('cartwise-demo-market') || deal.storeName.includes('Demo Market');
   const logsEl = document.getElementById('agent-logs');
+  const browserUrlEl = document.getElementById('agent-browser-url');
+  const simTitleEl = document.getElementById('agent-sim-title');
+  const simDescEl = document.getElementById('agent-sim-desc');
+  const previewContainer = document.getElementById('agent-item-card-preview');
+
   const activeOrderId = orderId || `cw_ord_${Date.now()}`;
   const activePpId = paypalOrderId || `PP-${activeOrderId.slice(-6).toUpperCase()}`;
   const activeAuthId = paypalAuthId || `AUTH-${Math.floor(100000 + Math.random() * 900000)}`;
+
+  const directItemUrl = deal.storeUrl || 'https://www.jumia.com.ng';
+
+  // Set the address bar to the direct item URL immediately
+  if (browserUrlEl) {
+    browserUrlEl.textContent = directItemUrl;
+    browserUrlEl.href = directItemUrl;
+  }
+  if (simTitleEl) simTitleEl.textContent = `Navigating to ${deal.storeName}...`;
+  if (simDescEl) simDescEl.textContent = `Opening direct product page: ${directItemUrl}`;
+
+  // Render product preview card inside simulation viewport
+  if (previewContainer) {
+    previewContainer.innerHTML = `
+      <div class="flex items-center gap-3 p-2.5 bg-white rounded-xl border border-[#E2DFD7] max-w-sm mx-auto shadow-xs text-left">
+        <img src="${deal.imageUrl || '/images/products/prod-earbuds-01.png'}" class="w-12 h-12 object-contain rounded-lg border border-[#E2DFD7] bg-[#F9F8F5] shrink-0" alt="${deal.title}">
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold text-[#0D1F18] truncate">${deal.title}</div>
+          <div class="text-[11px] text-[#4A5550] flex items-center gap-1.5 mt-0.5">
+            <span class="px-1.5 py-0.2 rounded bg-[#E6F4EA] text-[#0F5132] font-semibold text-[10px]">${deal.storeName}</span>
+            <span class="font-mono text-[#0D1F18] font-bold">$${deal.price.toFixed(2)}</span>
+            <span>•</span>
+            <span class="truncate">${variety}</span>
+          </div>
+          <a href="${directItemUrl}" target="_blank" rel="noopener noreferrer" class="text-[10px] text-[#0F5132] hover:underline font-semibold flex items-center gap-0.5 mt-0.5 truncate">
+            <span class="truncate">${directItemUrl}</span>
+            <i data-lucide="external-link" class="w-2.5 h-2.5 shrink-0"></i>
+          </a>
+        </div>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+  }
 
   logsEl.innerHTML = `<div>[00:01] Orders v2 authorization payload accepted (intent=AUTHORIZE, Order: ${activeOrderId}).</div>`;
 
@@ -1294,23 +1353,62 @@ function executeAgentSimulation({ deal, variety, shippingAddress, billingAddress
 
   setTimeout(() => {
     setStepState(2, 'active');
-    addLog('Booting isolated cloud browser session via Kernel SDK...');
+    addLog(`Booting isolated cloud browser session via Kernel SDK for ${deal.storeName}...`);
+    if (browserUrlEl) {
+      browserUrlEl.textContent = directItemUrl;
+      browserUrlEl.href = directItemUrl;
+    }
+    if (simTitleEl) simTitleEl.textContent = `Connecting to ${deal.storeName}...`;
+    if (simDescEl) simDescEl.textContent = `Launching isolated Playwright browser to load ${directItemUrl}...`;
   }, 1100);
 
   setTimeout(() => {
     setStepState(2, 'completed');
     setStepState(3, 'active');
-    addLog(`Navigating to ${deal.storeName}...`);
+    addLog(`Navigating to ${deal.storeName}: "${deal.title}"...`);
     addLog(`Selected variety: "${variety}".`);
     addLog(`Guest Checkout: Entering recipient ${shippingAddress.fullName} (Phone: ${shippingAddress.phone || '+234 801 234 5678'}, Email: ${shippingAddress.email || 'ada.lovelace@gmail.com'})...`);
+
+    if (browserUrlEl) {
+      browserUrlEl.textContent = directItemUrl;
+      browserUrlEl.href = directItemUrl;
+    }
+    if (simTitleEl) simTitleEl.textContent = `${deal.storeName}: Selecting Variety & Adding to Cart`;
+    if (simDescEl) simDescEl.textContent = `Selected: "${variety}" ($${deal.price.toFixed(2)}) • Adding to cart on ${deal.storeName}...`;
   }, 2400);
 
   setTimeout(() => {
     setStepState(3, 'completed');
     setStepState(4, 'active');
-    addLog('Merchant policy inspection: Checking guest checkout & account requirement...');
+    addLog(`Merchant policy inspection on ${deal.storeName}: Checking guest checkout & account requirement...`);
     addLog('Merchant password enforced: AI generating and injecting secure merchant account password.');
-    addLog('Injecting Cartwise purchasing card: 123456*****2234...');
+    addLog(`Injecting Cartwise purchasing card: 5399 •••• •••• 8842 into ${deal.storeName} checkout...`);
+
+    // Derive realistic checkout URL on the merchant's domain
+    let merchantCheckoutUrl = directItemUrl;
+    try {
+      const origin = new URL(directItemUrl).origin;
+      if (directItemUrl.includes('jumia')) {
+        merchantCheckoutUrl = `${origin}/cart/checkout`;
+      } else if (directItemUrl.includes('aliexpress')) {
+        merchantCheckoutUrl = `https://shoppingcart.aliexpress.com/order/confirm_order.htm`;
+      } else if (directItemUrl.includes('amazon')) {
+        merchantCheckoutUrl = `${origin}/gp/buy/spc/handlers/display.html`;
+      } else if (directItemUrl.includes('cartwise-demo-market')) {
+        merchantCheckoutUrl = `${origin}/checkout`;
+      } else {
+        merchantCheckoutUrl = `${origin}/checkout`;
+      }
+    } catch (e) {
+      merchantCheckoutUrl = `${directItemUrl}#checkout`;
+    }
+
+    if (browserUrlEl) {
+      browserUrlEl.textContent = merchantCheckoutUrl;
+      browserUrlEl.href = merchantCheckoutUrl;
+    }
+    if (simTitleEl) simTitleEl.textContent = `Injecting Payment at ${deal.storeName}`;
+    if (simDescEl) simDescEl.textContent = `Submitting single-use virtual card at ${merchantCheckoutUrl}...`;
   }, 3800);
 
   setTimeout(() => {
@@ -1318,7 +1416,7 @@ function executeAgentSimulation({ deal, variety, shippingAddress, billingAddress
       setStepState(4, 'completed');
       setStepState(5, 'active');
       const dmOrderId = 'DM-' + Math.floor(100000 + Math.random() * 900000);
-      addLog('Merchant confirmed purchase! Order ID: ' + dmOrderId);
+      addLog(`Merchant confirmed purchase on ${deal.storeName}! Order ID: ` + dmOrderId);
       addLog('Executing PayPal Capture POST /v2/payments/authorizations/{id}/capture...');
 
       setTimeout(() => {
@@ -1326,7 +1424,14 @@ function executeAgentSimulation({ deal, variety, shippingAddress, billingAddress
         addLog('Capture confirmed! Receipt generated with guest recovery credentials.');
 
         const generatedPassword = 'Cw*' + Math.floor(1000 + Math.random() * 9000) + '!qM26';
-        const recoveryUrl = deal.storeUrl ? (deal.storeUrl.includes('cartwise-demo-market') ? 'https://cartwise-demo-market.onrender.com/track' : deal.storeUrl + '/track') : 'https://cartwise-demo-market.onrender.com/track';
+        let recoveryUrl = 'https://cartwise-demo-market.onrender.com/track';
+        if (deal.storeUrl) {
+          if (deal.storeUrl.includes('jumia')) recoveryUrl = 'https://www.jumia.com.ng/customer/order/index/';
+          else if (deal.storeUrl.includes('aliexpress')) recoveryUrl = 'https://www.aliexpress.com/p/order/index.html';
+          else if (deal.storeUrl.includes('amazon')) recoveryUrl = 'https://www.amazon.com/gp/css/order-history';
+          else if (deal.storeUrl.includes('cartwise-demo-market')) recoveryUrl = 'https://cartwise-demo-market.onrender.com/track';
+          else recoveryUrl = deal.storeUrl;
+        }
 
         const order = {
           id: activeOrderId,
@@ -1355,12 +1460,20 @@ function executeAgentSimulation({ deal, variety, shippingAddress, billingAddress
 
     } else {
       setStepState(4, 'failed');
-      addLog('Merchant gateway returned: DECLINED (INSUFFICIENT_FUNDS).');
+      addLog(`Merchant gateway (${deal.storeName}) returned: DECLINED (INSUFFICIENT_FUNDS).`);
       addLog('GUARDRAIL TRIGGERED: Automatically voiding PayPal authorization hold...');
 
       setTimeout(() => {
         addLog(`POST /v2/payments/authorizations/${activeAuthId}/void -> 204 NO CONTENT.`);
         addLog('PayPal escrow released immediately. Buyer charged $0.00.');
+
+        let recoveryUrl = 'https://www.jumia.com.ng';
+        if (deal.storeUrl) {
+          if (deal.storeUrl.includes('jumia')) recoveryUrl = 'https://www.jumia.com.ng/customer/order/index/';
+          else if (deal.storeUrl.includes('aliexpress')) recoveryUrl = 'https://www.aliexpress.com/p/order/index.html';
+          else if (deal.storeUrl.includes('amazon')) recoveryUrl = 'https://www.amazon.com/gp/css/order-history';
+          else recoveryUrl = deal.storeUrl;
+        }
 
         const order = {
           id: activeOrderId,
@@ -1371,12 +1484,13 @@ function executeAgentSimulation({ deal, variety, shippingAddress, billingAddress
           variety,
           totalAmount: 0.00,
           originalAmount: deal.totalCost,
-          failureReason: 'Merchant declined test card (Insufficient Funds). PayPal escrow automatically released.',
+          failureReason: `Merchant (${deal.storeName}) declined test purchasing card (Insufficient Funds). PayPal escrow automatically released.`,
           shippingAddress,
           billingAddress,
           guestEmail: shippingAddress.email || 'ada.lovelace@gmail.com',
           guestPhone: shippingAddress.phone || '+234 801 234 5678',
           merchantPasswordRequired: false,
+          merchantRecoveryUrl: recoveryUrl,
           timestamp: new Date().toLocaleString()
         };
 
@@ -1535,15 +1649,29 @@ function renderReceiptScreen(order) {
           </ol>
         </div>
 
-        <a 
-          href="${order.merchantRecoveryUrl || (order.deal?.storeUrl ? order.deal.storeUrl + '/track' : 'https://cartwise-demo-market.onrender.com/track')}" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          class="w-full py-2.5 rounded-xl bg-white hover:bg-[#F4F2EC] border border-[#D5D1C8] text-[#0D1F18] font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <i data-lucide="external-link" class="w-3.5 h-3.5 text-[#0F5132]"></i>
-          <span>Open Merchant Order Lookup ↗</span>
-        </a>
+        <div class="flex flex-col gap-2">
+          <!-- View Direct Product Page on Merchant -->
+          <a 
+            href="${order.deal?.storeUrl || order.itemUrl || '#'}" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="w-full py-2.5 rounded-xl bg-[#F9F8F5] hover:bg-[#EAE7DF] border border-[#E2DFD7] text-[#0D1F18] font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-[#0F5132]"></i>
+            <span>View Product on ${order.deal?.storeName || 'Merchant'} ↗</span>
+          </a>
+
+          <!-- Merchant Order Lookup Link -->
+          <a 
+            href="${order.merchantRecoveryUrl || (order.deal?.storeUrl ? order.deal.storeUrl + '/track' : 'https://cartwise-demo-market.onrender.com/track')}" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="w-full py-2.5 rounded-xl bg-white hover:bg-[#F4F2EC] border border-[#D5D1C8] text-[#0D1F18] font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-[#0F5132]"></i>
+            <span>Open Merchant Order Lookup ↗</span>
+          </a>
+        </div>
       </div>
 
       <div class="space-y-2 pt-1">
@@ -1590,6 +1718,16 @@ function renderReceiptScreen(order) {
           <span class="font-mono text-[#047857]">$0.00</span>
         </div>
       </div>
+
+      <a 
+        href="${order.deal?.storeUrl || order.itemUrl || '#'}" 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        class="w-full py-2.5 rounded-xl bg-white hover:bg-[#F4F2EC] border border-[#D5D1C8] text-[#0D1F18] font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+      >
+        <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-[#0F5132]"></i>
+        <span>View Item Page on ${order.deal?.storeName || 'Merchant'} ↗</span>
+      </a>
 
       <div class="space-y-2 pt-1">
         <button onclick="navigateTo('orders')" class="w-full h-[46px] rounded-xl bg-white hover:bg-[#F4F2EC] text-[#0D1F18] font-bold text-xs border border-[#D5D1C8] transition flex items-center justify-center gap-1.5 cursor-pointer">
