@@ -121,8 +121,9 @@
               AI Agent
             </span>
           </div>
-          <div class="hidden md:block text-xs text-[#4A5550] font-medium truncate">
-            Autonomous "Buy-For-Me" Shopping
+          <div onclick="openAddressModal()" class="flex items-center gap-1.5 text-xs text-[#0F5132] font-semibold cursor-pointer hover:underline py-1" title="Shipping destination (tap to change)">
+            <span id="nav-address-summary">Lagos, Nigeria 🇳🇬</span>
+            <i data-lucide="edit-3" class="w-3.5 h-3.5 text-[#4A5550]"></i>
           </div>
         </div>
       </div>
@@ -152,6 +153,16 @@
             <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
           </svg>
           <span class="hidden sm:inline">Android APK</span>
+        </button>
+
+        <!-- Shipping Address (Beside history icon like Android app) -->
+        <button 
+          onclick="openAddressModal()" 
+          class="inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-[#FFFFFF] border border-[#E2DFD7] hover:border-[#D5D1C8] hover:bg-[#F9F8F5] text-xs font-semibold text-[#0D1F18] transition shrink-0 cursor-pointer"
+          title="Shipping Destination Address"
+        >
+          <i data-lucide="truck" class="w-4 h-4 text-[#0F5132]"></i>
+          <span class="hidden sm:inline">Address</span>
         </button>
 
         <!-- Orders History -->
@@ -451,7 +462,7 @@
             <div>
               <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <h3 class="text-base sm:text-lg font-bold text-[#0D1F18]">Get the Cartwise Android App</h3>
-                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD;">
+                <span class="text-xs font-bold uppercase px-2.5 py-0.5 rounded-full" style="background: #E6F4EA; color: #0D261C; border: 1px solid #B7E1CD;">
                   v1.0 Native
                 </span>
               </div>
@@ -496,13 +507,26 @@
         <!-- Left Column: Search Input & Controls (lg:col-span-7) -->
         <div class="lg:col-span-7 space-y-5">
           
-          <!-- Headline -->
-          <div class="space-y-1">
+          <!-- Headline & Shipping Destination Pill -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-[#4A5550] font-medium">Autonomous Shopping Concierge</span>
+              <button 
+                onclick="openAddressModal()" 
+                type="button" 
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E6F4EA] border border-[#B7E1CD] text-[#0D261C] text-xs font-bold hover:bg-[#d8edd9] transition cursor-pointer"
+                title="Click to change shipping country"
+              >
+                <i data-lucide="truck" class="w-3.5 h-3.5 text-[#0F5132]"></i>
+                <span>Ship to: <strong id="ask-dest-country-label">Lagos, Nigeria 🇳🇬</strong></span>
+                <i data-lucide="edit-3" class="w-2.5 h-2.5 text-[#0F5132]"></i>
+              </button>
+            </div>
             <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0D1F18] leading-tight">
               What would you like<br class="hidden sm:inline">
               Cartwise to buy for you?
             </h2>
-            <p class="text-xs text-[#4A5550]">Natural language search &bull; Landed cost ranking with express shipping to your location</p>
+            <p class="text-xs text-[#4A5550]">Natural language search &bull; Landed cost ranking with carrier shipping fees to your destination</p>
           </div>
 
           <!-- Main Search Card (Option D: Beveled Floating Halo) -->
@@ -672,7 +696,7 @@
             <div>
               <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <h3 class="text-base font-bold text-[#0D1F18]">Get the Cartwise Android App</h3>
-                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#E6F4EA] text-[#0D261C] border border-[#B7E1CD]">
+                <span class="text-xs font-bold uppercase px-2.5 py-0.5 rounded-full bg-[#E6F4EA] text-[#0D261C] border border-[#B7E1CD]">
                   v1.0 Native
                 </span>
               </div>
@@ -743,14 +767,21 @@
 
       <!-- Deal Summary Card -->
       <div class="rounded-2xl bg-white border border-[#E2DFD7] p-5 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-3.5">
-        <div class="flex items-start justify-between gap-2">
-          <div class="flex-1">
-            <div class="text-xs font-bold text-[#4A5550] uppercase tracking-wider" id="confirm-brand">Brand</div>
-            <h3 id="confirm-title" class="text-base font-bold text-[#0D1F18] line-clamp-2">Product Title</h3>
+        <div class="flex items-start gap-3.5">
+          <div class="w-16 h-16 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] overflow-hidden shrink-0 flex items-center justify-center p-1.5 shadow-xs">
+            <img id="confirm-image" src="/images/products/prod-earbuds-01.png" alt="Product" class="w-full h-full object-contain mix-blend-multiply" />
           </div>
-          <span id="confirm-variety-pill" class="text-xs px-3 py-1 rounded-full bg-[#E6F4EA] text-[#0D261C] border border-[#B7E1CD] font-bold shrink-0">
-            Matte Black
-          </span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold text-[#4A5550] uppercase tracking-wider" id="confirm-brand">Brand</div>
+                <h3 id="confirm-title" class="text-base font-bold text-[#0D1F18] line-clamp-2">Product Title</h3>
+              </div>
+              <span id="confirm-variety-pill" class="text-xs px-3 py-1 rounded-full bg-[#E6F4EA] text-[#0D261C] border border-[#B7E1CD] font-bold shrink-0">
+                Standard
+              </span>
+            </div>
+          </div>
         </div>
 
         <div class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] text-xs space-y-2 font-mono">
@@ -1337,6 +1368,101 @@
         <button onclick="hideApkModal()" class="flex-1 py-2.5 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-xs font-semibold text-[#F4F2EC] transition cursor-pointer">
           Close
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: SHIPPING DESTINATION & ADDRESS                    -->
+  <!-- ======================================================== -->
+  <div id="modal-address" onclick="if(event.target === this) closeAddressModal()" class="fixed inset-0 z-50 bg-[#0D1F18]/60 backdrop-blur-sm hidden overflow-y-auto p-4 sm:p-6">
+    <div class="min-h-full flex items-center justify-center py-4">
+      <div class="w-full max-w-md rounded-2xl bg-white border border-[#E2DFD7] p-5 sm:p-6 space-y-4 shadow-2xl relative my-auto">
+        
+        <!-- Header -->
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#E6F4EA] border border-[#B7E1CD] flex items-center justify-center text-[#0F5132] shrink-0 shadow-sm">
+              <i data-lucide="truck" class="w-5 h-5 text-[#0F5132]"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-[#0D1F18]">Shipping Destination & Address</h3>
+              <p class="text-[11px] text-[#4A5550]">AI search extracts real landed shipping fees for this location</p>
+            </div>
+          </div>
+          <button onclick="closeAddressModal()" type="button" class="w-8 h-8 flex items-center justify-center rounded-xl text-[#4A5550] hover:text-[#0D1F18] hover:bg-[#F9F8F5] cursor-pointer" aria-label="Close Address Modal">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Country Selector -->
+        <div class="space-y-1">
+          <label class="block text-xs font-semibold text-[#0D1F18]">Shipping To Country</label>
+          <select 
+            id="address-modal-country" 
+            onchange="handleAddressModalCountryChange(this.value)"
+            class="w-full px-3 py-2.5 bg-[#F9F8F5] border border-[#D5D1C8] rounded-xl text-xs font-semibold text-[#0D1F18] focus:bg-white focus:border-[#0D261C] focus:outline-none cursor-pointer"
+          >
+            <option value="NG|Nigeria|🇳🇬">Nigeria 🇳🇬 (Lagos, Abuja)</option>
+            <option value="US|United States|🇺🇸">United States 🇺🇸</option>
+            <option value="GB|United Kingdom|🇬🇧">United Kingdom 🇬🇧</option>
+            <option value="CA|Canada|🇨🇦">Canada 🇨🇦</option>
+            <option value="GH|Ghana|🇬🇭">Ghana 🇬🇭</option>
+            <option value="DE|Germany|🇩🇪">Germany 🇩🇪</option>
+            <option value="KE|Kenya|🇰🇪">Kenya 🇰🇪</option>
+            <option value="ZA|South Africa|🇿🇦">South Africa 🇿🇦</option>
+            <option value="CN|China|🇨🇳">China 🇨🇳</option>
+          </select>
+          <p class="text-[11px] text-[#0F5132] font-medium">Cloud AI search specifically calculates carrier rates to this destination country.</p>
+        </div>
+
+        <!-- City & State -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-semibold text-[#4A5550] mb-1">City</label>
+            <input id="address-modal-city" type="text" value="Lagos" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-xl text-xs font-medium text-[#0D1F18] focus:bg-white focus:border-[#0D261C] focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-[#4A5550] mb-1">State / Province</label>
+            <input id="address-modal-state" type="text" value="Lagos State" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-xl text-xs font-medium text-[#0D1F18] focus:bg-white focus:border-[#0D261C] focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Street Address -->
+        <div>
+          <label class="block text-xs font-semibold text-[#4A5550] mb-1">Street Address</label>
+          <input id="address-modal-street" type="text" value="14 Marina Street, Lagos Island" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-xl text-xs font-medium text-[#0D1F18] focus:bg-white focus:border-[#0D261C] focus:outline-none">
+        </div>
+
+        <!-- Full Name -->
+        <div>
+          <label class="block text-xs font-semibold text-[#4A5550] mb-1">Full Name</label>
+          <input id="address-modal-name" type="text" value="Ada Lovelace" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-xl text-xs font-medium text-[#0D1F18] focus:bg-white focus:border-[#0D261C] focus:outline-none">
+        </div>
+
+        <!-- Phone Number & Postal Code -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-semibold text-[#4A5550] mb-1">Phone (with Code)</label>
+            <input id="address-modal-phone" type="tel" value="+234 801 234 5678" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-xl text-xs font-mono text-[#0D1F18] focus:bg-white focus:border-[#0D261C] focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-[#4A5550] mb-1">Postal Code</label>
+            <input id="address-modal-postal" type="text" value="100221" class="w-full px-3 py-2 bg-[#F9F8F5] border border-[#D5D1C8] rounded-xl text-xs font-mono text-[#0D1F18] focus:bg-white focus:border-[#0D261C] focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeAddressModal()" type="button" class="flex-1 py-2.5 rounded-xl bg-white border border-[#D5D1C8] hover:bg-[#F9F8F5] text-xs font-semibold text-[#4A5550] transition cursor-pointer">
+            Cancel
+          </button>
+          <button onclick="saveAddressModalData()" type="button" class="flex-1 py-2.5 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-xs font-bold text-[#F4F2EC] shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="check" class="w-4 h-4 text-[#A3E635]"></i>
+            <span>Save Address</span>
+          </button>
+        </div>
+
       </div>
     </div>
   </div>

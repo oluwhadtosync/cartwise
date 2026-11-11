@@ -73,6 +73,16 @@ export interface AuditLogEntry {
   metadata?: Record<string, any>;
 }
 
+export interface ShippingMethod {
+  id: string;
+  name: string;
+  carrier?: string;
+  cost: number;
+  estimatedDelivery?: string;
+  trackingAvailable: boolean;
+  isFree: boolean;
+}
+
 export interface ProductVariety {
   id?: string;
   name: string;
@@ -80,6 +90,10 @@ export interface ProductVariety {
   inStock: boolean;
   stockCount: number;
   priceOffset?: number;
+  unitPrice?: number;
+  color?: string;
+  size?: string;
+  imageUrl?: string;
 }
 
 export interface WebsiteSafety {
@@ -101,6 +115,8 @@ export interface DealResult {
   category: string;
   price: number;
   shippingCost: number;
+  incrementalShippingPerUnit?: number;
+  isFreeShipping?: boolean;
   totalCost: number;
   currency: string;
   storeName: string;
@@ -112,6 +128,8 @@ export interface DealResult {
   stockCount?: number;
   varieties?: ProductVariety[];
   selectedVarietyName?: string;
+  shippingMethods?: ShippingMethod[];
+  selectedShippingMethodId?: string;
   safety?: WebsiteSafety;
   shipsToCountry: boolean;
   reasonWhy: string; // AI explanation "why this deal"

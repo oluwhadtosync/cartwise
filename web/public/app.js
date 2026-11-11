@@ -14,6 +14,20 @@ let isSearching = false;
 let orderHistory = [];
 let pendingPromptToSearch = null;
 
+// Global Shipping Address State (matches Android app)
+let currentShippingAddress = {
+  fullName: "Ada Lovelace",
+  phone: "+234 801 234 5678",
+  email: "ada.lovelace@gmail.com",
+  address: "14 Marina Street, Lagos Island",
+  city: "Lagos",
+  state: "Lagos State",
+  country: "Nigeria",
+  countryCode: "NG",
+  flag: "🇳🇬",
+  postalCode: "100221"
+};
+
 // Showcase Carousel Data (Matches Android OnboardingScreen 1:1)
 const showcaseItems = [
   {
@@ -395,6 +409,9 @@ async function executeSearch(query) {
 
   try {
     const isZh = /[\u4e00-\u9fa5]/.test(query);
+    const targetCountry = currentShippingAddress.countryCode || 'NG';
+    const targetCity = currentShippingAddress.city || 'Lagos';
+
     const res = await fetch('/api/search', {
       method: 'POST',
       headers: {
@@ -403,7 +420,10 @@ async function executeSearch(query) {
       },
       body: JSON.stringify({
         query,
-        country: 'NG',
+        country: targetCountry,
+        destinationCountry: currentShippingAddress.country || 'Nigeria',
+        city: targetCity,
+        shippingAddress: currentShippingAddress,
         safetyCheck: isSafetyCheckEnabled,
         language: isZh ? 'zh' : 'en',
         model: selectedGeminiModel
@@ -425,10 +445,14 @@ async function executeSearch(query) {
     updateSearchButtonState();
     if (label) label.textContent = 'Find Best Landed Deal';
 
-    // Set default selected variety
+    // Set default selected variety, shipping method, and quantity
     searchResults.forEach(d => {
+      if (!d.quantity || d.quantity < 1) d.quantity = 1;
       if (d.varieties && d.varieties.length > 0 && !d.selectedVarietyName) {
-        d.selectedVarietyName = d.varieties[0].name;
+        d.selectedVarietyName = d.varieties.find(v => v.inStock)?.name || d.varieties[0].name;
+      }
+      if (d.shippingMethods && d.shippingMethods.length > 0 && !d.selectedShippingMethodId) {
+        d.selectedShippingMethodId = d.shippingMethods.find(m => m.isFree)?.id || d.shippingMethods[0].id;
       }
     });
 
@@ -447,7 +471,7 @@ function renderDeals() {
 
   if (searchResults.length === 0) {
     container.innerHTML = `
-      <div class="py-12 text-center text-[#4A5550] space-y-2 bg-white rounded-2xl border border-[#E2DFD7] p-6 shadow-sm">
+      <div class="py-12 text-center text-[#4A5550] space-y-2 bg-white rounded-2xl border border-[#E2DFD7] p-6 shadow-sm col-span-full">
         <i data-lucide="package-search" class="w-10 h-10 mx-auto text-[#8C9690]"></i>
         <div class="text-sm font-bold text-[#0D1F18]">No products found matching "${searchQuery}"</div>
         <p class="text-xs">Try searching for "earbuds under $40", "fitness tracker", or "keyboard".</p>
@@ -458,8 +482,57 @@ function renderDeals() {
   }
 
   container.innerHTML = searchResults.map(deal => {
-    const currentVariety = (deal.varieties || []).find(v => v.name === deal.selectedVarietyName) || deal.varieties?.[0];
-    const isSoldOut = currentVariety ? !currentVariety.inStock || currentVariety.stockCount <= 0 : !deal.inStock;
+    // Ensure defaults
+    if (!deal.quantity || deal.quantity < 1) deal.quantity = 1;
+    if (!deal.varieties || deal.varieties.length === 0) {
+      deal.varieties = [
+        { id: 'var-1', name: 'Standard Edition', inStock: true, stockCount: 20, priceOffset: 0.0, unitPrice: deal.price }
+      ];
+    }
+    if (!deal.selectedVarietyName) {
+      deal.selectedVarietyName = deal.varieties.find(v => v.inStock)?.name || deal.varieties[0].name;
+    }
+
+    const currentVariety = deal.varieties.find(v => v.name === deal.selectedVarietyName) || deal.varieties[0];
+    const isSoldOut = currentVariety ? (!currentVariety.inStock || currentVariety.stockCount <= 0) : !deal.inStock;
+    const unitPrice = currentVariety?.unitPrice !== undefined ? currentVariety.unitPrice : Number((deal.price + (currentVariety?.priceOffset || 0)).toFixed(2));
+
+    // Ensure shipping methods tailored to merchant & destination
+    if (!deal.shippingMethods || deal.shippingMethods.length === 0) {
+      const isAli = /aliexpress/i.test(deal.storeName) || /aliexpress/i.test(deal.storeUrl);
+      const isJumia = /jumia/i.test(deal.storeName) || /jumia/i.test(deal.storeUrl);
+      if (isAli) {
+        deal.shippingMethods = [
+          { id: 'ship_aliexpress_std', name: 'AliExpress Standard Shipping', carrier: 'AliExpress', cost: 0.0, estimatedDelivery: '14 - 21 business days', trackingAvailable: true, isFree: true }
+        ];
+      } else if (isJumia) {
+        deal.shippingMethods = [
+          { id: 'ship_jumia_door', name: 'Jumia Door Delivery', carrier: 'Jumia Logistics', cost: deal.shippingCost > 0 ? deal.shippingCost : 0.85, estimatedDelivery: '1 - 3 business days', trackingAvailable: true, isFree: deal.shippingCost === 0 },
+          { id: 'ship_jumia_pickup', name: 'Jumia Pickup Station', carrier: 'Jumia Express', cost: deal.shippingCost > 0 ? Math.max(0, Number((deal.shippingCost - 0.45).toFixed(2))) : 0.40, estimatedDelivery: '1 - 2 business days', trackingAvailable: true, isFree: false }
+        ];
+      } else {
+        const baseCost = deal.shippingCost > 0 ? deal.shippingCost : 0.0;
+        deal.shippingMethods = [
+          { id: 'ship_std', name: `${deal.storeName} Standard Delivery`, carrier: `${deal.storeName} Logistics`, cost: baseCost, estimatedDelivery: '7 - 14 business days', trackingAvailable: true, isFree: baseCost === 0 || deal.isFreeShipping }
+        ];
+      }
+    }
+
+    if (!deal.selectedShippingMethodId) {
+      deal.selectedShippingMethodId = deal.shippingMethods.find(m => m.isFree)?.id || deal.shippingMethods[0].id;
+    }
+
+    const currentShippingMethod = deal.shippingMethods.find(m => m.id === deal.selectedShippingMethodId) || deal.shippingMethods[0];
+    const isFreeShipping = currentShippingMethod.isFree || currentShippingMethod.cost === 0.0;
+    const baseShipping = isFreeShipping ? 0.0 : currentShippingMethod.cost;
+    const extraUnits = Math.max(0, deal.quantity - 1);
+    const incrementalPerUnit = isFreeShipping ? 0.0 : (deal.incrementalShippingPerUnit !== undefined ? deal.incrementalShippingPerUnit : (currentShippingMethod?.carrier?.toLowerCase().includes('dhl') || currentShippingMethod?.carrier?.toLowerCase().includes('ups') ? 3.50 : 1.50));
+    const calculatedShipping = isFreeShipping ? 0.0 : Number((baseShipping + extraUnits * incrementalPerUnit).toFixed(2));
+    const calculatedSubtotal = Number((unitPrice * deal.quantity).toFixed(2));
+    const calculatedTotal = Number((calculatedSubtotal + calculatedShipping).toFixed(2));
+
+    deal.shippingCost = calculatedShipping;
+    deal.totalCost = calculatedTotal;
 
     // AI Safety badge HTML (visible only if toggled active)
     let safetyHtml = '';
@@ -495,81 +568,203 @@ function renderDeals() {
       if (!v.inStock || v.stockCount <= 0) stockText = '<span class="text-[10px] text-rose-600 font-bold ml-1">(Sold Out)</span>';
       else if (v.stockCount <= 3) stockText = `<span class="text-[10px] text-amber-700 font-bold ml-1">(${v.stockCount} left)</span>`;
 
+      const priceDelta = v.priceOffset && v.priceOffset > 0 ? ` +$${v.priceOffset.toFixed(2)}` : '';
+
       return `
         <button 
           type="button" 
           onclick="selectVariety('${deal.id}', '${v.name.replace(/'/g, "\\'")}')"
-          class="px-2 py-1 rounded-lg text-xs font-semibold border transition ${
+          class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer ${
             active 
               ? 'bg-[#0D261C] border-[#0D261C] text-[#F4F2EC] shadow-sm' 
               : 'bg-[#F9F8F5] border-[#E2DFD7] text-[#4A5550] hover:text-[#0D1F18] hover:bg-white'
           }"
         >
-          ${v.name} ${stockText}
+          ${v.name}${priceDelta} ${stockText}
         </button>
       `;
     }).join('');
 
+    // Shipping varieties options
+    const shippingOptionsHtml = (deal.shippingMethods || []).map(m => {
+      const isSelected = m.id === deal.selectedShippingMethodId;
+      const costLabel = m.isFree || m.cost === 0 ? 'FREE' : `$${m.cost.toFixed(2)}`;
+      const timeLabel = m.estimatedDelivery ? ` &bull; ${m.estimatedDelivery}` : '';
+      return `
+        <label class="flex items-center justify-between p-2 rounded-xl border cursor-pointer transition text-xs ${
+          isSelected 
+            ? 'bg-[#E6F4EA] border-[#0F5132] text-[#0D261C] font-semibold' 
+            : 'bg-[#F9F8F5] border-[#E2DFD7] text-[#4A5550] hover:bg-white'
+        }">
+          <div class="flex items-center gap-2 min-w-0">
+            <input 
+              type="radio" 
+              name="shipping-${deal.id}" 
+              value="${m.id}" 
+              ${isSelected ? 'checked' : ''} 
+              onchange="selectShippingMethod('${deal.id}', '${m.id}')"
+              class="w-3.5 h-3.5 text-[#0D261C] focus:ring-0 cursor-pointer"
+            >
+            <span class="truncate">${m.name}<span class="text-[11px] text-[#4A5550] font-normal">${timeLabel}</span></span>
+          </div>
+          <span class="font-mono text-xs shrink-0 ml-2 ${m.isFree || m.cost === 0 ? 'text-[#047857] font-bold' : 'text-[#0D1F18] font-bold'}">
+            ${costLabel}
+          </span>
+        </label>
+      `;
+    }).join('');
+
+    // Image handling with category-aware fallback
+    let itemImg = deal.imageUrl;
+    if (!itemImg || itemImg.includes('localhost:4000')) {
+      const t = ((deal.title || '') + ' ' + (deal.category || '')).toLowerCase();
+      if (t.includes('earbud') || t.includes('airbud') || t.includes('tws') || t.includes('earphone')) {
+        itemImg = '/images/products/prod-earbuds-01.png';
+      } else if (t.includes('phone') || t.includes('smartphone') || t.includes('redmi') || t.includes('xiaomi') || t.includes('itel')) {
+        itemImg = '/images/products/prod-phone-01.jpg';
+      } else if (t.includes('headphone') || t.includes('anc')) {
+        itemImg = '/images/products/prod-headphone-11.png';
+      } else if (t.includes('tracker') || t.includes('watch') || t.includes('fitness')) {
+        itemImg = '/images/products/prod-tracker-02.png';
+      } else if (t.includes('keyboard')) {
+        itemImg = '/images/products/prod-keyboard-04.png';
+      } else if (t.includes('mouse')) {
+        itemImg = '/images/products/prod-mouse-05.png';
+      } else if (t.includes('powerbank') || t.includes('charger')) {
+        itemImg = '/images/products/prod-powerbank-03.png';
+      } else if (t.includes('speaker')) {
+        itemImg = '/images/products/prod-speaker-07.png';
+      } else {
+        itemImg = '/images/products/prod-earbuds-01.png';
+      }
+    }
+    deal.imageUrl = itemImg;
+
     return `
-      <div class="rounded-2xl bg-white border border-[#E2DFD7] p-4 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-3">
-        
-        <!-- Top Row: Brand & Store Domain Link -->
-        <div class="flex items-center justify-between text-xs">
-          <span class="font-bold text-[#8C9690] uppercase tracking-wide text-[10px]">${deal.brand || 'Merchant'}</span>
-          <a 
-            href="${deal.storeUrl || '#'}" 
-            target="_blank" 
-            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F9F8F5] border border-[#E2DFD7] text-[#0F5132] hover:text-[#0D261C] font-medium text-[11px] transition"
-          >
-            <span>${deal.storeName}</span>
-            <i data-lucide="external-link" class="w-3 h-3"></i>
-          </a>
-        </div>
-
-        <!-- Title & Rating -->
-        <div>
-          <h3 class="text-sm font-bold text-[#0D1F18] line-clamp-2 leading-snug">${deal.title}</h3>
-          <div class="flex items-center gap-2 mt-1 text-xs text-[#4A5550]">
-            <span class="text-amber-500 font-bold">★ ${deal.rating || '4.8'}</span>
-            <span>&bull;</span>
-            <span>${deal.reviewsCount || '150'} reviews</span>
-            <span>&bull;</span>
-            <span class="${isSoldOut ? 'text-rose-600 font-bold' : 'text-[#047857] font-bold'}">
-              ${isSoldOut ? 'Sold Out' : (currentVariety ? `${currentVariety.stockCount} in stock` : 'In Stock')}
-            </span>
+      <div class="rounded-2xl bg-white border border-[#E2DFD7] p-4 sm:p-5 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-3.5 flex flex-col justify-between">
+        <div class="space-y-3">
+          <!-- Top Row: Brand & Store Domain Link -->
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-[#8C9690] uppercase tracking-wide text-[10px]">${deal.brand || 'Merchant'}</span>
+            <a 
+              href="${deal.storeUrl || '#'}" 
+              target="_blank" 
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F9F8F5] border border-[#E2DFD7] text-[#0F5132] hover:text-[#0D261C] font-medium text-[11px] transition"
+            >
+              <span>${deal.storeName}</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
           </div>
-        </div>
 
-        <!-- AI Why This Deal Card -->
-        <div class="p-2.5 rounded-xl bg-[#E6F4EA] border border-[#B7E1CD] text-xs text-[#0D261C] flex items-start gap-2">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#0F5132] shrink-0 mt-0.5"></i>
-          <span class="leading-relaxed"><strong>Why this deal:</strong> ${deal.reasonWhy || 'Best overall landed cost with verified delivery to your location.'}</span>
-        </div>
-
-        <!-- Variety Selector -->
-        <div class="space-y-1.5 pt-0.5">
-          <div class="text-[10px] font-bold text-[#8C9690] uppercase tracking-wider">Choose Variety:</div>
-          <div class="flex flex-wrap gap-1.5">
-            ${varietiesHtml}
-          </div>
-          ${isSoldOut ? `
-            <div class="text-xs text-rose-700 font-bold bg-[#FEF2F2] p-2 rounded-lg border border-[#FECACA] mt-1 flex items-center gap-1.5">
-              <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i> Option sold out. Please select another variant.
+          <!-- Product Image & Title Section -->
+          <div class="flex items-start gap-3 sm:gap-4">
+            <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] overflow-hidden shrink-0 flex items-center justify-center p-2 relative group shadow-xs">
+              <img 
+                src="${itemImg}" 
+                alt="${deal.title}" 
+                class="w-full h-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
+                onerror="this.onerror=null; this.src='/images/products/prod-earbuds-01.png';"
+                loading="lazy"
+              />
             </div>
-          ` : ''}
+            <div class="min-w-0 flex-1 space-y-1">
+              <h3 class="text-sm font-bold text-[#0D1F18] line-clamp-2 leading-snug">${deal.title}</h3>
+              <div class="flex items-center gap-1.5 text-xs text-[#4A5550]">
+                <span class="text-amber-500 font-bold">★ ${deal.rating || '4.8'}</span>
+                <span>&bull;</span>
+                <span>${deal.reviewsCount || '150'} reviews</span>
+              </div>
+              <div class="flex items-baseline gap-2 pt-0.5">
+                <span class="font-mono text-sm font-bold text-[#0D1F18]">$${unitPrice.toFixed(2)}</span>
+                <span class="text-[11px] ${isSoldOut ? 'text-rose-600 font-bold' : 'text-[#047857] font-semibold'}">
+                  ${isSoldOut ? 'Sold Out' : (currentVariety ? `${currentVariety.stockCount} in stock` : 'In Stock')}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Why This Deal Card -->
+          <div class="p-2.5 rounded-xl bg-[#E6F4EA] border border-[#B7E1CD] text-xs text-[#0D261C] flex items-start gap-2">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#0F5132] shrink-0 mt-0.5"></i>
+            <span class="leading-relaxed"><strong>Why this deal:</strong> ${deal.reasonWhy || 'Best overall landed cost with verified delivery to your location.'}</span>
+          </div>
+
+          <!-- 1. Variety Selector -->
+          <div class="space-y-1.5 pt-0.5">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#8C9690]">
+              <span>${deal.varieties.length > 1 ? `Choose Variety (${deal.varieties.length} Available):` : 'Item Specification:'}</span>
+              <span class="text-[#0D1F18]">${currentVariety.name}</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              ${varietiesHtml}
+            </div>
+            ${isSoldOut ? `
+              <div class="text-xs text-rose-700 font-bold bg-[#FEF2F2] p-2 rounded-lg border border-[#FECACA] mt-1 flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i> Option sold out. Please select another variant.
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- 2. Shipping Varieties Selector -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#8C9690]">
+              <span class="flex items-center gap-1">
+                <i data-lucide="truck" class="w-3 h-3 text-[#0F5132]"></i> Shipping Method (${deal.shippingMethods.length} Available):
+              </span>
+              <span class="text-[#047857] font-mono font-bold">${currentShippingMethod.carrier || ''}</span>
+            </div>
+            <div class="space-y-1">
+              ${shippingOptionsHtml}
+            </div>
+          </div>
+
+          <!-- 3. Quantity Increase Stepper & Incremental Shipping Scaling -->
+          <div class="p-2.5 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] flex items-center justify-between">
+            <div>
+              <div class="text-xs font-bold text-[#0D1F18]">Item Quantity</div>
+              <div class="text-[10.5px] text-[#4A5550]">
+                ${isFreeShipping 
+                  ? '<span class="text-[#047857] font-semibold">Free shipping applied</span>' 
+                  : (deal.quantity > 1 
+                      ? `<span class="text-[#0F5132] font-semibold">+$${incrementalPerUnit.toFixed(2)}/unit</span> incremental shipping` 
+                      : `Shipping scales +$${incrementalPerUnit.toFixed(2)} per extra unit`)}
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button 
+                type="button" 
+                onclick="changeDealQuantity('${deal.id}', -1)"
+                ${deal.quantity <= 1 ? 'disabled' : ''}
+                class="w-7 h-7 rounded-lg bg-white border border-[#D5D1C8] text-[#0D1F18] font-bold flex items-center justify-center hover:bg-[#E2DFD7] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                -
+              </button>
+              <span class="font-mono text-sm font-bold text-[#0D1F18] w-6 text-center">${deal.quantity}</span>
+              <button 
+                type="button" 
+                onclick="changeDealQuantity('${deal.id}', 1)"
+                ${deal.quantity >= (currentVariety.stockCount || 10) ? 'disabled' : ''}
+                class="w-7 h-7 rounded-lg bg-white border border-[#D5D1C8] text-[#0D1F18] font-bold flex items-center justify-center hover:bg-[#E2DFD7] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          ${safetyHtml}
         </div>
 
-        ${safetyHtml}
-
-        <!-- Landed Cost & Button -->
-        <div class="pt-3 border-t border-[#E2DFD7] space-y-2.5">
+        <!-- Landed Cost & Select Button -->
+        <div class="pt-3 border-t border-[#E2DFD7] space-y-2.5 mt-2">
           <div class="flex items-baseline justify-between">
             <div>
               <div class="text-[10px] uppercase font-bold text-[#8C9690]">Total Landed Cost</div>
-              <div class="text-[11px] text-[#4A5550]">$${deal.price.toFixed(2)} item + $${deal.shippingCost.toFixed(2)} shipping</div>
+              <div class="text-[11px] text-[#4A5550]">
+                $${calculatedSubtotal.toFixed(2)} (${deal.quantity}x) + $${calculatedShipping.toFixed(2)} shipping
+              </div>
             </div>
             <div class="text-lg font-extrabold text-[#047857] font-mono">
-              $${deal.totalCost.toFixed(2)}
+              $${calculatedTotal.toFixed(2)}
             </div>
           </div>
 
@@ -577,13 +772,13 @@ function renderDeals() {
             type="button"
             onclick="proceedToConfirm('${deal.id}')"
             ${isSoldOut ? 'disabled' : ''}
-            class="w-full h-[44px] rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 ${
+            class="w-full h-[44px] rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${
               isSoldOut 
                 ? 'bg-[#E2DFD7] text-[#8C9690] cursor-not-allowed border border-[#D5D1C8]' 
-                : 'bg-[#0D261C] hover:bg-[#16382b] text-[#F4F2EC] shadow-sm cursor-pointer'
+                : 'bg-[#0D261C] hover:bg-[#16382b] text-[#F4F2EC] shadow-sm'
             }"
           >
-            <span>${isSoldOut ? 'Option Sold Out' : 'Select Deal & Review Escrow'}</span>
+            <span>${isSoldOut ? 'Option Sold Out' : `Select Deal & Review Escrow ($${calculatedTotal.toFixed(2)})`}</span>
             <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-[#A3E635]"></i>
           </button>
         </div>
@@ -603,6 +798,24 @@ function selectVariety(dealId, varietyName) {
   }
 }
 
+function selectShippingMethod(dealId, methodId) {
+  const deal = searchResults.find(d => d.id === dealId);
+  if (deal) {
+    deal.selectedShippingMethodId = methodId;
+    renderDeals();
+  }
+}
+
+function changeDealQuantity(dealId, delta) {
+  const deal = searchResults.find(d => d.id === dealId);
+  if (deal) {
+    const currentVariety = deal.varieties.find(v => v.name === deal.selectedVarietyName) || deal.varieties[0];
+    const maxStock = currentVariety ? currentVariety.stockCount : 10;
+    deal.quantity = Math.max(1, Math.min((deal.quantity || 1) + delta, maxStock || 10));
+    renderDeals();
+  }
+}
+
 // Confirm Screen
 function proceedToConfirm(dealId) {
   const deal = searchResults.find(d => d.id === dealId);
@@ -611,14 +824,38 @@ function proceedToConfirm(dealId) {
 
   const currentVariety = (deal.varieties || []).find(v => v.name === deal.selectedVarietyName) || deal.varieties?.[0];
   selectedVariety = currentVariety ? currentVariety.name : 'Standard';
+  const unitPrice = currentVariety?.unitPrice !== undefined ? currentVariety.unitPrice : Number((deal.price + (currentVariety?.priceOffset || 0)).toFixed(2));
+  const qty = deal.quantity || 1;
+  const itemSubtotal = Number((unitPrice * qty).toFixed(2));
+
+  const currentMethod = (deal.shippingMethods || []).find(m => m.id === deal.selectedShippingMethodId) || deal.shippingMethods?.[0];
+  const isFree = currentMethod ? (currentMethod.isFree || currentMethod.cost === 0) : deal.shippingCost === 0;
+  const extraUnits = Math.max(0, qty - 1);
+  const inc = isFree ? 0 : (deal.incrementalShippingPerUnit !== undefined ? deal.incrementalShippingPerUnit : 1.50);
+  const shipCost = isFree ? 0.0 : Number(((currentMethod?.cost || 0) + extraUnits * inc).toFixed(2));
+  const total = Number((itemSubtotal + shipCost).toFixed(2));
+
+  deal.shippingCost = shipCost;
+  deal.totalCost = total;
 
   document.getElementById('confirm-brand').textContent = deal.brand || 'Merchant';
   document.getElementById('confirm-title').textContent = deal.title;
-  document.getElementById('confirm-variety-pill').textContent = selectedVariety;
-  document.getElementById('confirm-item-price').textContent = `$${deal.price.toFixed(2)}`;
-  document.getElementById('confirm-shipping-price').textContent = `$${deal.shippingCost.toFixed(2)}`;
-  document.getElementById('confirm-total-cost').textContent = `$${deal.totalCost.toFixed(2)}`;
-  document.getElementById('btn-authorize-label').textContent = `Authorize Escrow Hold with PayPal ($${deal.totalCost.toFixed(2)})`;
+  if (document.getElementById('confirm-image')) {
+    document.getElementById('confirm-image').src = deal.imageUrl || '/images/products/prod-earbuds-01.png';
+  }
+  document.getElementById('confirm-variety-pill').textContent = `${selectedVariety} • Qty ${qty}`;
+  document.getElementById('confirm-item-price').textContent = `$${itemSubtotal.toFixed(2)} ($${unitPrice.toFixed(2)} x ${qty})`;
+  document.getElementById('confirm-shipping-price').textContent = isFree ? `Free (${currentMethod?.name || 'Standard'})` : `$${shipCost.toFixed(2)} (${currentMethod?.name || 'Courier'})`;
+  document.getElementById('confirm-total-cost').textContent = `$${total.toFixed(2)}`;
+  document.getElementById('btn-authorize-label').textContent = `Authorize Escrow Hold with PayPal ($${total.toFixed(2)})`;
+
+  // Pre-fill shipping address fields with currentShippingAddress
+  if (document.getElementById('ship-name')) document.getElementById('ship-name').value = currentShippingAddress.fullName;
+  if (document.getElementById('ship-phone')) document.getElementById('ship-phone').value = currentShippingAddress.phone;
+  if (document.getElementById('ship-email')) document.getElementById('ship-email').value = currentShippingAddress.email;
+  if (document.getElementById('ship-address')) document.getElementById('ship-address').value = currentShippingAddress.address;
+  if (document.getElementById('ship-city')) document.getElementById('ship-city').value = currentShippingAddress.city;
+  if (document.getElementById('ship-country')) document.getElementById('ship-country').value = currentShippingAddress.country;
 
   navigateTo('confirm');
 }
@@ -1381,14 +1618,10 @@ function loadSavedShipping() {
     const raw = localStorage.getItem(STORAGE_SHIPPING_KEY);
     if (raw) {
       const addr = JSON.parse(raw);
-      if (addr.fullName) document.getElementById('ship-name').value = addr.fullName;
-      if (addr.phone && document.getElementById('ship-phone')) document.getElementById('ship-phone').value = addr.phone;
-      if (addr.email && document.getElementById('ship-email')) document.getElementById('ship-email').value = addr.email;
-      if (addr.address) document.getElementById('ship-address').value = addr.address;
-      if (addr.city) document.getElementById('ship-city').value = addr.city;
-      if (addr.country) document.getElementById('ship-country').value = addr.country;
+      currentShippingAddress = { ...currentShippingAddress, ...addr };
     }
   } catch (e) {}
+  updateAddressUI();
 }
 
 function saveShippingAddress(addr) {
@@ -1397,19 +1630,164 @@ function saveShippingAddress(addr) {
   } catch (e) {}
 }
 
+function openAddressModal() {
+  const modal = document.getElementById('modal-address');
+  if (!modal) return;
+
+  const countrySelect = document.getElementById('address-modal-country');
+  if (countrySelect) {
+    for (let i = 0; i < countrySelect.options.length; i++) {
+      const opt = countrySelect.options[i];
+      if (opt.value.startsWith(currentShippingAddress.countryCode + '|')) {
+        countrySelect.selectedIndex = i;
+        break;
+      }
+    }
+  }
+  if (document.getElementById('address-modal-city')) document.getElementById('address-modal-city').value = currentShippingAddress.city;
+  if (document.getElementById('address-modal-state')) document.getElementById('address-modal-state').value = currentShippingAddress.state || '';
+  if (document.getElementById('address-modal-street')) document.getElementById('address-modal-street').value = currentShippingAddress.address;
+  if (document.getElementById('address-modal-name')) document.getElementById('address-modal-name').value = currentShippingAddress.fullName;
+  if (document.getElementById('address-modal-phone')) document.getElementById('address-modal-phone').value = currentShippingAddress.phone;
+  if (document.getElementById('address-modal-postal')) document.getElementById('address-modal-postal').value = currentShippingAddress.postalCode || '100221';
+
+  modal.classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeAddressModal() {
+  const modal = document.getElementById('modal-address');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleAddressModalCountryChange(val) {
+  const parts = val.split('|');
+  const code = parts[0];
+
+  const cityInput = document.getElementById('address-modal-city');
+  const stateInput = document.getElementById('address-modal-state');
+  const phoneInput = document.getElementById('address-modal-phone');
+
+  if (code === 'NG') {
+    if (cityInput) cityInput.value = 'Lagos';
+    if (stateInput) stateInput.value = 'Lagos State';
+    if (phoneInput && !phoneInput.value.startsWith('+234')) phoneInput.value = '+234 801 234 5678';
+  } else if (code === 'US') {
+    if (cityInput) cityInput.value = 'New York';
+    if (stateInput) stateInput.value = 'NY';
+    if (phoneInput) phoneInput.value = '+1 212 555 0198';
+  } else if (code === 'GB') {
+    if (cityInput) cityInput.value = 'London';
+    if (stateInput) stateInput.value = 'Greater London';
+    if (phoneInput) phoneInput.value = '+44 20 7946 0991';
+  } else if (code === 'CA') {
+    if (cityInput) cityInput.value = 'Toronto';
+    if (stateInput) stateInput.value = 'Ontario';
+    if (phoneInput) phoneInput.value = '+1 416 555 0142';
+  } else if (code === 'GH') {
+    if (cityInput) cityInput.value = 'Accra';
+    if (stateInput) stateInput.value = 'Greater Accra';
+    if (phoneInput) phoneInput.value = '+233 24 123 4567';
+  }
+}
+
+function saveAddressModalData() {
+  const countrySelect = document.getElementById('address-modal-country');
+  let code = 'NG';
+  let countryName = 'Nigeria';
+  let flag = '🇳🇬';
+
+  if (countrySelect && countrySelect.value) {
+    const parts = countrySelect.value.split('|');
+    code = parts[0];
+    countryName = parts[1];
+    flag = parts[2] || '';
+  }
+
+  const city = document.getElementById('address-modal-city')?.value.trim() || 'Lagos';
+  const state = document.getElementById('address-modal-state')?.value.trim() || '';
+  const address = document.getElementById('address-modal-street')?.value.trim() || '14 Marina Street, Lagos Island';
+  const fullName = document.getElementById('address-modal-name')?.value.trim() || 'Ada Lovelace';
+  const phone = document.getElementById('address-modal-phone')?.value.trim() || '+234 801 234 5678';
+  const postalCode = document.getElementById('address-modal-postal')?.value.trim() || '100221';
+
+  currentShippingAddress = {
+    fullName,
+    phone,
+    email: currentShippingAddress.email || 'ada.lovelace@gmail.com',
+    address,
+    city,
+    state,
+    country: countryName,
+    countryCode: code,
+    flag,
+    postalCode
+  };
+
+  saveShippingAddress(currentShippingAddress);
+  updateAddressUI();
+  closeAddressModal();
+}
+
+function updateAddressUI() {
+  const summary = `${currentShippingAddress.city}, ${currentShippingAddress.country} ${currentShippingAddress.flag || ''}`.trim();
+  const navLabel = document.getElementById('nav-address-summary');
+  if (navLabel) navLabel.textContent = summary;
+
+  const askLabel = document.getElementById('ask-dest-country-label');
+  if (askLabel) askLabel.textContent = summary;
+
+  // Update confirm screen inputs if available
+  if (document.getElementById('ship-name')) document.getElementById('ship-name').value = currentShippingAddress.fullName;
+  if (document.getElementById('ship-phone')) document.getElementById('ship-phone').value = currentShippingAddress.phone;
+  if (document.getElementById('ship-email')) document.getElementById('ship-email').value = currentShippingAddress.email;
+  if (document.getElementById('ship-address')) document.getElementById('ship-address').value = currentShippingAddress.address;
+  if (document.getElementById('ship-city')) document.getElementById('ship-city').value = currentShippingAddress.city;
+  if (document.getElementById('ship-country')) document.getElementById('ship-country').value = currentShippingAddress.country;
+}
+
 // Fallback Deals (Multilingual Support)
 function getFallbackDeals(query) {
+  if (!query || typeof query !== 'string') return [];
+  const qClean = query.trim().toLowerCase();
   const isZh = /[\u4e00-\u9fa5]/.test(query);
 
-  if (isZh) {
-    return [
+  const isNigeria = (currentShippingAddress.countryCode || 'NG') === 'NG';
+
+  const demoShippingMethods = [
+    {
+      id: 'ship_demo_std',
+      name: 'Standard Insured Delivery',
+      carrier: 'Cartwise Logistics',
+      cost: 5.00,
+      estimatedDelivery: isNigeria ? '3 - 5 business days' : '5 - 8 business days',
+      trackingAvailable: true,
+      isFree: false
+    },
+    {
+      id: 'ship_demo_exp',
+      name: 'Express Air Courier',
+      carrier: 'DHL Express',
+      cost: 12.00,
+      estimatedDelivery: '1 - 2 business days',
+      trackingAvailable: true,
+      isFree: false
+    }
+  ];
+
+  const pool = isZh ? [
       {
         id: "prod-earbuds-01",
         title: "SoundPulse Air 无线降噪耳机",
         brand: "SoundPulse",
         price: 34.99,
         shippingCost: 5.00,
+        incrementalShippingPerUnit: 1.50,
+        isFreeShipping: false,
         totalCost: 39.99,
+        quantity: 1,
+        shippingMethods: demoShippingMethods,
+        selectedShippingMethodId: 'ship_demo_std',
         storeName: "Cartwise 官方自营 Demo Market",
         storeUrl: "https://cartwise-demo-market.onrender.com/product/prod-earbuds-01",
         rating: 4.8,
@@ -1419,10 +1797,10 @@ function getFallbackDeals(query) {
         reasonWhy: "最佳综合性价比：全包到手价仅 $39.99，支持正品保障与快速送达。",
         selectedVarietyName: "曜石黑",
         varieties: [
-          { name: "曜石黑", sku: "SP-AIR-BLK", stockCount: 25, inStock: true },
-          { name: "珍珠白", sku: "SP-AIR-WHT", stockCount: 12, inStock: true },
-          { name: "深海蓝", sku: "SP-AIR-NVY", stockCount: 2, inStock: true },
-          { name: "玫瑰金", sku: "SP-AIR-GLD", stockCount: 0, inStock: false }
+          { id: "var-1", name: "曜石黑", sku: "SP-AIR-BLK", stockCount: 25, inStock: true, priceOffset: 0.0, unitPrice: 34.99 },
+          { id: "var-2", name: "珍珠白", sku: "SP-AIR-WHT", stockCount: 12, inStock: true, priceOffset: 0.0, unitPrice: 34.99 },
+          { id: "var-3", name: "深海蓝", sku: "SP-AIR-NVY", stockCount: 2, inStock: true, priceOffset: 0.0, unitPrice: 34.99 },
+          { id: "var-4", name: "玫瑰金", sku: "SP-AIR-GLD", stockCount: 0, inStock: false, priceOffset: 0.0, unitPrice: 34.99 }
         ],
         safety: {
           score: 98,
@@ -1437,7 +1815,12 @@ function getFallbackDeals(query) {
         brand: "NovaFit",
         price: 29.99,
         shippingCost: 4.50,
+        incrementalShippingPerUnit: 1.50,
+        isFreeShipping: false,
         totalCost: 34.49,
+        quantity: 1,
+        shippingMethods: demoShippingMethods,
+        selectedShippingMethodId: 'ship_demo_std',
         storeName: "Cartwise 官方自营 Demo Market",
         storeUrl: "https://cartwise-demo-market.onrender.com/product/prod-tracker-02",
         rating: 4.6,
@@ -1447,9 +1830,9 @@ function getFallbackDeals(query) {
         reasonWhy: "高评分健康监测优选：14天超长续航，AMOLED高清大屏，全包到手价最低。",
         selectedVarietyName: "暗夜黑",
         varieties: [
-          { name: "暗夜黑", sku: "NF-PRO-BLK", stockCount: 18, inStock: true },
-          { name: "橄榄绿", sku: "NF-PRO-GRN", stockCount: 5, inStock: true },
-          { name: "珊瑚粉", sku: "NF-PRO-CRL", stockCount: 0, inStock: false }
+          { id: "var-1", name: "暗夜黑", sku: "NF-PRO-BLK", stockCount: 18, inStock: true, priceOffset: 0.0, unitPrice: 29.99 },
+          { id: "var-2", name: "橄榄绿", sku: "NF-PRO-GRN", stockCount: 5, inStock: true, priceOffset: 0.0, unitPrice: 29.99 },
+          { id: "var-3", name: "珊瑚粉", sku: "NF-PRO-CRL", stockCount: 0, inStock: false, priceOffset: 0.0, unitPrice: 29.99 }
         ],
         safety: {
           score: 98,
@@ -1458,17 +1841,19 @@ function getFallbackDeals(query) {
           summary: "Cartwise 官方自营测试商户。256位TLS加密，沙箱结算隔离，100%全额托管保障。"
         }
       }
-    ];
-  }
-
-  return [
+    ] : [
     {
       id: "prod-earbuds-01",
       title: "SoundPulse Air Wireless Noise-Cancelling Earbuds",
       brand: "SoundPulse",
       price: 34.99,
       shippingCost: 5.00,
+      incrementalShippingPerUnit: 1.50,
+      isFreeShipping: false,
       totalCost: 39.99,
+      quantity: 1,
+      shippingMethods: demoShippingMethods,
+      selectedShippingMethodId: 'ship_demo_std',
       storeName: "Cartwise Demo Market",
       storeUrl: "https://cartwise-demo-market.onrender.com/product/prod-earbuds-01",
       rating: 4.8,
@@ -1478,10 +1863,10 @@ function getFallbackDeals(query) {
       reasonWhy: "Best value pick: lowest total landed cost ($39.99) with verified shipping to your location.",
       selectedVarietyName: "Matte Black",
       varieties: [
-        { name: "Matte Black", sku: "SP-AIR-BLK", stockCount: 25, inStock: true },
-        { name: "Pearl White", sku: "SP-AIR-WHT", stockCount: 12, inStock: true },
-        { name: "Deep Navy", sku: "SP-AIR-NVY", stockCount: 2, inStock: true },
-        { name: "Rose Gold", sku: "SP-AIR-GLD", stockCount: 0, inStock: false }
+        { id: "var-1", name: "Matte Black", sku: "SP-AIR-BLK", stockCount: 25, inStock: true, priceOffset: 0.0, unitPrice: 34.99 },
+        { id: "var-2", name: "Pearl White", sku: "SP-AIR-WHT", stockCount: 12, inStock: true, priceOffset: 0.0, unitPrice: 34.99 },
+        { id: "var-3", name: "Deep Navy", sku: "SP-AIR-NVY", stockCount: 2, inStock: true, priceOffset: 0.0, unitPrice: 34.99 },
+        { id: "var-4", name: "Rose Gold", sku: "SP-AIR-GLD", stockCount: 0, inStock: false, priceOffset: 0.0, unitPrice: 34.99 }
       ],
       safety: {
         score: 98,
@@ -1496,7 +1881,12 @@ function getFallbackDeals(query) {
       brand: "NovaFit",
       price: 29.99,
       shippingCost: 4.50,
+      incrementalShippingPerUnit: 1.50,
+      isFreeShipping: false,
       totalCost: 34.49,
+      quantity: 1,
+      shippingMethods: demoShippingMethods,
+      selectedShippingMethodId: 'ship_demo_std',
       storeName: "Cartwise Demo Market",
       storeUrl: "https://cartwise-demo-market.onrender.com/product/prod-tracker-02",
       rating: 4.6,
@@ -1506,9 +1896,9 @@ function getFallbackDeals(query) {
       reasonWhy: "Top customer-rated fitness wearable with 14-day battery and AMOLED display under $35.",
       selectedVarietyName: "Midnight Black",
       varieties: [
-        { name: "Midnight Black", sku: "NF-PRO-BLK", stockCount: 18, inStock: true },
-        { name: "Olive Green", sku: "NF-PRO-GRN", stockCount: 5, inStock: true },
-        { name: "Sunset Coral", sku: "NF-PRO-CRL", stockCount: 0, inStock: false }
+        { id: "var-1", name: "Midnight Black", sku: "NF-PRO-BLK", stockCount: 18, inStock: true, priceOffset: 0.0, unitPrice: 29.99 },
+        { id: "var-2", name: "Olive Green", sku: "NF-PRO-GRN", stockCount: 5, inStock: true, priceOffset: 0.0, unitPrice: 29.99 },
+        { id: "var-3", name: "Sunset Coral", sku: "NF-PRO-CRL", stockCount: 0, inStock: false, priceOffset: 0.0, unitPrice: 29.99 }
       ],
       safety: {
         score: 98,
@@ -1523,7 +1913,15 @@ function getFallbackDeals(query) {
       brand: "Sony",
       price: 38.50,
       shippingCost: 10.00,
+      incrementalShippingPerUnit: 2.00,
+      isFreeShipping: false,
       totalCost: 48.50,
+      quantity: 1,
+      shippingMethods: [
+        { id: 'ship_gg_std', name: 'Standard Courier', carrier: 'Glorious Express', cost: 10.00, estimatedDelivery: '7 - 12 days', trackingAvailable: true, isFree: false },
+        { id: 'ship_gg_exp', name: 'Priority Express', carrier: 'DHL Express', cost: 22.00, estimatedDelivery: '2 - 4 days', trackingAvailable: true, isFree: false }
+      ],
+      selectedShippingMethodId: 'ship_gg_std',
       storeName: "Glorious Gaming Boutique",
       storeUrl: "https://www.gloriousgaming.com",
       rating: 4.6,
@@ -1533,9 +1931,9 @@ function getFallbackDeals(query) {
       reasonWhy: "Popular choice with premium ANC, but third-party merchant with strict card fraud verification.",
       selectedVarietyName: "Midnight Black",
       varieties: [
-        { name: "Midnight Black", sku: "var-sony-blk", stockCount: 6, inStock: true },
-        { name: "Platinum Silver", sku: "var-sony-slv", stockCount: 1, inStock: true },
-        { name: "Space Grey", sku: "var-sony-gry", stockCount: 0, inStock: false }
+        { id: "var-1", name: "Midnight Black", sku: "var-sony-blk", stockCount: 6, inStock: true, priceOffset: 0.0, unitPrice: 38.50 },
+        { id: "var-2", name: "Platinum Silver", sku: "var-sony-slv", stockCount: 1, inStock: true, priceOffset: 0.0, unitPrice: 38.50 },
+        { id: "var-3", name: "Space Grey", sku: "var-sony-gry", stockCount: 0, inStock: false, priceOffset: 0.0, unitPrice: 38.50 }
       ],
       safety: {
         score: 68,
@@ -1545,4 +1943,15 @@ function getFallbackDeals(query) {
       }
     }
   ];
+
+  // Only return fallback deals if they genuinely match what the shopper searched for!
+  // If the shopper searched for "Redmi 15C", do NOT return demo earbuds or trackers!
+  const queryKeywords = qClean.split(/\s+/).filter(w => w.length > 2);
+  const matched = pool.filter(deal => {
+    const title = (deal.title || '').toLowerCase();
+    const brand = (deal.brand || '').toLowerCase();
+    return queryKeywords.some(kw => title.includes(kw) || brand.includes(kw));
+  });
+
+  return matched;
 }

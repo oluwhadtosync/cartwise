@@ -8,6 +8,7 @@ import { ordersRouter } from './routes/orders';
 import { webhooksRouter } from './routes/webhooks';
 import { searchRouter } from './routes/search';
 import { checkoutRouter } from './routes/checkout';
+import { extractRouter } from './routes/extract';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.get('/health', (req, res) => {
 
 // Mount Routes
 app.use('/api/search', searchRouter);
+app.use('/api/extract', extractRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/webhooks', webhooksRouter);

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sample A: Segmented Pill Toggle</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .phone-frame {
+      width: 390px;
+      height: 820px;
+      background: #0B0F17;
+      border-radius: 44px;
+      border: 3px solid #1E293B;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+      overflow-y: auto;
+      overflow-x: hidden;
+      color: #FFFFFF;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-frame::-webkit-scrollbar { display: none; }
+    
+    /* Android Status Bar */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #94A3B8;
+    }
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    
+    .content {
+      padding: 16px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Top App Bar */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #6366F1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #F8FAFC;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: #94A3B8;
+    }
+    .history-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #161E2E;
+      border: 1px solid #2A374A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94A3B8;
+    }
+
+    .hero-title {
+      font-size: 23px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: #F8FAFC;
+      letter-spacing: -0.3px;
+    }
+
+    /* SEGMENTED PILL SWITCHER */
+    .segment-bar {
+      background: #131B2A;
+      border: 1px solid #233044;
+      border-radius: 14px;
+      padding: 4px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      position: relative;
+    }
+    .segment-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 11px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+    .segment-btn.inactive {
+      background: transparent;
+      color: #94A3B8;
+    }
+    .segment-btn.active {
+      background: #6366F1;
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    /* MAIN INPUT CARD */
+    .input-card {
+      background: #161E2E;
+      border: 1px solid #2A374A;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .card-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38BDF8;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      width: fit-content;
+    }
+
+    .url-input-wrap {
+      background: #0B0F17;
+      border: 1.5px solid #38BDF8;
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+    }
+    .url-icon {
+      color: #38BDF8;
+      flex-shrink: 0;
+    }
+    .url-text-field {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #FFFFFF;
+      font-size: 13.5px;
+      outline: none;
+      font-family: monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .paste-chip-btn {
+      background: rgba(99, 102, 241, 0.25);
+      border: 1px solid #6366F1;
+      color: #A5B4FC;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Detected Product Preview */
+    .detected-preview {
+      background: #0F172A;
+      border: 1px solid #1E293B;
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .preview-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: #1E293B;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .preview-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .preview-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #F8FAFC;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .preview-meta {
+      font-size: 11px;
+      color: #10B981;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    /* Stores supported row */
+    .supported-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 2px;
+    }
+    .supported-label {
+      font-size: 11px;
+      color: #64748B;
+      font-weight: 600;
+    }
+    .store-tags {
+      display: flex;
+      gap: 6px;
+    }
+    .store-tag {
+      font-size: 10px;
+      font-weight: 600;
+      background: #0F172A;
+      color: #94A3B8;
+      border: 1px solid #1E293B;
+      padding: 3px 7px;
+      border-radius: 6px;
+    }
+
+    /* Primary Action CTA */
+    .cta-btn {
+      background: #6366F1;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 12px;
+      height: 48px;
+      font-size: 14.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    }
+    .cta-note {
+      font-size: 11px;
+      color: #64748B;
+      text-align: center;
+      margin-top: -4px;
+    }
+
+    /* Suggestions Section */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .section-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #94A3B8;
+    }
+    .section-hint {
+      font-size: 11px;
+      color: #64748B;
+    }
+
+    .prompt-card {
+      background: #161E2E;
+      border: 1px solid #2A374A;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #E2E8F0;
+      font-size: 12.5px;
+    }
+    .prompt-icon { color: #38BDF8; font-size: 14px; flex-shrink: 0; }
+    .prompt-arrow { color: #64748B; margin-left: auto; }
+
+    /* Partners footer */
+    .partners-bar {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid #1A2234;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .partners-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: #64748B;
+    }
+    .partners-logos {
+      display: flex;
+      gap: 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94A3B8;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <span>5G</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- App Header -->
+      <div class="header-row">
+        <div class="brand-wrap">
+          <div class="brand-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title">Cartwise</div>
+            <div class="brand-sub">Lagos, Nigeria 🇳🇬</div>
+          </div>
+        </div>
+        <div class="history-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="hero-title">
+        What would you like<br>Cartwise to buy for you?
+      </div>
+
+      <!-- TOGGLE SWITCHER (AI Search vs Paste Link) -->
+      <div class="segment-bar">
+        <button class="segment-btn inactive">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span>AI Search (Default)</span>
+        </button>
+        <button class="segment-btn active">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          <span>Paste Link</span>
+        </button>
+      </div>
+
+      <!-- PASTE LINK CARD VIEW -->
+      <div class="input-card">
+        <div class="card-mode-badge">
+          <span>●</span> Direct Store Link Extraction
+        </div>
+
+        <div class="url-input-wrap">
+          <div class="url-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+          <div class="url-text-field">
+            https://cartwise-demo-market.onrender.com/product/prod-hoodie-13
+          </div>
+          <div class="paste-chip-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Paste
+          </div>
+        </div>
+
+        <!-- Detected store preview -->
+        <div class="detected-preview">
+          <div class="preview-thumb">🧥</div>
+          <div class="preview-info">
+            <div class="preview-title">Apex Pro All-Weather Tech Fleece Zip Hoodie</div>
+            <div class="preview-meta">
+              <span>✓ Verified Demo Market Item</span> &bull; <span>$49.99</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="supported-row">
+          <span class="supported-label">Supported Store Links:</span>
+          <div class="store-tags">
+            <span class="store-tag" style="color: #38BDF8; border-color: rgba(56,189,248,0.3);">Demo Market</span>
+            <span class="store-tag">Shopify</span>
+            <span class="store-tag">Amazon</span>
+            <span class="store-tag">AliExpress</span>
+          </div>
+        </div>
+
+        <button class="cta-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          Extract Item & Buy Safely
+        </button>
+        <div class="cta-note">
+          Extracts Color & Size variants &bull; 100% Landed Cost locked in PayPal Escrow
+        </div>
+      </div>
+
+      <!-- Suggested Searches -->
+      <div class="section-header">
+        <span class="section-title">Suggested Searches</span>
+        <span class="section-hint">Tap to verify</span>
+      </div>
+
+      <div class="prompt-card">
+        <span class="prompt-icon">🔍</span>
+        <span>Find me wireless noise-cancelling earbuds under $40</span>
+        <span class="prompt-arrow">›</span>
+      </div>
+
+      <!-- Partners footer -->
+      <div class="partners-bar">
+        <div class="partners-label">POWERED BY HACKATHON PARTNERS</div>
+        <div class="partners-logos">
+          <span>PayPal</span> &bull;
+          <span>Gemini 3.8</span> &bull;
+          <span>Render</span> &bull;
+          <span>Channel3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

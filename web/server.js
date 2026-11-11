@@ -9,7 +9,40 @@ const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const BACKEND_URL = (process.env.BACKEND_URL || 'https://cartwise-backend-kr8p.onrender.com').replace(/\/$/, '');
+
+// Resolve backend URL: In local preview/VM, prefer active local backend on port 3000.
+// If process.env.BACKEND_URL is explicitly provided, use it. Otherwise, probe local backend.
+const LOCAL_BACKEND = 'http://localhost:3000';
+const DEFAULT_REMOTE_BACKEND = 'https://cartwise-backend-kr8p.onrender.com';
+let cachedBackendUrl = process.env.BACKEND_URL ? process.env.BACKEND_URL.replace(/\/$/, '') : null;
+let lastCheckTime = 0;
+
+async function resolveBackendUrl() {
+  if (process.env.BACKEND_URL) {
+    return process.env.BACKEND_URL.replace(/\/$/, '');
+  }
+
+  const now = Date.now();
+  // Cache the check for 10 seconds to avoid probing on every single request
+  if (cachedBackendUrl && (now - lastCheckTime < 10000)) {
+    return cachedBackendUrl;
+  }
+
+  try {
+    const probe = await fetch(`${LOCAL_BACKEND}/health`, { signal: AbortSignal.timeout(800) });
+    if (probe.ok) {
+      cachedBackendUrl = LOCAL_BACKEND;
+      lastCheckTime = now;
+      return cachedBackendUrl;
+    }
+  } catch (err) {
+    // Local backend not reachable
+  }
+
+  cachedBackendUrl = DEFAULT_REMOTE_BACKEND;
+  lastCheckTime = now;
+  return cachedBackendUrl;
+}
 
 app.use(cors());
 app.use(express.json());
@@ -19,19 +52,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+  const activeBackend = await resolveBackendUrl();
   res.json({
     status: 'ok',
     service: 'Cartwise Web Client',
-    backendUrl: BACKEND_URL,
+    backendUrl: activeBackend,
     timestamp: new Date().toISOString()
   });
 });
 
 // Config endpoint for client
-app.get('/api/web-config', (req, res) => {
+app.get('/api/web-config', async (req, res) => {
+  const activeBackend = await resolveBackendUrl();
   res.json({
-    backendUrl: BACKEND_URL,
+    backendUrl: activeBackend,
     paypalClientId: process.env.PAYPAL_CLIENT_ID || 'sandbox_client_id_placeholder',
     version: '1.0.0'
   });
@@ -39,8 +74,9 @@ app.get('/api/web-config', (req, res) => {
 
 // Proxy API requests to Cartwise Backend
 app.all('/api/*', async (req, res) => {
+  const activeBackend = await resolveBackendUrl();
   const targetPath = req.path;
-  const targetUrl = `${BACKEND_URL}${targetPath}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`;
+  const targetUrl = `${activeBackend}${targetPath}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`;
 
   try {
     const fetchOptions = {
@@ -95,9 +131,10 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  const activeBackend = await resolveBackendUrl();
   console.log(`Cartwise Web running at http://localhost:${PORT}`);
-  console.log(`Connected to Cartwise Backend: ${BACKEND_URL}`);
+  console.log(`Connected to Cartwise Backend: ${activeBackend}`);
 });
 
 module.exports = app;
