@@ -93,9 +93,10 @@ export class PayPalService {
 
     if (!this.isConfigured()) {
       const mockId = `MOCK-PP-${Math.floor(100000 + Math.random() * 900000)}`;
+      const mockReturnUrl = params.returnUrl || `cartwise://paypal/return?orderId=${params.orderId}`;
       return {
         paypalOrderId: mockId,
-        approveUrl: `${config.backendUrl}/api/orders/mock-approve?orderId=${params.orderId}&paypalOrderId=${mockId}`,
+        approveUrl: `${config.backendUrl}/api/orders/mock-approve?orderId=${params.orderId}&paypalOrderId=${mockId}&returnUrl=${encodeURIComponent(mockReturnUrl)}`,
         status: 'CREATED'
       };
     }

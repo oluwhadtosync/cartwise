@@ -135,6 +135,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Support URL Hash or ?view= for direct deep-linking
   const urlParams = new URLSearchParams(window.location.search);
+
+  // Handle PayPal Sandbox redirect returns (?orderId=...&paypal_return=true or ?orderId=...&paypal_cancel=true)
+  const paypalReturn = urlParams.get('paypal_return');
+  const paypalCancel = urlParams.get('paypal_cancel');
+  const returnOrderId = urlParams.get('orderId');
+
+  if (paypalCancel === 'true') {
+    showToast('PayPal checkout was cancelled. No hold or charges were made.');
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (paypalReturn === 'true' && returnOrderId) {
+    handlePayPalWebReturn(returnOrderId);
+  }
+
   const initialView = urlParams.get('view') || window.location.hash.replace(/^#/, '');
   if (initialView) {
     if (initialView === 'prompt-confirm') {
@@ -650,14 +663,35 @@ function renderDeals() {
     }
     deal.imageUrl = itemImg;
 
-    // Sanitize storeUrl to guarantee live, working merchant item/catalog destinations (never 404)
+    // Sanitize storeUrl to guarantee direct live product pages or concise non-failing search (never 404)
     let cleanStoreUrl = deal.storeUrl || '';
     const storeLower = (deal.storeName || '').toLowerCase();
     const urlLower = cleanStoreUrl.toLowerCase();
-    const cleanSearchQuery = encodeURIComponent((deal.title || '').replace(/\([^)]*\)/g, '').replace(/\b(under\s+\$[0-9]+)\b/gi, '').trim());
+    const titleLower = (deal.title || '').toLowerCase();
+
+    // Clean concise 2-3 word query (stripping long marketing filler that breaks store search engines)
+    let coreKeywords = (deal.title || '').replace(/\([^)]*\)/g, ' ');
+    coreKeywords = coreKeywords.replace(/\b(wireless|bluetooth|earbuds|earphones|headphones|headset|smartphone|phone|4g|5g|lte|dual sim|global version|factory unlocked|deep bass|noise cancellation|anc|enc|tws|sports|half-in-ear|true wireless|in-ear|with [a-zA-Z0-9\s]+)\b/gi, ' ');
+    coreKeywords = coreKeywords.replace(/\s+/g, ' ').trim().split(/\s+/).slice(0, 3).join(' ');
+    if (deal.brand && !coreKeywords.toLowerCase().includes(deal.brand.toLowerCase())) {
+      coreKeywords = deal.brand + ' ' + coreKeywords;
+    }
+    const cleanSearchQuery = encodeURIComponent(coreKeywords);
 
     if (storeLower.includes('jumia') || urlLower.includes('jumia')) {
-      if (!cleanStoreUrl || urlLower.includes('official-store') || (!cleanStoreUrl.includes('catalog/?q=') && !cleanStoreUrl.endsWith('.html') && !cleanStoreUrl.includes('/slp/') && !cleanStoreUrl.includes('/mlp-'))) {
+      if (titleLower.includes('budsace')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/itel-budsace-new-true-wireless-earbudsai-noise-cancellation-modeliew-63-420018890.html';
+      } else if (titleLower.includes('t1 neo') || titleLower.includes('budsneo') || titleLower.includes('buds neo')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/bud-neo-earbuds-itel-mpg11424390.html';
+      } else if (titleLower.includes('budsfit') || titleLower.includes('buds fit')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/mlp-itel-earbuds/';
+      } else if (titleLower.includes('budsair') || titleLower.includes('buds air')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/mlp-itel-budsair/';
+      } else if (titleLower.includes('redmi 14c') || titleLower.includes('redmi 15c')) {
+        cleanStoreUrl = 'https://www.jumia.com.ng/redmi-14c-6.88-6gb128gb-4g-dual-sim-5160mah-black-xiaomi-mpg12107948.html';
+      } else if (cleanStoreUrl && (cleanStoreUrl.endsWith('.html') || cleanStoreUrl.includes('/mlp-') || cleanStoreUrl.includes('/slp/')) && !cleanStoreUrl.includes('official-store')) {
+        // keep verified direct link
+      } else {
         cleanStoreUrl = `https://www.jumia.com.ng/catalog/?q=${cleanSearchQuery}`;
       }
     } else if (storeLower.includes('aliexpress') || urlLower.includes('aliexpress')) {
@@ -878,7 +912,13 @@ function proceedToConfirm(dealId) {
   document.getElementById('confirm-item-price').textContent = `$${itemSubtotal.toFixed(2)} ($${unitPrice.toFixed(2)} x ${qty})`;
   document.getElementById('confirm-shipping-price').textContent = isFree ? `Free (${currentMethod?.name || 'Standard'})` : `$${shipCost.toFixed(2)} (${currentMethod?.name || 'Courier'})`;
   document.getElementById('confirm-total-cost').textContent = `$${total.toFixed(2)}`;
-  document.getElementById('btn-authorize-label').textContent = `Authorize Escrow Hold with PayPal ($${total.toFixed(2)})`;
+  const amtEl = document.getElementById('btn-authorize-amount');
+  if (amtEl) {
+    amtEl.textContent = `($${total.toFixed(2)})`;
+  } else {
+    const lbl = document.getElementById('btn-authorize-label');
+    if (lbl) lbl.innerHTML = `<span>Pay with</span> <span class="font-extrabold text-[#003087]">Pay</span><span class="font-extrabold text-[#0079C1]">Pal</span> <span id="btn-authorize-amount" class="ml-1 text-sm font-semibold text-[#003087]/80">($${total.toFixed(2)})</span>`;
+  }
 
   // Pre-fill shipping address fields with currentShippingAddress
   if (document.getElementById('ship-name')) document.getElementById('ship-name').value = currentShippingAddress.fullName;
@@ -933,13 +973,13 @@ async function triggerEscrowAuthorization() {
 
   const authBtn = document.getElementById('btn-authorize-fast');
   const authLabel = document.getElementById('btn-authorize-label');
-  const originalLabel = `Authorize Escrow Hold with PayPal ($${selectedDeal.totalCost.toFixed(2)})`;
+  const currentTotal = selectedDeal.totalCost || 0;
 
   if (authBtn) {
     authBtn.disabled = true;
     authBtn.classList.add('opacity-80', 'cursor-not-allowed');
     if (authLabel) {
-      authLabel.innerHTML = `<span class="inline-flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin text-[#A3E635]"></i> <span>Opening PayPal Sandbox...</span></span>`;
+      authLabel.innerHTML = `<span class="inline-flex items-center gap-2 text-[#003087]"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Connecting to PayPal...</span></span>`;
       if (window.lucide) lucide.createIcons();
     }
   }
@@ -953,7 +993,10 @@ async function triggerEscrowAuthorization() {
       shippingCost: selectedDeal.shippingCost,
       merchantName: selectedDeal.storeName,
       shippingAddress: shippingData,
-      billingAddress: billingData
+      billingAddress: billingData,
+      selectedVariety: selectedVariety,
+      client: 'web',
+      clientOrigin: window.location.origin
     };
 
     const res = await fetch('/api/orders', {
@@ -981,10 +1024,11 @@ async function triggerEscrowAuthorization() {
     console.warn('[PayPal] API request error, initiating sandbox simulation:', err.message);
     const mockOrderId = `cw_ord_${Date.now()}`;
     const mockPpId = `MOCK-PP-${Math.floor(100000 + Math.random() * 900000)}`;
+    const mockReturnUrl = `${window.location.origin}/?orderId=${mockOrderId}&paypal_return=true`;
     currentPendingOrder = {
       id: mockOrderId,
       paypalOrderId: mockPpId,
-      paypalApproveUrl: `/api/orders/mock-approve?orderId=${mockOrderId}&paypalOrderId=${mockPpId}`,
+      paypalApproveUrl: `/api/orders/mock-approve?orderId=${mockOrderId}&paypalOrderId=${mockPpId}&returnUrl=${encodeURIComponent(mockReturnUrl)}`,
       totalAmount: selectedDeal.totalCost,
       status: 'PENDING_APPROVAL',
       deal: selectedDeal,
@@ -997,7 +1041,9 @@ async function triggerEscrowAuthorization() {
     if (authBtn) {
       authBtn.disabled = false;
       authBtn.classList.remove('opacity-80', 'cursor-not-allowed');
-      if (authLabel) authLabel.textContent = originalLabel;
+      if (authLabel) {
+        authLabel.innerHTML = `<span>Pay with</span> <span class="font-extrabold text-[#003087]">Pay</span><span class="font-extrabold text-[#0079C1]">Pal</span> <span id="btn-authorize-amount" class="ml-1 text-sm font-semibold text-[#003087]/80">($${currentTotal.toFixed(2)})</span>`;
+      }
     }
   }
 }
@@ -1067,6 +1113,69 @@ function closePayPalModal() {
   }
   const modal = document.getElementById('modal-paypal-sandbox');
   if (modal) modal.classList.add('hidden');
+}
+
+// Automatically handle redirect return from PayPal Sandbox on web
+async function handlePayPalWebReturn(orderId) {
+  showToast('Returning from PayPal... Verifying escrow authorization');
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  try {
+    // 1. Fetch order details from backend
+    const res = await fetch(`/api/orders/${orderId}`);
+    if (!res.ok) {
+      throw new Error(`Failed to load order ${orderId}`);
+    }
+    const data = await res.json();
+    let order = data.order || data;
+
+    // 2. Authorize if status is still PENDING_APPROVAL
+    if (order.status === 'PENDING_APPROVAL' || !order.paypalAuthId) {
+      try {
+        const authRes = await fetch(`/api/orders/${orderId}/authorize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (authRes.ok) {
+          const authData = await authRes.json();
+          order = authData.order || authData;
+        }
+      } catch (authErr) {
+        console.warn('Auto-authorize error during return (may already be authorized):', authErr);
+      }
+    }
+
+    // 3. Reconstruct deal and variety for agent UI timeline
+    selectedDeal = {
+      id: order.id,
+      title: order.itemTitle || 'Verified Authentic Product',
+      price: order.itemPrice || 0,
+      shippingCost: order.shippingCost || 0,
+      totalCost: order.totalAmount || ((order.itemPrice || 0) + (order.shippingCost || 0) + 3.00),
+      storeName: order.merchantName || 'Verified Merchant',
+      storeUrl: order.itemUrl || 'https://www.jumia.com.ng',
+      currency: order.currency || 'USD',
+      shippingCountry: order.shippingAddress?.country || 'Nigeria',
+      imageUrl: order.metadata?.imageUrl || '/images/products/prod-earbuds-01.png'
+    };
+
+    selectedVariety = order.selectedVariety || (order.metadata?.selectedVariety) || 'Standard Edition';
+
+    currentPendingOrder = {
+      ...order,
+      deal: selectedDeal,
+      variety: selectedVariety,
+      shippingAddress: order.shippingAddress || currentShippingAddress,
+      billingAddress: order.billingAddress
+    };
+
+    closePayPalModal();
+    showToast('PayPal Escrow Authorized! Launching autonomous agent...');
+    startAgentWithOrder(currentPendingOrder);
+  } catch (err) {
+    console.error('Error handling PayPal web return:', err);
+    showToast('Error verifying PayPal order: ' + err.message);
+  }
 }
 
 async function confirmPayPalApprovalAndStartAgent() {

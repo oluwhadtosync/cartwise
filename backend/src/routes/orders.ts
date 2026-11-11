@@ -28,7 +28,12 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
         country: 'Nigeria',
         postalCode: '100001'
       },
-      billingAddress
+      billingAddress,
+      selectedVariety,
+      client,
+      clientOrigin,
+      returnUrl: clientReturnUrl,
+      cancelUrl: clientCancelUrl
     } = req.body;
 
     if (!itemTitle || itemPrice === undefined) {
@@ -41,6 +46,65 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
     const totalAmount = Number((price + shipping + serviceFee).toFixed(2));
     const orderId = `cw_ord_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
+    // Client platform identification:
+    // If initiated from Web, return to Web URL. If from Android, return to cartwise:// deep link.
+    const userAgent = (req.headers['user-agent'] || '').toLowerCase();
+    const isExplicitAndroid = client === 'android' || userAgent.includes('okhttp') || userAgent.includes('cartwise-android');
+    const isExplicitWeb = client === 'web';
+    const isAndroid = isExplicitAndroid && !isExplicitWeb;
+    const isWeb = isExplicitWeb || !isAndroid;
+
+    let returnUrl = clientReturnUrl;
+    let cancelUrl = clientCancelUrl;
+
+    if (!returnUrl) {
+      if (isWeb) {
+        let webOrigin = clientOrigin;
+        if (!webOrigin && req.headers.origin) {
+          webOrigin = req.headers.origin;
+        } else if (!webOrigin && req.headers['x-forwarded-host']) {
+          const proto = req.headers['x-forwarded-proto'] || 'http';
+          webOrigin = `${proto}://${req.headers['x-forwarded-host']}`;
+        } else if (!webOrigin && req.headers.referer) {
+          try {
+            webOrigin = new URL(req.headers.referer).origin;
+          } catch (e) {
+            // ignore
+          }
+        }
+        if (!webOrigin || webOrigin === 'null') {
+          webOrigin = config.frontendUrl || 'https://cartwise-web-app.onrender.com';
+        }
+        returnUrl = `${webOrigin}/?orderId=${orderId}&paypal_return=true`;
+      } else {
+        returnUrl = `cartwise://paypal/return?orderId=${orderId}`;
+      }
+    }
+
+    if (!cancelUrl) {
+      if (isWeb) {
+        let webOrigin = clientOrigin;
+        if (!webOrigin && req.headers.origin) {
+          webOrigin = req.headers.origin;
+        } else if (!webOrigin && req.headers['x-forwarded-host']) {
+          const proto = req.headers['x-forwarded-proto'] || 'http';
+          webOrigin = `${proto}://${req.headers['x-forwarded-host']}`;
+        } else if (!webOrigin && req.headers.referer) {
+          try {
+            webOrigin = new URL(req.headers.referer).origin;
+          } catch (e) {
+            // ignore
+          }
+        }
+        if (!webOrigin || webOrigin === 'null') {
+          webOrigin = config.frontendUrl || 'https://cartwise-web-app.onrender.com';
+        }
+        cancelUrl = `${webOrigin}/?orderId=${orderId}&paypal_cancel=true`;
+      } else {
+        cancelUrl = `cartwise://paypal/cancel?orderId=${orderId}`;
+      }
+    }
+
     // Create PayPal Order with intent="AUTHORIZE"
     const ppOrder = await paypalService.createAuthorizeOrder({
       orderId,
@@ -48,7 +112,9 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
       itemPrice: price,
       shippingCost: shipping,
       serviceFee,
-      currency: config.paypal.currency
+      currency: config.paypal.currency,
+      returnUrl,
+      cancelUrl
     });
 
     const newOrder: CartwiseOrder = {
@@ -62,6 +128,8 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
       totalAmount,
       currency: config.paypal.currency,
       merchantName,
+      selectedVariety,
+      client: isWeb ? 'web' : 'android',
       paypalOrderId: ppOrder.paypalOrderId,
       paypalApproveUrl: ppOrder.approveUrl,
       status: 'PENDING_APPROVAL',
@@ -231,7 +299,8 @@ ordersRouter.get('/', async (req: Request, res: Response) => {
 
 // Mock PayPal Approval Page (Helper for testing approval in web browser or demo mode)
 ordersRouter.get('/mock-approve', (req: Request, res: Response) => {
-  const { orderId, paypalOrderId } = req.query;
+  const { orderId, paypalOrderId, returnUrl } = req.query;
+  const redirectTarget = returnUrl ? String(returnUrl) : `/?orderId=${orderId}&paypal_return=true`;
 
   const html = `<!DOCTYPE html>
 <html>
@@ -241,16 +310,16 @@ ordersRouter.get('/mock-approve', (req: Request, res: Response) => {
   <style>
     body { font-family: system-ui, sans-serif; background: #f4f6f8; padding: 2rem; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
     .card { background: #fff; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 480px; width: 100%; text-align: center; }
-    .btn { background: #0070ba; color: #fff; font-weight: 700; border: none; padding: 0.85rem 1.5rem; border-radius: 2rem; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 1.5rem; }
-    .btn:hover { background: #005ea6; }
-    .badge { background: #e6f4ea; color: #137333; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+    .btn { background: #FFC439; color: #003087; font-weight: 700; border: 1px solid #E0A820; padding: 0.85rem 1.5rem; border-radius: 2rem; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 1.5rem; transition: background 0.2s; }
+    .btn:hover { background: #F4B400; }
+    .badge { background: #003087; color: #fff; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
   </style>
 </head>
 <body>
   <div class="card">
     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🅿️</div>
-    <h2 style="color: #003087; margin-bottom: 0.25rem;">PayPal Sandbox</h2>
-    <span class="badge">Simulated Checkout Flow</span>
+    <h2 style="color: #003087; margin-bottom: 0.25rem;">PayPal <span style="color: #0079C1;">Sandbox</span></h2>
+    <span class="badge">Sandbox Checkout</span>
     <p style="color: #555; margin: 1.5rem 0; font-size: 0.95rem;">
       You are authorizing a payment hold for Cartwise Order <strong>${orderId}</strong>.
       Funds will only be captured if the store confirms the order.
@@ -260,18 +329,17 @@ ordersRouter.get('/mock-approve', (req: Request, res: Response) => {
       <div><strong>Payment Intent:</strong> AUTHORIZE</div>
       <div><strong>Buyer Protection:</strong> Eligible</div>
     </div>
-    <button class="btn" onclick="approve()">Authorize Payment to Cartwise</button>
+    <button class="btn" onclick="approve()">Pay with PayPal &rarr; Return to Cartwise</button>
   </div>
   <script>
     async function approve() {
       const btn = document.querySelector('button');
-      btn.innerText = 'Authorizing...';
+      btn.innerText = 'Authorizing Escrow...';
       btn.disabled = true;
       try {
         const res = await fetch('/api/orders/${orderId}/authorize', { method: 'POST' });
         const data = await res.json();
-        alert('PayPal Payment Authorized! Hold created with ID: ' + (data.paypalAuthId || 'OK'));
-        window.location.href = '/api/orders/${orderId}';
+        window.location.href = "${redirectTarget}";
       } catch (e) {
         alert('Error: ' + e.message);
       }

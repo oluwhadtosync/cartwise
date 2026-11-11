@@ -79,12 +79,21 @@ app.all('/api/*', async (req, res) => {
   const targetUrl = `${activeBackend}${targetPath}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`;
 
   try {
+    const clientHost = req.headers.host || `localhost:${PORT}`;
+    const clientProto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+    const clientOrigin = req.headers.origin || `${clientProto}://${clientHost}`;
+
     const fetchOptions = {
       method: req.method,
       headers: {
         'Content-Type': req.headers['content-type'] || 'application/json',
         'Accept': req.headers['accept'] || 'application/json',
-        'Accept-Language': req.headers['accept-language'] || 'en-US,en;q=0.9,zh-CN,zh;q=0.8'
+        'Accept-Language': req.headers['accept-language'] || 'en-US,en;q=0.9,zh-CN,zh;q=0.8',
+        'Origin': clientOrigin,
+        'Referer': req.headers['referer'] || `${clientOrigin}/`,
+        'User-Agent': req.headers['user-agent'] || 'Cartwise-Web-Client',
+        'X-Forwarded-Host': clientHost,
+        'X-Forwarded-Proto': clientProto
       }
     };
 

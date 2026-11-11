@@ -34,6 +34,7 @@ export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   backendUrl: process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL || 'https://cartwise-web-app.onrender.com',
   demoStoreUrl: process.env.DEMO_STORE_URL || 'http://localhost:4000',
 
   // Feature Flags

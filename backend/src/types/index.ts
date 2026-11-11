@@ -42,6 +42,8 @@ export interface CartwiseOrder {
   totalAmount: number;
   currency: string; // e.g. "USD"
   merchantName: string;
+  selectedVariety?: string;
+  client?: 'web' | 'android';
   merchantOrderId?: string;
   paypalOrderId?: string;
   paypalAuthId?: string;
