@@ -36,6 +36,7 @@ export interface CartwiseOrder {
   userId: string;
   itemTitle: string;
   itemUrl: string;
+  imageUrl?: string;
   itemPrice: number;
   shippingCost: number;
   serviceFee: number;

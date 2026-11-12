@@ -6,6 +6,7 @@ import { db } from '../db';
 import { paypalService } from '../services/paypal';
 import { CartwiseOrder } from '../types';
 import { config } from '../config';
+import { geminiService } from '../services/gemini';
 
 export const ordersRouter = Router();
 
@@ -16,6 +17,7 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
       userId = 'user_default',
       itemTitle,
       itemUrl,
+      imageUrl,
       itemPrice,
       shippingCost = 5.00,
       merchantName = 'Demo Market',
@@ -117,11 +119,16 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
       cancelUrl
     });
 
+    const resolvedImage = (imageUrl && (imageUrl.startsWith('http') || imageUrl.startsWith('/images/')) && !imageUrl.includes('prod-earbuds-01.png'))
+      ? imageUrl
+      : geminiService.resolveProductImageUrl(itemTitle);
+
     const newOrder: CartwiseOrder = {
       id: orderId,
       userId,
       itemTitle,
       itemUrl: itemUrl || '',
+      imageUrl: resolvedImage,
       itemPrice: price,
       shippingCost: shipping,
       serviceFee,
@@ -276,6 +283,9 @@ ordersRouter.get('/:id', async (req: Request, res: Response) => {
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
+    if (!order.imageUrl || order.imageUrl.includes('prod-earbuds-01.png')) {
+      order.imageUrl = geminiService.resolveProductImageUrl(order.itemTitle);
+    }
     const auditLogs = await db.getAuditLogs(order.id);
     res.json({
       order,
@@ -290,7 +300,13 @@ ordersRouter.get('/:id', async (req: Request, res: Response) => {
 ordersRouter.get('/', async (req: Request, res: Response) => {
   try {
     const userId = req.query.userId as string;
-    const orders = await db.listOrders(userId);
+    const rawOrders = await db.listOrders(userId);
+    const orders = rawOrders.map(o => {
+      if (!o.imageUrl || o.imageUrl.includes('prod-earbuds-01.png')) {
+        o.imageUrl = geminiService.resolveProductImageUrl(o.itemTitle);
+      }
+      return o;
+    });
     res.json({ orders, total: orders.length });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

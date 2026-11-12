@@ -59,6 +59,83 @@ const showcaseItems = [
 let showcaseIndex = 0;
 let showcaseTimer = null;
 
+// Reusable Authentic Product Image Resolver
+function resolveProductImage(title = '', category = '', existingImg = '', index = 0) {
+  if (existingImg && existingImg.startsWith('http') && !existingImg.includes('localhost:4000') && !existingImg.includes('placeholder')) {
+    return existingImg;
+  }
+  if (existingImg && existingImg.startsWith('/images/products/') && !existingImg.includes('prod-earbuds-01.png')) {
+    return existingImg;
+  }
+  const t = ((title || '') + ' ' + (category || '')).toLowerCase();
+  if (t.includes('budsfit') || t.includes('buds fit')) {
+    return '/images/products/prod-itel-budsfit.jpg';
+  }
+  if (t.includes('budsace')) {
+    return '/images/products/prod-itel-budsace.jpg';
+  }
+  if (t.includes('t1 neo') || t.includes('budsneo') || t.includes('neo')) {
+    return '/images/products/prod-itel-t1-neo.jpg';
+  }
+  if (t.includes('budsfire') || t.includes('budsair') || t.includes('buds air')) {
+    return index === 0 ? '/images/products/prod-itel-budsfit.jpg' : '/images/products/prod-itel-budsace.jpg';
+  }
+  if (t.includes('itel') && (t.includes('earbud') || t.includes('airbud') || t.includes('tws') || t.includes('earphone') || t.includes('audio'))) {
+    if (index === 0) return '/images/products/prod-itel-budsace.jpg';
+    if (index === 1) return '/images/products/prod-itel-budsfit.jpg';
+    return '/images/products/prod-itel-t1-neo.jpg';
+  }
+  if (t.includes('p20i') || (t.includes('anker') && t.includes('soundcore'))) {
+    return '/images/products/prod-headphone-11.png';
+  }
+  if (t.includes('redmi') || t.includes('xiaomi')) {
+    return index === 0 ? '/images/products/prod-phone-redmi.jpg' : '/images/products/prod-phone-01.jpg';
+  }
+  if (t.includes('galaxy') || t.includes('samsung') || t.includes('iphone') || t.includes('phone') || t.includes('smartphone')) {
+    return index === 0 ? '/images/products/prod-phone-redmi.jpg' : '/images/products/prod-phone-01.jpg';
+  }
+  if (t.includes('earbud') || t.includes('earphone') || t.includes('tws') || t.includes('airpod')) {
+    return index === 0 ? '/images/products/prod-itel-budsace.jpg' : '/images/products/prod-itel-budsfit.jpg';
+  }
+  if (t.includes('headphone') || t.includes('headset') || t.includes('anc')) {
+    return '/images/products/prod-headphone-11.png';
+  }
+  if (t.includes('tracker') || t.includes('watch') || t.includes('fitness') || t.includes('band')) {
+    return '/images/products/prod-tracker-02.png';
+  }
+  if (t.includes('keyboard')) {
+    return '/images/products/prod-keyboard-04.png';
+  }
+  if (t.includes('mouse')) {
+    return '/images/products/prod-mouse-05.png';
+  }
+  if (t.includes('powerbank') || t.includes('charger') || t.includes('battery')) {
+    return '/images/products/prod-powerbank-03.png';
+  }
+  if (t.includes('speaker')) {
+    return '/images/products/prod-speaker-07.png';
+  }
+  if (t.includes('webcam') || t.includes('camera')) {
+    return '/images/products/prod-webcam-08.png';
+  }
+  if (t.includes('hub') || t.includes('dock') || t.includes('adapter')) {
+    return '/images/products/prod-hub-09.png';
+  }
+  if (t.includes('fan')) {
+    return '/images/products/prod-fan-10.png';
+  }
+  if (t.includes('lamp') || t.includes('light')) {
+    return '/images/products/prod-lamp-06.png';
+  }
+  if (t.includes('backpack') || t.includes('bag')) {
+    return '/images/products/prod-backpack-12.png';
+  }
+  if (t.includes('hoodie') || t.includes('jacket') || t.includes('cloth')) {
+    return '/images/products/prod-hoodie-13.png';
+  }
+  return existingImg || '/images/products/prod-itel-budsace.jpg';
+}
+
 function initShowcaseCarousel() {
   updateShowcaseUI();
   if (showcaseTimer) clearInterval(showcaseTimer);
@@ -628,39 +705,7 @@ function renderDeals() {
     }).join('');
 
     // Image handling with model-specific authentic photo mapping
-    let itemImg = deal.imageUrl;
-    const t = ((deal.title || '') + ' ' + (deal.category || '')).toLowerCase();
-    if (!itemImg || itemImg.includes('localhost:4000') || itemImg === '/images/products/prod-earbuds-01.png') {
-      if (t.includes('budsace')) {
-        itemImg = '/images/products/prod-itel-budsace.jpg';
-      } else if (t.includes('budsfit')) {
-        itemImg = '/images/products/prod-itel-budsfit.jpg';
-      } else if (t.includes('t1 neo') || t.includes('budsneo') || t.includes('neo')) {
-        itemImg = '/images/products/prod-itel-t1-neo.jpg';
-      } else if (t.includes('budsfire') || t.includes('budsair')) {
-        itemImg = '/images/products/prod-itel-budsfit.jpg';
-      } else if (t.includes('itel') && (t.includes('earbud') || t.includes('airbud') || t.includes('tws'))) {
-        itemImg = '/images/products/prod-itel-budsace.jpg';
-      } else if (t.includes('redmi') || t.includes('xiaomi')) {
-        itemImg = '/images/products/prod-phone-redmi.jpg';
-      } else if (t.includes('phone') || t.includes('smartphone')) {
-        itemImg = '/images/products/prod-phone-redmi.jpg';
-      } else if (t.includes('headphone') || t.includes('anc')) {
-        itemImg = '/images/products/prod-headphone-11.png';
-      } else if (t.includes('tracker') || t.includes('watch') || t.includes('fitness')) {
-        itemImg = '/images/products/prod-tracker-02.png';
-      } else if (t.includes('keyboard')) {
-        itemImg = '/images/products/prod-keyboard-04.png';
-      } else if (t.includes('mouse')) {
-        itemImg = '/images/products/prod-mouse-05.png';
-      } else if (t.includes('powerbank') || t.includes('charger')) {
-        itemImg = '/images/products/prod-powerbank-03.png';
-      } else if (t.includes('speaker')) {
-        itemImg = '/images/products/prod-speaker-07.png';
-      } else {
-        itemImg = '/images/products/prod-itel-budsace.jpg';
-      }
-    }
+    let itemImg = resolveProductImage(deal.title, deal.category, deal.imageUrl, index);
     deal.imageUrl = itemImg;
 
     // Sanitize storeUrl to guarantee direct live product pages or concise non-failing search (never 404)
@@ -923,11 +968,17 @@ function proceedToConfirm(dealId) {
 
   deal.shippingCost = shipCost;
   deal.totalCost = total;
+  deal.imageUrl = resolveProductImage(deal.title, deal.category, deal.imageUrl);
+
+  try {
+    sessionStorage.setItem('cartwise_selected_deal', JSON.stringify(deal));
+    sessionStorage.setItem('cartwise_selected_variety', selectedVariety || 'Standard Edition');
+  } catch (e) {}
 
   document.getElementById('confirm-brand').textContent = deal.brand || 'Merchant';
   document.getElementById('confirm-title').textContent = deal.title;
   if (document.getElementById('confirm-image')) {
-    document.getElementById('confirm-image').src = deal.imageUrl || '/images/products/prod-earbuds-01.png';
+    document.getElementById('confirm-image').src = deal.imageUrl;
   }
   document.getElementById('confirm-variety-pill').textContent = `${selectedVariety} • Qty ${qty}`;
   document.getElementById('confirm-item-price').textContent = `$${itemSubtotal.toFixed(2)} ($${unitPrice.toFixed(2)} x ${qty})`;
@@ -1006,10 +1057,14 @@ async function triggerEscrowAuthorization() {
   }
 
   try {
+    const itemImage = selectedDeal.imageUrl || resolveProductImage(selectedDeal.title, selectedDeal.category, selectedDeal.imageUrl);
+    selectedDeal.imageUrl = itemImage;
+
     const payload = {
       userId: 'user_default',
       itemTitle: selectedDeal.title,
       itemUrl: selectedDeal.storeUrl,
+      imageUrl: itemImage,
       itemPrice: selectedDeal.price,
       shippingCost: selectedDeal.shippingCost,
       merchantName: selectedDeal.storeName,
@@ -1167,20 +1222,31 @@ async function handlePayPalWebReturn(orderId) {
     }
 
     // 3. Reconstruct deal and variety for agent UI timeline
+    let cachedDeal = null;
+    let cachedVariety = null;
+    try {
+      cachedDeal = JSON.parse(sessionStorage.getItem('cartwise_selected_deal') || 'null');
+      cachedVariety = sessionStorage.getItem('cartwise_selected_variety');
+    } catch (e) {}
+
+    const itemTitle = order.itemTitle || cachedDeal?.title || 'Verified Authentic Product';
+    const storeUrl = order.itemUrl || cachedDeal?.storeUrl || 'https://www.jumia.com.ng';
+    const itemImg = order.imageUrl || cachedDeal?.imageUrl || resolveProductImage(itemTitle);
+
     selectedDeal = {
       id: order.id,
-      title: order.itemTitle || 'Verified Authentic Product',
-      price: order.itemPrice || 0,
-      shippingCost: order.shippingCost || 0,
-      totalCost: order.totalAmount || ((order.itemPrice || 0) + (order.shippingCost || 0) + 3.00),
-      storeName: order.merchantName || 'Verified Merchant',
-      storeUrl: order.itemUrl || 'https://www.jumia.com.ng',
+      title: itemTitle,
+      price: order.itemPrice || cachedDeal?.price || 0,
+      shippingCost: order.shippingCost || cachedDeal?.shippingCost || 0,
+      totalCost: order.totalAmount || cachedDeal?.totalCost || ((order.itemPrice || 0) + (order.shippingCost || 0) + 3.00),
+      storeName: order.merchantName || cachedDeal?.storeName || 'Verified Merchant',
+      storeUrl: storeUrl,
       currency: order.currency || 'USD',
       shippingCountry: order.shippingAddress?.country || 'Nigeria',
-      imageUrl: order.metadata?.imageUrl || '/images/products/prod-earbuds-01.png'
+      imageUrl: itemImg
     };
 
-    selectedVariety = order.selectedVariety || (order.metadata?.selectedVariety) || 'Standard Edition';
+    selectedVariety = order.selectedVariety || (order.metadata?.selectedVariety) || cachedVariety || 'Standard Edition';
 
     currentPendingOrder = {
       ...order,
@@ -1261,10 +1327,12 @@ function fastPassPayPalAndStartAgent() {
 
 function startAgentWithOrder(order) {
   navigateTo('agent');
+  const targetDeal = order.deal || selectedDeal || {};
+  targetDeal.imageUrl = targetDeal.imageUrl || order.imageUrl || resolveProductImage(targetDeal.title || order.itemTitle);
   executeAgentSimulation({
-    deal: order.deal || selectedDeal,
-    variety: order.variety || selectedVariety,
-    shippingAddress: order.shippingAddress,
+    deal: targetDeal,
+    variety: order.variety || selectedVariety || targetDeal.selectedVarietyName || 'Standard Edition',
+    shippingAddress: order.shippingAddress || currentShippingAddress,
     billingAddress: order.billingAddress,
     orderId: order.id,
     paypalOrderId: order.paypalOrderId,
@@ -1286,6 +1354,8 @@ function executeAgentSimulation({ deal, variety, shippingAddress, billingAddress
   const activeAuthId = paypalAuthId || `AUTH-${Math.floor(100000 + Math.random() * 900000)}`;
 
   const directItemUrl = deal.storeUrl || 'https://www.jumia.com.ng';
+  const displayImage = resolveProductImage(deal.title, deal.category, deal.imageUrl);
+  deal.imageUrl = displayImage;
 
   // Set the address bar to the direct item URL immediately
   if (browserUrlEl) {
@@ -1299,7 +1369,7 @@ function executeAgentSimulation({ deal, variety, shippingAddress, billingAddress
   if (previewContainer) {
     previewContainer.innerHTML = `
       <div class="flex items-center gap-3 p-2.5 bg-white rounded-xl border border-[#E2DFD7] max-w-sm mx-auto shadow-xs text-left">
-        <img src="${deal.imageUrl || '/images/products/prod-earbuds-01.png'}" class="w-12 h-12 object-contain rounded-lg border border-[#E2DFD7] bg-[#F9F8F5] shrink-0" alt="${deal.title}">
+        <img src="${displayImage}" class="w-12 h-12 object-contain rounded-lg border border-[#E2DFD7] bg-[#F9F8F5] shrink-0" alt="${deal.title}">
         <div class="min-w-0 flex-1">
           <div class="text-xs font-bold text-[#0D1F18] truncate">${deal.title}</div>
           <div class="text-[11px] text-[#4A5550] flex items-center gap-1.5 mt-0.5">
@@ -1512,6 +1582,7 @@ function renderReceiptScreen(order) {
   const guestPhone = order.guestPhone || order.shippingAddress?.phone || '+234 801 234 5678';
   const merchantPassword = order.merchantPassword || 'Cw*9824!qM26';
   const hasPassword = Boolean(order.merchantPasswordRequired);
+  const receiptImg = order.deal?.imageUrl || order.imageUrl || resolveProductImage(order.itemTitle || order.deal?.title);
 
   if (isCaptured) {
     container.innerHTML = `
@@ -1526,6 +1597,20 @@ function renderReceiptScreen(order) {
         <p class="text-xs text-[#4A5550]">Escrow captured &bull; Merchant receipt secured</p>
       </div>
 
+      <!-- Item Photo & Title Header -->
+      <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#E2DFD7] shadow-xs">
+        <img src="${receiptImg}" class="w-14 h-14 object-contain rounded-lg border border-[#E2DFD7] bg-[#F9F8F5] shrink-0" alt="${order.deal?.title || order.itemTitle}">
+        <div class="min-w-0 flex-1">
+          <div class="font-bold text-[#0D1F18] text-xs truncate">${order.deal?.title || order.itemTitle || 'Purchased Item'}</div>
+          <div class="text-[11px] text-[#4A5550] flex items-center gap-1.5 mt-0.5">
+            <span class="px-1.5 py-0.2 rounded bg-[#E6F4EA] text-[#0F5132] font-semibold text-[10px]">${order.deal?.storeName || order.merchantName || 'Merchant'}</span>
+            <span class="font-mono text-[#0D1F18] font-bold">$${order.totalAmount.toFixed(2)}</span>
+            <span>&bull;</span>
+            <span class="truncate">${order.variety || 'Standard Edition'}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Payment & Transaction Details Card -->
       <div class="bg-[#F9F8F5] rounded-xl p-3.5 border border-[#E2DFD7] space-y-2 text-xs">
         <div class="flex justify-between pb-1.5 border-b border-[#E2DFD7]">
@@ -1535,10 +1620,6 @@ function renderReceiptScreen(order) {
         <div class="flex justify-between pb-1.5 border-b border-[#E2DFD7]">
           <span class="text-[#4A5550]">PayPal Capture ID</span>
           <span class="font-mono text-[#0F5132] font-semibold">${order.paypalCaptureId}</span>
-        </div>
-        <div class="flex justify-between pb-1.5 border-b border-[#E2DFD7]">
-          <span class="text-[#4A5550]">Item</span>
-          <span class="font-semibold text-[#0D1F18] truncate max-w-[200px]">${order.deal?.title || 'Purchased Item'} (${order.variety})</span>
         </div>
         <div class="flex justify-between pb-1.5 border-b border-[#E2DFD7]">
           <span class="text-[#4A5550]">Recipient</span>
@@ -1845,6 +1926,7 @@ function renderOrderHistory() {
     const isCaptured = o.status === 'CAPTURED';
     const guestPhone = o.guestPhone || o.shippingAddress?.phone || '+234 801 234 5678';
     const guestEmail = o.guestEmail || o.shippingAddress?.email || 'ada.lovelace@gmail.com';
+    const histImg = o.deal?.imageUrl || o.imageUrl || resolveProductImage(o.deal?.title || o.itemTitle);
 
     return `
       <div onclick="viewReceiptForOrder('${o.id}')" class="rounded-2xl bg-white border border-[#E2DFD7] hover:border-[#0D261C] p-4 shadow-[0_2px_8px_rgba(13,38,28,0.04)] space-y-2.5 cursor-pointer transition group">
@@ -1864,14 +1946,17 @@ function renderOrderHistory() {
           </span>
         </div>
 
-        <div>
-          <h4 class="text-xs font-bold text-[#0D1F18] group-hover:text-[#0F5132] transition line-clamp-1">${o.deal?.title || 'Purchased Item'}</h4>
-          <div class="text-[11px] text-[#4A5550] mt-0.5 flex flex-wrap items-center gap-1.5">
-            <span class="px-1.5 py-0.2 rounded bg-[#F9F8F5] text-[#0D1F18] font-semibold border border-[#E2DFD7]">${o.variety || 'Default'}</span>
-            <span>&bull;</span>
-            <span class="text-[#0F5132] font-medium">${o.deal?.storeName || 'Merchant'}</span>
-            <span>&bull;</span>
-            <span class="text-[#8C9690]">${o.timestamp || ''}</span>
+        <div class="flex items-center gap-3">
+          <img src="${histImg}" class="w-11 h-11 object-contain rounded-lg border border-[#E2DFD7] bg-[#F9F8F5] shrink-0" alt="${o.deal?.title || 'Item'}">
+          <div class="min-w-0 flex-1">
+            <h4 class="text-xs font-bold text-[#0D1F18] group-hover:text-[#0F5132] transition line-clamp-1">${o.deal?.title || o.itemTitle || 'Purchased Item'}</h4>
+            <div class="text-[11px] text-[#4A5550] mt-0.5 flex flex-wrap items-center gap-1.5">
+              <span class="px-1.5 py-0.2 rounded bg-[#F9F8F5] text-[#0D1F18] font-semibold border border-[#E2DFD7]">${o.variety || 'Default'}</span>
+              <span>&bull;</span>
+              <span class="text-[#0F5132] font-medium">${o.deal?.storeName || o.merchantName || 'Merchant'}</span>
+              <span>&bull;</span>
+              <span class="text-[#8C9690]">${o.timestamp || ''}</span>
+            </div>
           </div>
         </div>
 
