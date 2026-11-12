@@ -105,6 +105,7 @@ data class ExtractResponse(
 data class CreateOrderRequest(
     val itemTitle: String,
     val itemUrl: String,
+    val imageUrl: String? = null,
     val itemPrice: Double,
     val shippingCost: Double,
     val merchantName: String = "Demo Market",
@@ -144,6 +145,7 @@ data class CartwiseOrder(
     val userId: String = "user_default",
     val itemTitle: String,
     val itemUrl: String = "",
+    val imageUrl: String? = null,
     val itemPrice: Double,
     val shippingCost: Double,
     val serviceFee: Double = 3.00,

@@ -135,6 +135,7 @@ class ApiClient(private var baseUrl: String = "https://cartwise-backend-kr8p.onr
         val reqBody = CreateOrderRequest(
             itemTitle = titleWithVariety,
             itemUrl = deal.storeUrl,
+            imageUrl = deal.imageUrl.ifBlank { null },
             itemPrice = subtotal,
             shippingCost = shipping,
             merchantName = deal.storeName,

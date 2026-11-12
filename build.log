@@ -66,5 +66,5 @@ w: file:///root/cartwise/android/app/src/main/java/com/cartwise/app/ui/screens/S
 > Task :app:createDebugApkListingFileRedirect UP-TO-DATE
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 3m 40s
+BUILD SUCCESSFUL in 2m 45s
 37 actionable tasks: 4 executed, 33 up-to-date
