@@ -472,15 +472,25 @@
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
-            <button 
-              onclick="showApkModal()" 
+          <div class="flex flex-col sm:flex-row items-center gap-2 shrink-0 w-full sm:w-auto">
+            <a 
+              href="https://github.com/oluwhadtosync/cartwise/releases/latest/download/cartwise.apk" 
+              download="cartwise.apk"
               class="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#0D261C] hover:bg-[#153e2e] text-[#F4F2EC] font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              title="Direct Download Latest Release APK"
             >
               <svg class="w-4 h-4 fill-current text-[#A3E635] shrink-0" viewBox="0 0 24 24">
                 <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
               </svg>
               <span>Download Android APK</span>
+              <i data-lucide="download" class="w-3.5 h-3.5 text-[#A3E635]"></i>
+            </a>
+            <button 
+              onclick="showApkModal()" 
+              class="w-full sm:w-auto p-3 rounded-xl bg-white/10 hover:bg-white/20 text-[#F4F2EC] text-xs font-semibold transition cursor-pointer flex items-center justify-center"
+              title="APK Details & Instructions"
+            >
+              <i data-lucide="info" class="w-4 h-4 text-white/80"></i>
             </button>
           </div>
         </div>
@@ -706,15 +716,19 @@
             </div>
           </div>
 
-          <button 
-            onclick="showApkModal()"
-            class="shrink-0 w-full sm:w-auto px-5 py-3 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-[#F4F2EC] font-semibold text-xs shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <svg class="w-4 h-4 fill-current text-[#A3E635] shrink-0" viewBox="0 0 24 24">
-              <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
-            </svg>
-            <span>Download Android APK</span>
-          </button>
+          <div class="flex flex-col sm:flex-row items-center gap-2 shrink-0 w-full sm:w-auto">
+            <a 
+              href="https://github.com/oluwhadtosync/cartwise/releases/latest/download/cartwise.apk" 
+              download="cartwise.apk"
+              class="shrink-0 w-full sm:w-auto px-5 py-3 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-[#F4F2EC] font-semibold text-xs shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <svg class="w-4 h-4 fill-current text-[#A3E635] shrink-0" viewBox="0 0 24 24">
+                <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
+              </svg>
+              <span>Download Android APK</span>
+              <i data-lucide="download" class="w-3.5 h-3.5 text-[#A3E635]"></i>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -1137,12 +1151,12 @@
               </a>
             </li>
             <li>
-              <button onclick="showApkModal()" class="text-[#4A5550] hover:text-[#0D1F18] transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
+              <a href="https://github.com/oluwhadtosync/cartwise/releases/latest/download/cartwise.apk" download="cartwise.apk" class="text-[#4A5550] hover:text-[#0D1F18] transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
                 <svg class="w-3.5 h-3.5 fill-current text-[#0D261C] shrink-0" viewBox="0 0 24 24">
                   <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.551 0 .9993.4486.9993 1.0001s-.4483 1.0001-.9993 1.0001m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0001s.4482-1.0001.9993-1.0001c.5511 0 .9993.4486.9993 1.0001s-.4482 1.0001-.9993 1.0001m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4116 13.8427 8.125 12 8.125c-1.8427 0-3.5802.2866-5.1368.8247L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
                 </svg>
-                <span>Download Android APK</span>
-              </button>
+                <span>Download Android APK (v1.0)</span>
+              </a>
             </li>
             <li>
               <button onclick="navigateTo('orders')" class="text-[#4A5550] hover:text-[#0D1F18] transition flex items-center gap-2 py-2 min-h-[38px] cursor-pointer">
@@ -1374,17 +1388,37 @@
         </p>
         <div class="p-3 rounded-xl bg-[#F9F8F5] border border-[#E2DFD7] space-y-1.5 font-mono text-[11px]">
           <div class="text-[#4A5550]">Package: <span class="text-[#0D1F18]">com.cartwise.app</span></div>
-          <div class="text-[#4A5550]">Build: <span class="text-[#047857] font-bold">app-debug.apk (20.1 MB)</span></div>
+          <div class="text-[#4A5550]">Build: <span class="text-[#047857] font-bold">cartwise.apk (20.1 MB)</span></div>
           <div class="text-[#4A5550]">Target: <span class="text-[#0D1F18]">Android 8.0 - Android 16</span></div>
-          <div class="text-[#4A5550]">Location: <span class="text-[#4A5550] break-all">android/app/build/outputs/apk/debug/app-debug.apk</span></div>
+          <div class="text-[#4A5550]">Release: <span class="text-[#0D1F18]">v1.0.0 (PayPal AI Hackathon)</span></div>
         </div>
         <p class="text-[11.5px] text-[#4A5550]">
-          The direct APK download link will be attached to the Devpost submission for judges to test on physical Android devices.
+          Click below to download the latest APK directly to your phone. Enable <em>Install unknown apps</em> in Android Settings to install.
         </p>
       </div>
 
-      <div class="flex gap-2">
-        <button onclick="hideApkModal()" class="flex-1 py-2.5 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-xs font-semibold text-[#F4F2EC] transition cursor-pointer">
+      <div class="flex flex-col sm:flex-row gap-2 pt-1">
+        <a 
+          href="https://github.com/oluwhadtosync/cartwise/releases/latest/download/cartwise.apk" 
+          download="cartwise.apk"
+          class="flex-1 py-3 px-4 rounded-xl bg-[#0D261C] hover:bg-[#16382b] text-xs font-bold text-[#F4F2EC] transition flex items-center justify-center gap-2 shadow-xs cursor-pointer text-center"
+        >
+          <i data-lucide="download" class="w-4 h-4 text-[#A3E635]"></i>
+          <span>Download Latest Release</span>
+        </a>
+        <a 
+          href="/cartwise.apk" 
+          download="cartwise.apk"
+          class="py-3 px-4 rounded-xl bg-[#F4F2EC] hover:bg-[#EAE7DF] border border-[#E2DFD7] text-xs font-semibold text-[#0D1F18] transition flex items-center justify-center gap-1.5 cursor-pointer text-center"
+          title="Direct Server Mirror"
+        >
+          <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-[#0F5132]"></i>
+          <span>Web Mirror</span>
+        </a>
+        <button 
+          onclick="hideApkModal()" 
+          class="py-3 px-4 rounded-xl bg-white border border-[#E2DFD7] hover:bg-[#F9F8F5] text-xs font-semibold text-[#4A5550] transition cursor-pointer"
+        >
           Close
         </button>
       </div>

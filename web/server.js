@@ -62,6 +62,11 @@ app.get('/health', async (req, res) => {
   });
 });
 
+// Direct APK download redirects
+app.get('/download/apk', (req, res) => {
+  res.redirect('https://github.com/oluwhadtosync/cartwise/releases/latest/download/cartwise.apk');
+});
+
 // Config endpoint for client
 app.get('/api/web-config', async (req, res) => {
   const activeBackend = await resolveBackendUrl();
